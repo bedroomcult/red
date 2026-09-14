@@ -245,3 +245,62 @@ Expected: no error (or wrangler login hint)
 git add -A
 git commit -m "feat: banners + history + deploy config"
 ```
+
+### Task 6: Installable Android (Capacitor + PWA, Orion-Store pattern)
+
+**Files:**
+- Create: `manifest.json`, `capacitor.config.ts`, `public/icon.svg`
+- Modify: `index.html` (viewport-fit, theme-color, manifest link), `package.json` (deps)
+
+**Interfaces:**
+- Consumes: `dist/` web build as Capacitor `webDir`
+- Produces: installable PWA + `npx cap add android` ready project
+
+- [ ] **Step 1: Add Capacitor deps**
+
+Run: `npm i @capacitor/core @capacitor/android @capacitor/app @capacitor/status-bar @capacitor/splash-screen @capacitor/local-notifications @capacitor/haptics`
+Expected: package.json updated
+
+- [ ] **Step 2: manifest + config (mirror Orion-Store)**
+
+```json
+// manifest.json
+{
+  "name": "Cycle Tracker",
+  "short_name": "Cycle",
+  "start_url": ".",
+  "display": "standalone",
+  "background_color": "#fff1f2",
+  "theme_color": "#e5484d",
+  "orientation": "portrait",
+  "icons": [{ "src": "./icon.png", "sizes": "512x512", "type": "image/png" }]
+}
+```
+
+```ts
+// capacitor.config.ts
+import { CapacitorConfig } from '@capacitor/cli';
+const config: CapacitorConfig = {
+  appId: 'com.cycle.tracker',
+  appName: 'Cycle Tracker',
+  webDir: 'dist',
+  server: { androidScheme: 'https' },
+  plugins: { StatusBar: { style: 'LIGHT' } }
+};
+export default config;
+```
+
+- [ ] **Step 3: index.html mobile shell**
+
+```html
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0, viewport-fit=cover" />
+<meta name="theme-color" content="#e5484d" />
+<link rel="manifest" href="/manifest.json" />
+```
+
+- [ ] **Step 4: Commit**
+
+```bash
+git add -A
+git commit -m "feat: capacitor android + PWA installable"
+```
