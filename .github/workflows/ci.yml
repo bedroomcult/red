@@ -52,7 +52,8 @@ jobs:
         with: { node-version: 20, cache: npm }
       - uses: actions/setup-java@v4
         with: { distribution: temurin, java-version: 21 }
-      - uses: android-actions/setup-android@v3
+      # ponytail: ubuntu-latest ships Android SDK + ANDROID_HOME; setup-android@v3
+      # now fails installing the removed 'tools' package, so it is not needed.
       - run: npm ci && npm run build
       - run: test -d android || npx cap add android
       - run: npx cap sync android
