@@ -15,6 +15,8 @@ export function uid(): string {
   return crypto.randomUUID();
 }
 
+import { predict } from './_predict';
+
 export function getCookie(request: Request, name: string): string | null {
   const h = request.headers.get('Cookie');
   if (!h) return null;
@@ -43,7 +45,6 @@ export function rateLimited(ip: string): boolean {
 }
 
 export async function buildState(env: any, userId: string) {
-  const { predict } = await import('../../lib/predict');
   const { results: periods } = await env.DB.prepare(
     'SELECT id,start_date,end_date,flow,type FROM periods WHERE user_id=? ORDER BY start_date'
   ).bind(userId).all();

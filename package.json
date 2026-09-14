@@ -10,7 +10,14 @@
   },
   "dependencies": {
     "react": "^18.3.1",
-    "react-dom": "^18.3.1"
+    "react-dom": "^18.3.1",
+    "@capacitor/core": "^7.6.4",
+    "@capacitor/android": "^7.6.4",
+    "@capacitor/app": "^7.1.2",
+    "@capacitor/haptics": "^7.0.0",
+    "@capacitor/local-notifications": "^7.0.0",
+    "@capacitor/splash-screen": "^7.0.5",
+    "@capacitor/status-bar": "^7.0.6"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.4",
