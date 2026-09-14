@@ -16,6 +16,7 @@ export function uid(): string {
 }
 
 import { predict } from './_predict';
+import { insights } from './_insights';
 
 export function getCookie(request: Request, name: string): string | null {
   const h = request.headers.get('Cookie');
@@ -62,7 +63,17 @@ export async function buildState(env: any, userId: string) {
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
-  return { periods, bc: bc ?? null, ec, prediction, todaySymptoms: (symptoms as any[]).map((s) => s.kind), today: todayIso };
+  const profile: any = await env.DB.prepare(
+    'SELECT display_name, cycle_len, period_len FROM users WHERE id=?'
+  ).bind(userId).first();
+  const ins = insights(periods as any[], profile?.cycle_len ?? 28, profile?.period_len ?? 5);
+  return {
+    periods, bc: bc ?? null, ec, prediction,
+    todaySymptoms: (symptoms as any[]).map((s) => s.kind),
+    today: todayIso,
+    profile: profile ?? null,
+    insights: ins,
+  };
 }
 
 export async function requireUser(env: any, request: Request): Promise<{ id: string; email: string } | null> {

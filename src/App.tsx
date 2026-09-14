@@ -4,9 +4,12 @@ import LogSheet from './LogSheet';
 import BcPanel from './BcPanel';
 import EcPanel from './EcPanel';
 import Home from './Home';
+import InsightsScreen from './InsightsScreen';
+import SettingsScreen from './SettingsScreen';
 import { t } from './i18n';
+import type { Insights } from '../lib/insights';
 
-type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string };
+type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
 
 const today = () => new Date().toISOString().slice(0, 10);
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -18,7 +21,7 @@ export default function App() {
   const [sel, setSel] = useState<string | null>(null);
   const [bcOpen, setBcOpen] = useState(false);
   const [ecOpen, setEcOpen] = useState(false);
-  const [tab, setTab] = useState<'home' | 'calendar' | 'history'>('home');
+  const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
   const [login, setLogin] = useState({ email: '', password: '', mode: 'login' as 'login' | 'signup' });
   const [needLogin, setNeedLogin] = useState(false);
 
@@ -195,6 +198,14 @@ export default function App() {
         </div>
       )}
 
+      {me && tab === 'insights' && (
+        <InsightsScreen ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, next3: [] }} />
+      )}
+
+      {me && tab === 'settings' && (
+        <SettingsScreen profile={me.profile ?? null} onSaved={setMe} onLogout={doLogout} />
+      )}
+
       {sel && <LogSheet date={sel} existing={existing} onClose={() => setSel(null)} onSaved={setMe} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
       {ecOpen && <EcPanel onClose={() => setEcOpen(false)} onSaved={setMe} />}
@@ -208,8 +219,14 @@ export default function App() {
         <button className={`tab ${tab === 'calendar' ? 'active' : ''}`} onClick={() => setTab('calendar')}>
           <span className="ico">📅</span>{t.navCalendar}
         </button>
+        <button className={`tab ${tab === 'insights' ? 'active' : ''}`} onClick={() => setTab('insights')}>
+          <span className="ico">📊</span>{t.navInsights}
+        </button>
         <button className={`tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>
           <span className="ico">🕘</span>{t.navHistory}
+        </button>
+        <button className={`tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
+          <span className="ico">⚙️</span>{t.navSettings}
         </button>
       </nav>
     </div>

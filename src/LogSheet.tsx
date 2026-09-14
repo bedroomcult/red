@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import type { Period } from './Calendar';
 import { t } from './i18n';
 
@@ -9,6 +9,28 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
   const [busy, setBusy] = useState(false);
   const [flow, setFlow] = useState(existing?.flow ?? 'medium');
   const [endDate, setEndDate] = useState(existing?.end_date ?? '');
+  const [note, setNote] = useState('');
+
+  useEffect(() => {
+    let on = true;
+    fetch('/api/notes?date=' + date)
+      .then((r) => (r.ok ? r.json() : { note: '' }))
+      .then((j) => { if (on) setNote(j.note ?? ''); })
+      .catch(() => {});
+    return () => { on = false; };
+  }, [date]);
+
+  async function saveNote() {
+    setBusy(true); setErr(null);
+    try {
+      const r = await fetch('/api/notes', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ date, note }),
+      });
+      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
+      onClose();
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  }
 
   async function post(body: any) {
     setBusy(true); setErr(null);
@@ -64,10 +86,17 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
           <label>{t.end}</label>
           <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
         </div>
+        <div className="field">
+          <label>{t.note}</label>
+          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+            placeholder={t.notePlaceholder}
+            style={{ font: 'inherit', width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', resize: 'vertical' }} />
+        </div>
         <div className="row">
           <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
           <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
           {existing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+          <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
           <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
         </div>
       </div>

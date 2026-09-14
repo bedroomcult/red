@@ -1,0 +1,69 @@
+// Cycle insights + stats for the "Wawasan" screen.
+// ponytail: pure math over logged period starts, no chart lib.
+
+export type Insights = {
+  avgCycle: number | null;
+  avgPeriod: number | null;
+  variability: number | null; // stddev of cycle lengths
+  count: number;
+  shortest: number | null;
+  longest: number | null;
+  next3: string[];
+};
+
+const DAY = 864e5;
+const parse = (d: string) => Date.parse(d + 'T00:00:00Z');
+const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
+
+export function insights(
+  periods: { start_date: string; end_date: string | null; type: string }[],
+  fallbackCycle = 28,
+  fallbackPeriod = 5
+): Insights {
+  const mens = periods.filter((p) => p.type === 'menstruation').sort((a, b) => a.start_date.localeCompare(b.start_date));
+  const starts = mens.map((p) => parse(p.start_date));
+
+  const lens: number[] = [];
+  for (let i = 1; i < starts.length; i++) lens.push(Math.round((starts[i] - starts[i - 1]) / DAY));
+
+  const plens: number[] = [];
+  for (const p of mens) {
+    if (p.end_date) plens.push(Math.round((parse(p.end_date) - parse(p.start_date)) / DAY) + 1);
+  }
+
+  const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
+  const avgCycle = lens.length ? Math.round(mean(lens)) : null;
+  const avgPeriod = plens.length ? Math.round(mean(plens)) : null;
+  const variability = lens.length >= 2 ? Math.round(Math.sqrt(mean(lens.map((c) => (c - mean(lens)) ** 2))) * 10) / 10 : null;
+
+  const eff = avgCycle ?? fallbackCycle;
+  const last = starts.length ? starts[starts.length - 1] : null;
+  const next3: string[] = [];
+  if (last !== null) for (let i = 1; i <= 3; i++) next3.push(iso(last + eff * i * DAY));
+
+  return {
+    avgCycle,
+    avgPeriod,
+    variability,
+    count: lens.length,
+    shortest: lens.length ? Math.min(...lens) : null,
+    longest: lens.length ? Math.max(...lens) : null,
+    next3,
+  };
+}
+
+// ponytail: assert self-check. `node --experimental-strip-types lib/insights.ts`
+if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('insights.ts')) {
+  const p = [
+    { start_date: '2026-01-01', end_date: '2026-01-05', type: 'menstruation' },
+    { start_date: '2026-01-29', end_date: '2026-02-02', type: 'menstruation' },
+    { start_date: '2026-02-26', end_date: '2026-03-02', type: 'menstruation' },
+  ];
+  const r = insights(p);
+  console.assert(r.avgCycle === 28, 'avgCycle ' + r.avgCycle);
+  console.assert(r.avgPeriod === 5, 'avgPeriod ' + r.avgPeriod);
+  console.assert(r.count === 2, 'count');
+  console.assert(r.next3.length === 3 && r.next3[0] === '2026-03-26', 'next3 ' + r.next3[0]);
+  console.assert(insights([]).avgCycle === null, 'empty');
+  console.log('insights.ts self-check passed');
+}

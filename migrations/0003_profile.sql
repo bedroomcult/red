@@ -1,0 +1,3 @@
+ALTER TABLE users ADD COLUMN display_name TEXT;
+ALTER TABLE users ADD COLUMN cycle_len INTEGER;
+ALTER TABLE users ADD COLUMN period_len INTEGER;
