@@ -22,14 +22,20 @@ Multi-user period tracker on Cloudflare Pages + D1 + shadcn. Aware of cycle chan
 
 ## 3. Prediction Engine (pure `lib/predict.ts`)
 - Input: period start list (type=menstruation only for natural avg; withdrawal/breakthrough excluded)
-- avg = mean last 3–6 cycles, drop single outlier (>2xSD). SD computed.
-- next_start = last_start + round(avg). window = ±max(SD,2d).
+- cycle[i] = start[i+1] − start[i] in days. Use last 3–6 cycles.
+- avg = sum(cycles)/n. SD = sqrt(sum((x−avg)²)/n) population SD.
+- outlier drop: if n≥4 and one cycle deviates >2×SD from avg, drop it, recompute avg/SD once.
+- Example: starts Jan1, Jan29, Feb26, Mar29 → cycles [28,28,31] → avg=29.0, SD≈1.41 → high confidence.
+- next_start = last_start + round(avg). window = ±max(round(SD),2d). Example above: Mar29+29=Apr27, window Apr25–29.
 - confidence: SD<2 high, <4 medium, else low. Low → show range only, no single day.
 - ovulation = next_start − 14d; fertile = ov −5d..+1d. Suppressed in BC / EC-disrupted.
 - irregular if |current−avg|>7d OR (max−min)>9d over last 6–12.
-- late only after expected+7d. No avg shift till new bleed logged.
+- late only after expected+7d. late_days = today − expected_start. No avg shift till new bleed logged.
+- change-aware: if last cycle deviates >7d, flag `shift_detected`, keep old avg for 1 cycle, require next bleed to confirm new baseline; show "cycle shifting?" banner.
 - spotting rule: <2d light, no product → type=spotting, excluded from day1.
 - missed period: keep expected, flag `awaiting_input`, widen low confidence.
+- EC adjust: next_expected stays calendar-based but window = ±7d LNG, ±10d UPA for 1–2 cycles; late threshold pushed to expected+10d; ovulation=null.
+- BC adjust: return {mode:suppressed, next_withdrawal: pack_start+21 (+placebo d2–4 window)} for 21/7, pack_start+24 for 24/4; continuous/mini → {mode:suppressed, next:null}.
 
 ## 4. BC Mode
 - Toggle + regimen pick. Suppresses ovulation/fertile/late/cycle stats.
