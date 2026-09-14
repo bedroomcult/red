@@ -50,10 +50,15 @@ Multi-user period tracker on Cloudflare Pages + D1 + shadcn. Aware of cycle chan
 - Tracker: widen next 1–2 predictions ±7–10d, suppress late alarms + ovulation unreliable banner, prompt log next bleed to recalibrate.
 - Medical surface (info only, not advice): test if no bleed expected+7d or 21d post UPSI/EC; seek care if >2 pads/hr 2h, severe pain, faintness, positive test, delay >3wk. UPA → wait 5d restart hormonal; LNG → restart now + condoms 7d. Footer disclaimer + consult clinician.
 
-## 6. UX / Data Flow
-- Screens: login/signup, dashboard calendar (predicted range shaded + confidence label), log period, BC pack view, EC log, history list.
+## 6. UX / Data Flow + UI Spec (personalized calendar)
+- Screens: login/signup, dashboard calendar, log sheet, BC pack view, EC log, history list.
+- Calendar month grid, week starts Mon. Header: `< Month Year • name • mode pill`.
+- Day visuals: red hollow circle = predicted period; green hollow circle = predicted ovulation/fertile; red solid fill + ✓ = logged period; green solid = confirmed ovulation (LH); grey dot = spotting/breakthrough; striped/disrupted badge when EC-disrupted.
+- Confidence label under calendar: high/med/low + range text e.g. "Apr 25–29". Low → no single day, range only.
+- Interaction: tap day → bottom sheet: Log period / spotting / symptoms / EC / missed pill + Confirm / Edit / Skip for predicted days. + Log today button.
+- Fallback rule: if no user log, day stays prediction. Prediction auto-confirms into history only after late window passes (expected+7d natural, +10d EC) and counts toward next calc; before that shown hollow. User log overrides prediction (solid). Skip = keep hollow, exclude from avg prompt.
+- Banners: BC-suppressed ("ovulation hidden, withdrawal expected placebo d2–4"), EC-disrupted ("unreliable ±10d, log next bleed").
 - Flow: log bleed → POST /api/periods → recalc predict() server-side → return next + window + flags → render.
-- States: natural / BC-suppressed / EC-disrupted banner always visible when not natural.
 
 ## 7. Security / Errors / Edge
 - D1 at-rest encrypted; no cycle data in analytics; logout-all; session rotate.
