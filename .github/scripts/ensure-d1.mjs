@@ -7,13 +7,14 @@ if (!acct || !tok) throw new Error('missing Cloudflare env');
 
 function api(method, path, body) {
   const args = [
-    'curl -sf -X ' + method,
+    'curl -s -X ' + method,
     'https://api.cloudflare.com/client/v4/accounts/' + acct + '/d1/database' + (path || ''),
     "-H 'Authorization: Bearer " + tok + "'",
   ];
   if (body) args.push("-H 'Content-Type: application/json'", "-d '" + JSON.stringify(body) + "'");
-  const out = execSync(args.join(' '), { encoding: 'utf8', shell: '/bin/bash' });
-  const j = JSON.parse(out);
+  const out = execSync(args.join(' '), { encoding: 'utf8', shell: '/bin/bash', stdio: ['ignore', 'pipe', 'pipe'] });
+  let j;
+  try { j = JSON.parse(out); } catch { throw new Error('D1 API non-JSON: ' + out); }
   if (!j.success) throw new Error('D1 API failed: ' + out);
   return j.result;
 }
