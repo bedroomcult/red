@@ -304,3 +304,56 @@ export default config;
 git add -A
 git commit -m "feat: capacitor android + PWA installable"
 ```
+
+### Task 7: GitHub CI build + deploy Pages
+
+**Files:**
+- Create: `.github/workflows/ci.yml`
+
+**Interfaces:**
+- Consumes: repo secrets `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID`, D1 `DB` binding
+- Produces: CI green → Pages deployed, D1 migrated
+
+- [ ] **Step 1: Write workflow**
+
+```yaml
+# .github/workflows/ci.yml
+name: ci
+on:
+  push:
+    branches: [main]
+  pull_request:
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci
+      - run: npx vitest run
+      - run: npm run build
+  deploy:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 20, cache: npm }
+      - run: npm ci && npm run build
+      - run: npx wrangler d1 migrations apply period-db --remote
+        env: { CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}, CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }} }
+      - uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: pages deploy dist --project-name cycle-tracker
+```
+
+- [ ] **Step 2: Commit**
+
+```bash
+git add .github/workflows/ci.yml
+git commit -m "ci: build test deploy pages + D1"
+```
