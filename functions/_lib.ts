@@ -58,7 +58,11 @@ export async function buildState(env: any, userId: string) {
   const starts = (periods as any[]).filter((p) => p.type === 'menstruation').map((p) => p.start_date as string);
   const ecType = (ec as any[]).length ? (ec as any[])[0].ec_type : null;
   const prediction = predict(starts, { ecType, bcMode: !!bc });
-  return { periods, bc: bc ?? null, ec, prediction };
+  const todayIso = new Date().toISOString().slice(0, 10);
+  const { results: symptoms } = await env.DB.prepare(
+    'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
+  ).bind(userId, todayIso).all();
+  return { periods, bc: bc ?? null, ec, prediction, todaySymptoms: (symptoms as any[]).map((s) => s.kind), today: todayIso };
 }
 
 export async function requireUser(env: any, request: Request): Promise<{ id: string; email: string } | null> {

@@ -20,7 +20,8 @@ function monthCells(year: number, mon: number): (string | null)[] {
 function ovSet(ov: string | null): Set<string> {
   if (!ov) return new Set();
   const t = Date.parse(ov + 'T00:00:00Z');
-  return new Set([-1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
+  // Fertile window = ovulation -5d .. +1d (spec).
+  return new Set([-5, -4, -3, -2, -1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
 }
 
 export default function Calendar({ year, mon, periods, prediction, selected, onPick }: {
@@ -41,7 +42,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const cls = p && p.type === 'menstruation' ? 'logged'
                 : p ? '' // spotting: plain + dot below
                 : inRange(d, prediction?.lo ?? null, prediction?.hi ?? null) ? 'pred-period'
-                : ovs.has(d) ? 'pred-ov' : '';
+                : ovs.has(d) ? 'pred-fertile' : '';
               return (
                 <button
                   className={`dnum ${cls} ${d === selected ? 'sel' : ''}`}

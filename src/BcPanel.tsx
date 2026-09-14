@@ -1,7 +1,7 @@
 import { useState } from 'react';
+import { t } from './i18n';
 
-const REGIMENS = ['21/7', '24/4', '84/7', 'continuous'] as const;
-const PILL_TYPES = ['combined', 'mini'] as const;
+const REGIMENS = ['21/7', '24/4', 'continuous'] as const;
 
 export default function BcPanel({ current, onClose, onSaved }: {
   current: { pill_type: string; regimen: string } | null;
@@ -43,27 +43,32 @@ export default function BcPanel({ current, onClose, onSaved }: {
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Birth control">
-        <strong>Birth control</strong>
-        <div className="muted">Suppresses ovulation predictions. Withdrawal bleed expected placebo days 2–4.</div>
+      <div className="sheet" role="dialog" aria-label={t.bcTitle}>
+        <div className="grabber" />
+        <h3>{t.bcTitle}</h3>
+        <div className="hint">{t.bcHint}</div>
         {err && <div className="err">{err}</div>}
-        <div className="row" style={{ alignItems: 'center' }}>
-          <label className="muted">Type</label>
-          <select value={pillType} onChange={(e) => setPillType(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}>
-            {PILL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-          </select>
-          <label className="muted">Regimen</label>
-          <select value={regimen} onChange={(e) => setRegimen(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}>
-            {REGIMENS.map((t) => <option key={t} value={t}>{t}</option>)}
+        <div className="field">
+          <label>{t.bcType}</label>
+          <select value={pillType} onChange={(e) => setPillType(e.target.value)}>
+            <option value="combined">{t.bcCombined}</option>
+            <option value="mini">{t.bcMini}</option>
           </select>
         </div>
-        <div className="row" style={{ alignItems: 'center' }}>
-          <label><input type="checkbox" checked={taken} onChange={(e) => setTaken(e.target.checked)} /> took today's pill</label>
+        <div className="field">
+          <label>{t.bcRegimen}</label>
+          <select value={regimen} onChange={(e) => setRegimen(e.target.value)}>
+            {REGIMENS.map((r) => <option key={r} value={r}>{r}</option>)}
+          </select>
         </div>
+        <label className="check">
+          <input type="checkbox" checked={taken} onChange={(e) => setTaken(e.target.checked)} />
+          {t.bcTakenToday}
+        </label>
         <div className="row">
-          <button className="primary" disabled={busy} onClick={save}>Save</button>
-          {current && <button disabled={busy} onClick={stop}>Stop BC</button>}
-          <button disabled={busy} onClick={onClose}>Close</button>
+          <button className="btn primary" disabled={busy} onClick={save}>{t.bcSave}</button>
+          {current && <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStop}</button>}
+          <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
         </div>
       </div>
     </>

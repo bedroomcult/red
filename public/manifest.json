@@ -1,6 +1,6 @@
 {
-  "name": "Period Tracker",
-  "short_name": "Periods",
+  "name": "Pelacak Haid",
+  "short_name": "Haid",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff1f2",

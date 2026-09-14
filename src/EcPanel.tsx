@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { t } from './i18n';
 
 export default function EcPanel({ onClose, onSaved }: {
   onClose: () => void; onSaved: (state: any) => void;
@@ -29,28 +30,30 @@ export default function EcPanel({ onClose, onSaved }: {
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label="Emergency contraception">
-        <strong>Emergency pill</strong>
-        <div className="muted">Cycle disrupted ±7d LNG, ±10d UPA. Ovulation unreliable. Log next bleed to recalibrate. Test if no bleed expected+7d or 21d after UPSI/EC. Seek care if &gt;2 pads/hr 2h, severe pain, faintness, positive test, delay &gt;3wk. General info only, not medical advice — consult clinician.</div>
+      <div className="sheet" role="dialog" aria-label={t.ecTitle}>
+        <div className="grabber" />
+        <h3>{t.ecTitle}</h3>
+        <div className="hint">{t.ecHint}</div>
         {err && <div className="err">{err}</div>}
-        <div className="row" style={{ alignItems: 'center' }}>
-          <label className="muted">Type</label>
-          <select value={ecType} onChange={(e) => setEcType(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}>
-            <option value="LNG">LNG (≤72h)</option>
-            <option value="UPA">UPA (≤120h)</option>
-            <option value="copper">Copper IUD (≤5d)</option>
-            <option value="copper">copper IUD (≤5d)</option>
+        <div className="field">
+          <label>{t.bcType}</label>
+          <select value={ecType} onChange={(e) => setEcType(e.target.value)}>
+            <option value="LNG">LNG (≤72 jam)</option>
+            <option value="UPA">UPA (≤120 jam)</option>
+            <option value="copper">IUD tembaga (≤5 hari)</option>
           </select>
         </div>
-        <div className="row" style={{ alignItems: 'center' }}>
-          <label className="muted">Taken</label>
-          <input type="date" value={intake} onChange={(e) => setIntake(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }} />
-          <label className="muted">Unprotected</label>
-          <input type="date" value={upsi} onChange={(e) => setUpsi(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }} />
+        <div className="field">
+          <label>{t.ecTaken}</label>
+          <input type="date" value={intake} onChange={(e) => setIntake(e.target.value)} />
+        </div>
+        <div className="field">
+          <label>{t.ecUpsi}</label>
+          <input type="date" value={upsi} onChange={(e) => setUpsi(e.target.value)} />
         </div>
         <div className="row">
-          <button className="primary" disabled={busy} onClick={save}>Log EC</button>
-          <button disabled={busy} onClick={onClose}>Close</button>
+          <button className="btn primary" disabled={busy} onClick={save}>{t.ecSave}</button>
+          <button className="btn ghost" disabled={busy} onClick={onClose}>{t.ecClose}</button>
         </div>
       </div>
     </>

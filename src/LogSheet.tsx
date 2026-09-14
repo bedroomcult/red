@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import type { Period } from './Calendar';
+import { t } from './i18n';
 
 export default function LogSheet({ date, existing, onClose, onSaved }: {
   date: string; existing: Period | undefined; onClose: () => void; onSaved: (state: any) => void;
@@ -32,29 +33,42 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
 
+  // id present => UPDATE existing (lets user set period end), else INSERT.
+  const save = (type: string) => post({
+    id: existing?.id,
+    start_date: date,
+    type,
+    flow,
+    end_date: endDate || undefined,
+  });
+
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={'Log ' + date}>
-        <strong>{date}</strong>
-        {existing && <div className="muted">logged: {existing.type}{existing.flow ? ' · ' + existing.flow : ''}</div>}
-        {!existing && <div className="muted">no log = prediction stays hollow</div>}
+      <div className="sheet" role="dialog" aria-label={date}>
+        <div className="grabber" />
+        <h3>{date}</h3>
+        <div className="hint">
+          {existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
+        </div>
         {err && <div className="err">{err}</div>}
-        <div className="row" style={{ alignItems: 'center' }}>
-          <label className="muted">Flow</label>
-          <select value={flow} onChange={(e) => setFlow(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}>
-            <option value="light">light</option>
-            <option value="medium">medium</option>
-            <option value="heavy">heavy</option>
+        <div className="field">
+          <label>{t.flow}</label>
+          <select value={flow} onChange={(e) => setFlow(e.target.value)}>
+            <option value="light">{t.flowLight}</option>
+            <option value="medium">{t.flowMedium}</option>
+            <option value="heavy">{t.flowHeavy}</option>
           </select>
-          <label className="muted">End</label>
-          <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }} />
+        </div>
+        <div className="field">
+          <label>{t.end}</label>
+          <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
         </div>
         <div className="row">
-          <button className="primary" disabled={busy} onClick={() => post({ start_date: date, type: 'menstruation', flow, end_date: endDate || undefined })}>Log period</button>
-          <button disabled={busy} onClick={() => post({ start_date: date, type: 'spotting', flow, end_date: endDate || undefined })}>Spotting</button>
-          {existing && <button disabled={busy} onClick={del}>Remove</button>}
-          <button disabled={busy} onClick={onClose}>Skip</button>
+          <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
+          <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
+          {existing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+          <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
         </div>
       </div>
     </>
