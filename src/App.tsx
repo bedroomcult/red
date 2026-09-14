@@ -11,19 +11,67 @@ export default function App() {
   const [err, setErr] = useState<string | null>(null);
   const [ym, setYm] = useState(() => { const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; });
   const [sel, setSel] = useState<string | null>(null);
+  const [login, setLogin] = useState({ email: '', password: '', mode: 'login' as 'login' | 'signup' });
+  const [needLogin, setNeedLogin] = useState(false);
 
   const load = useCallback(async () => {
     try {
       const r = await fetch('/api/me');
-      if (r.status === 401) { setErr('login required'); return; }
+      if (r.status === 401) { setNeedLogin(true); setErr(null); return; }
       if (!r.ok) throw new Error(r.statusText);
+      setNeedLogin(false);
       setMe(await r.json());
     } catch (e: any) { setErr(e.message); }
   }, []);
 
   useEffect(() => { load(); }, [load]);
 
+  const doAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setErr(null);
+    try {
+      const r = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: login.mode, email: login.email, password: login.password }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) { setErr((j as any).error ?? 'login failed'); return; }
+      setLogin({ email: '', password: '', mode: 'login' });
+      await load();
+    } catch (e: any) { setErr(e.message); }
+  };
+
+  const doLogout = async () => {
+    await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) });
+    setMe(null);
+    setNeedLogin(true);
+  };
   const jumpToday = () => { const t = new Date(); setYm({ y: t.getFullYear(), m: t.getMonth() }); setSel(today()); };
+  if (needLogin) {
+    return (
+      <div className="wrap">
+        <h2 style={{ margin: '32px 0 4px' }}>Period Tracker</h2>
+        <div className="muted" style={{ marginBottom: 16 }}>Log in or create an account</div>
+        <form onSubmit={doAuth}>
+          <input type="email" required placeholder="email" autoComplete="email"
+            value={login.email} onChange={(e) => setLogin({ ...login, email: e.target.value })}
+            style={{ width: '100%', padding: 10, marginBottom: 8, borderRadius: 8, border: '1px solid #ddd' }} />
+          <input type="password" required minLength={8} placeholder="password (min 8)" autoComplete={login.mode === 'login' ? 'current-password' : 'new-password'}
+            value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })}
+            style={{ width: '100%', padding: 10, marginBottom: 12, borderRadius: 8, border: '1px solid #ddd' }} />
+          {err && <div className="err" style={{ marginBottom: 8 }}>{err}</div>}
+          <div className="row" style={{ marginTop: 0 }}>
+            <button className="primary" type="submit">{login.mode === 'login' ? 'Log in' : 'Sign up'}</button>
+            <button type="button" onClick={() => setLogin({ ...login, mode: login.mode === 'login' ? 'signup' : 'login' })}>
+              {login.mode === 'login' ? 'Need account? Sign up' : 'Have account? Log in'}
+            </button>
+          </div>
+        </form>
+        <footer>General info only, not medical advice.</footer>
+      </div>
+    );
+  }
   const label = new Date(Date.UTC(ym.y, ym.m, 1)).toLocaleString(undefined, { month: 'long', year: 'numeric' });
   const existing = sel ? me?.periods.find((p) => p.start_date === sel) : undefined;
   const flags = me?.prediction.flags ?? [];
@@ -38,6 +86,7 @@ export default function App() {
         <strong>{label}</strong>
         <button onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
         <button onClick={jumpToday}>Today</button>
+        <button onClick={doLogout}>Logout</button>
       </div>
       {err && <div className="err">{err}</div>}
       {bcMode && (

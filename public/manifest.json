@@ -1,6 +1,6 @@
 {
-  "name": "Cycle Tracker",
-  "short_name": "Cycle",
+  "name": "Period Tracker",
+  "short_name": "Periods",
   "start_url": ".",
   "display": "standalone",
   "background_color": "#fff1f2",
