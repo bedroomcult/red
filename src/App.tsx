@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import Calendar, { type Period, type Prediction } from './Calendar';
 import LogSheet from './LogSheet';
+import BcPanel from './BcPanel';
+import EcPanel from './EcPanel';
 
 type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction };
 
@@ -11,6 +13,8 @@ export default function App() {
   const [err, setErr] = useState<string | null>(null);
   const [ym, setYm] = useState(() => { const t = new Date(); return { y: t.getFullYear(), m: t.getMonth() }; });
   const [sel, setSel] = useState<string | null>(null);
+  const [bcOpen, setBcOpen] = useState(false);
+  const [ecOpen, setEcOpen] = useState(false);
   const [login, setLogin] = useState({ email: '', password: '', mode: 'login' as 'login' | 'signup' });
   const [needLogin, setNeedLogin] = useState(false);
 
@@ -107,6 +111,10 @@ export default function App() {
             {me.prediction.next ? `next ${me.prediction.next} (${me.prediction.lo}–${me.prediction.hi})` : 'not enough data — log 2+ periods'}
             {flags.includes('irregular') ? ' · irregular cycles, wide window' : ''}
           </div>
+          <div className="row">
+            <button onClick={() => setBcOpen(true)}>BC</button>
+            <button onClick={() => setEcOpen(true)}>EC log</button>
+          </div>
           <h3 style={{ margin: '16px 0 8px', fontSize: 14 }}>History</h3>
           {history.length === 0 && <div className="muted">nothing logged yet</div>}
           <ul style={{ listStyle: 'none', margin: 0, padding: 0 }}>
@@ -120,6 +128,8 @@ export default function App() {
         </>
       )}
       {sel && <LogSheet date={sel} existing={existing} onClose={() => setSel(null)} onSaved={setMe} />}
+      {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
+      {ecOpen && <EcPanel onClose={() => setEcOpen(false)} onSaved={setMe} />}
       <footer>
         General info only, not medical advice. Predictions are estimates, not contraception guidance.
         {ecHit ? ' After EC, talk to a pharmacist/clinician if unsure when to test.' : ''}

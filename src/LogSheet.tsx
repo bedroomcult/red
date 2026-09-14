@@ -6,6 +6,8 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
 }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [flow, setFlow] = useState(existing?.flow ?? 'medium');
+  const [endDate, setEndDate] = useState(existing?.end_date ?? '');
 
   async function post(body: any) {
     setBusy(true); setErr(null);
@@ -38,9 +40,19 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
         {existing && <div className="muted">logged: {existing.type}{existing.flow ? ' · ' + existing.flow : ''}</div>}
         {!existing && <div className="muted">no log = prediction stays hollow</div>}
         {err && <div className="err">{err}</div>}
+        <div className="row" style={{ alignItems: 'center' }}>
+          <label className="muted">Flow</label>
+          <select value={flow} onChange={(e) => setFlow(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }}>
+            <option value="light">light</option>
+            <option value="medium">medium</option>
+            <option value="heavy">heavy</option>
+          </select>
+          <label className="muted">End</label>
+          <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} style={{ padding: 8, borderRadius: 8, border: '1px solid #ddd' }} />
+        </div>
         <div className="row">
-          <button className="primary" disabled={busy} onClick={() => post({ start_date: date, type: 'menstruation' })}>Log period</button>
-          <button disabled={busy} onClick={() => post({ start_date: date, type: 'spotting' })}>Spotting</button>
+          <button className="primary" disabled={busy} onClick={() => post({ start_date: date, type: 'menstruation', flow, end_date: endDate || undefined })}>Log period</button>
+          <button disabled={busy} onClick={() => post({ start_date: date, type: 'spotting', flow, end_date: endDate || undefined })}>Spotting</button>
           {existing && <button disabled={busy} onClick={del}>Remove</button>}
           <button disabled={busy} onClick={onClose}>Skip</button>
         </div>
