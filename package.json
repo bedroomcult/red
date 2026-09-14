@@ -20,6 +20,7 @@
     "@capacitor/status-bar": "^7.0.6"
   },
   "devDependencies": {
+    "@capacitor/cli": "^7.6.4",
     "@vitejs/plugin-react": "^4.3.4",
     "typescript": "^5.6.3",
     "vite": "^6.0.3",
