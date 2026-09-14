@@ -1,0 +1,10 @@
+name = "period-tracker"
+compatibility_date = "2026-09-01"
+pages_build_output_dir = "dist"
+
+# ponytail: replace database_id after `wrangler d1 create period-db`.
+[[d1_databases]]
+binding = "DB"
+database_name = "period-db"
+database_id = "REPLACE_WITH_D1_ID"
+migrations_dir = "migrations"
