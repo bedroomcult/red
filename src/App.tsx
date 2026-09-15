@@ -90,13 +90,13 @@ export default function App() {
         <div className="sub">{t.loginSubtitle}</div>
         <form onSubmit={doAuth}>
           <div className="field">
-            <label>{t.email}</label>
-            <input type="email" required autoComplete="email" value={login.email}
+            <label htmlFor="auth-email">{t.email}</label>
+            <input id="auth-email" type="email" required autoComplete="email" value={login.email}
               onChange={(e) => setLogin({ ...login, email: e.target.value })} />
           </div>
           <div className="field">
-            <label>{t.password}</label>
-            <input type="password" required minLength={8}
+            <label htmlFor="auth-pw">{t.password}</label>
+            <input id="auth-pw" type="password" required minLength={8}
               autoComplete={login.mode === 'login' ? 'current-password' : 'new-password'}
               value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} />
           </div>
@@ -134,18 +134,10 @@ export default function App() {
 
   return (
     <div className="app">
-      {tab !== 'home' && (
-        <div className="top">
-          <h1>{t.appName}</h1>
-          <button className="icon-btn" onClick={doLogout}>{t.logout}</button>
-        </div>
-      )}
-      {tab === 'home' && (
-        <div className="top" style={{ marginBottom: 0 }}>
-          <h1>{t.appName}</h1>
-          <button className="icon-btn" onClick={doLogout}>{t.logout}</button>
-        </div>
-      )}
+      <div className="top" style={tab === 'home' ? { marginBottom: 0 } : undefined}>
+        <h1>{t.appName}</h1>
+        <button className="icon-btn" onClick={doLogout}>{t.logout}</button>
+      </div>
 
       {err && <div className="err">{err}</div>}
 
@@ -239,20 +231,20 @@ export default function App() {
       <footer className="disclaimer">{t.disclaimer}</footer>
 
       <nav className="tabbar">
-        <button className={`tab ${tab === 'home' ? 'active' : ''}`} onClick={() => setTab('home')}>
-          <span className="ico">💗</span>{t.navHome}
+        <button className={`tab ${tab === 'home' ? 'active' : ''}`} aria-current={tab === 'home' ? 'page' : undefined} onClick={() => setTab('home')}>
+          <span className="ico" aria-hidden="true">💗</span>{t.navHome}
         </button>
-        <button className={`tab ${tab === 'calendar' ? 'active' : ''}`} onClick={() => setTab('calendar')}>
-          <span className="ico">📅</span>{t.navCalendar}
+        <button className={`tab ${tab === 'calendar' ? 'active' : ''}`} aria-current={tab === 'calendar' ? 'page' : undefined} onClick={() => setTab('calendar')}>
+          <span className="ico" aria-hidden="true">📅</span>{t.navCalendar}
         </button>
-        <button className={`tab ${tab === 'insights' ? 'active' : ''}`} onClick={() => setTab('insights')}>
-          <span className="ico">📊</span>{t.navInsights}
+        <button className={`tab ${tab === 'insights' ? 'active' : ''}`} aria-current={tab === 'insights' ? 'page' : undefined} onClick={() => setTab('insights')}>
+          <span className="ico" aria-hidden="true">📊</span>{t.navInsights}
         </button>
-        <button className={`tab ${tab === 'history' ? 'active' : ''}`} onClick={() => setTab('history')}>
-          <span className="ico">🕘</span>{t.navHistory}
+        <button className={`tab ${tab === 'history' ? 'active' : ''}`} aria-current={tab === 'history' ? 'page' : undefined} onClick={() => setTab('history')}>
+          <span className="ico" aria-hidden="true">🕘</span>{t.navHistory}
         </button>
-        <button className={`tab ${tab === 'settings' ? 'active' : ''}`} onClick={() => setTab('settings')}>
-          <span className="ico">⚙️</span>{t.navSettings}
+        <button className={`tab ${tab === 'settings' ? 'active' : ''}`} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => setTab('settings')}>
+          <span className="ico" aria-hidden="true">⚙️</span>{t.navSettings}
         </button>
       </nav>
     </div>

@@ -48,7 +48,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   return (
     <div>
       <div className="grid">
-        {['M', 'T', 'W', 'T', 'F', 'S', 'S'].map((d, i) => <div key={i} className="dow">{d}</div>)}
+        {['S', 'S', 'R', 'K', 'J', 'S', 'M'].map((d, i) => <div key={i} className="dow">{d}</div>)}
         {cells.map((d, i) => (
           <div key={i} className="day">
             {d && (() => {
@@ -60,9 +60,9 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               return (
                 <button
                   className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''}`}
-                  style={d === selected ? { outline: '2px solid #111' } : undefined}
                   onClick={() => onPick(d)}
-                  aria-label={d}
+                  aria-label={new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  aria-current={d === todayIso ? 'date' : undefined}
                 >{inPeriod.has(d) ? '✓' : Number(d.slice(8))}</button>
               );
             })()}

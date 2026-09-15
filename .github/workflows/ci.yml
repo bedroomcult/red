@@ -3,6 +3,8 @@ on:
   push:
     branches: [main]
   pull_request:
+permissions:
+  contents: write
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -56,9 +58,28 @@ jobs:
       # now fails installing the removed 'tools' package, so it is not needed.
       - run: npm ci && npm run build
       - run: test -d android || npx cap add android
+      - name: Stamp version
+        env:
+          BUILD_NUMBER: ${{ github.run_number }}
+        run: node .github/scripts/android-version.mjs
       - run: npx cap sync android
       - run: ./android/gradlew -p android assembleDebug
+      - name: Rename apk
+        run: |
+          V=$(node -p "require('./package.json').version")
+          cp android/app/build/outputs/apk/debug/app-debug.apk "pelacak-haid-$V.apk"
       - uses: actions/upload-artifact@v4
         with:
           name: cycle-tracker-debug-apk
-          path: android/app/build/outputs/apk/debug/app-debug.apk
+          path: pelacak-haid-*.apk
+      - name: Create release
+        if: github.ref == 'refs/heads/main'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ github.run_number }}
+          name: Pelacak Haid build ${{ github.run_number }}
+          body: |
+            APK debug otomatis dari commit ${{ github.sha }}.
+            Versi aplikasi: ${{ github.run_number }}.
+          files: pelacak-haid-*.apk
+          prerelease: false

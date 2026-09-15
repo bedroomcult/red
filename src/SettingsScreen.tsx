@@ -61,16 +61,16 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
       <div className="card">
         <h2>{t.setTitle}</h2>
         <div className="field">
-          <label>{t.setName}</label>
-          <input value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.setName} />
+          <label htmlFor="set-name">{t.setName}</label>
+          <input id="set-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.setName} />
         </div>
         <div className="field">
-          <label>{t.setCycle}</label>
-          <input type="number" min={15} max={60} value={cycle} onChange={(e) => setCycle(Number(e.target.value))} />
+          <label htmlFor="set-cycle">{t.setCycle}</label>
+          <input id="set-cycle" type="number" min={15} max={60} value={cycle} onChange={(e) => setCycle(Number(e.target.value))} />
         </div>
         <div className="field">
-          <label>{t.setPeriod}</label>
-          <input type="number" min={1} max={15} value={period} onChange={(e) => setPeriod(Number(e.target.value))} />
+          <label htmlFor="set-period">{t.setPeriod}</label>
+          <input id="set-period" type="number" min={1} max={15} value={period} onChange={(e) => setPeriod(Number(e.target.value))} />
         </div>
         {msg && <div className="muted">{msg}</div>}
         <div className="row">
@@ -82,7 +82,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
         <h2>{t.setAppearance}</h2>
         <div className="row" style={{ marginTop: 0 }}>
           {([['light', t.themeLight], ['dark', t.themeDark], ['system', t.themeSystem]] as const).map(([v, label]) => (
-            <button key={v} className={`btn ${theme === v ? 'primary' : ''}`} onClick={() => pickTheme(v)}>{label}</button>
+            <button key={v} className={`btn ${theme === v ? 'primary' : ''}`} aria-pressed={theme === v} onClick={() => pickTheme(v)}>{label}</button>
           ))}
         </div>
       </div>
@@ -96,8 +96,8 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
         </label>
         {prefs.pillEnabled && (
           <div className="field" style={{ marginTop: 10 }}>
-            <label>{t.remPillTime}</label>
-            <input type="time" value={prefs.pillTime}
+            <label htmlFor="set-pilltime">{t.remPillTime}</label>
+            <input id="set-pilltime" type="time" value={prefs.pillTime}
               onChange={(e) => applyReminders({ ...prefs, pillTime: e.target.value })} />
           </div>
         )}

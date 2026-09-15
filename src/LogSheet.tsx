@@ -81,7 +81,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={date}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}>
         <div className="grabber" />
         <h3>{date}</h3>
         <div className="hint">
@@ -105,20 +105,20 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
         ) : (
           <>
             <div className="field">
-              <label>{t.flow}</label>
-              <select value={flow} onChange={(e) => setFlow(e.target.value)}>
+              <label htmlFor="ls-flow">{t.flow}</label>
+              <select id="ls-flow" value={flow} onChange={(e) => setFlow(e.target.value)}>
                 <option value="light">{t.flowLight}</option>
                 <option value="medium">{t.flowMedium}</option>
                 <option value="heavy">{t.flowHeavy}</option>
               </select>
             </div>
             <div className="field">
-              <label>{t.end}</label>
-              <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
+              <label htmlFor="ls-end">{t.end}</label>
+              <input id="ls-end" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
             </div>
             <div className="field">
-              <label>{t.note}</label>
-              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+              <label htmlFor="ls-note">{t.note}</label>
+              <textarea id="ls-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3}
                 placeholder={t.notePlaceholder}
                 style={{ font: 'inherit', width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', resize: 'vertical' }} />
             </div>

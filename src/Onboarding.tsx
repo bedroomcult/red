@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { t } from './i18n';
 
-// 3-step first-run flow: name -> last period -> cycle length.
+// 4-step first-run flow: welcome -> name -> last period -> cycle length.
 export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
@@ -10,7 +10,7 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
 
-  async function finish() {
+  async function saveProfile(withPeriod: boolean) {
     setBusy(true); setErr(null);
     try {
       const pr = await fetch('/api/profile', {
@@ -18,7 +18,7 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
         body: JSON.stringify({ display_name: name || undefined, cycle_len: cycle, period_len: 5 }),
       });
       if (!pr.ok) throw new Error((await pr.json()).error ?? pr.statusText);
-      if (last) {
+      if (withPeriod && last) {
         const pe = await fetch('/api/periods', {
           method: 'POST', headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ start_date: last, type: 'menstruation', flow: 'medium' }),
@@ -30,6 +30,9 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
       }
     } catch (e: any) { setErr(e.message); setBusy(false); }
   }
+
+  const finish = () => saveProfile(true);
+  const skip = () => saveProfile(false);
 
   const steps = [
     { title: t.obWelcomeTitle, sub: t.obWelcomeSub },
@@ -79,7 +82,7 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
         </div>
         <div className="row tight">
           {step > 0 && <button className="btn ghost" disabled={busy} onClick={() => setStep(step - 1)}>{t.obBack}</button>}
-          <button className="btn ghost" disabled={busy} onClick={finish}>{t.obSkip}</button>
+          <button className="btn ghost" disabled={busy} onClick={skip}>{t.obSkip}</button>
         </div>
       </div>
 

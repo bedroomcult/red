@@ -52,7 +52,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   const light = LIGHT[st.phase];
   const fg = light ? '#fff' : '#1c1c1e';
-  const sub = light ? 'rgba(255,255,255,.85)' : '#6a6a72';
+  const sub = light ? 'rgba(255,255,255,.9)' : '#4a4a52';
 
   let title: ReactNode;
   let subtitle = '';
@@ -107,8 +107,8 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
               {SYMPTOMS.map((k) => {
                 const on = syms.includes(k);
                 return (
-                  <button key={k} className="btn" onClick={() => toggle(k)}
-                    style={on ? { background: 'var(--rose)', color: '#fff' } : undefined}>
+                  <button key={k} className={`btn ${on ? 'on' : ''}`} onClick={() => toggle(k)}
+                    aria-pressed={on}>
                     {symLabel[k]}
                   </button>
                 );
