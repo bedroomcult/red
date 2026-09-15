@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react';
 import type { Period } from './Calendar';
 import { t } from './i18n';
 
-export default function LogSheet({ date, existing, onClose, onSaved }: {
-  date: string; existing: Period | undefined; onClose: () => void; onSaved: (state: any) => void;
+export default function LogSheet({ date, existing, active, onClose, onSaved }: {
+  date: string; existing: Period | undefined; active: Period | undefined;
+  onClose: () => void; onSaved: (state: any) => void;
 }) {
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -64,6 +65,16 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
     end_date: endDate || undefined,
   });
 
+  // Tapped a day inside a logged period range but not its start => mark end here.
+  const inRange = !!active && active.start_date !== date;
+  const markEnd = () => post({
+    id: active!.id,
+    start_date: active!.start_date,
+    type: active!.type,
+    flow: active!.flow ?? flow,
+    end_date: date,
+  });
+
   return (
     <>
       <div className="overlay" onClick={onClose} />
@@ -71,34 +82,51 @@ export default function LogSheet({ date, existing, onClose, onSaved }: {
         <div className="grabber" />
         <h3>{date}</h3>
         <div className="hint">
-          {existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
+          {inRange
+            ? t.insideRange
+            : existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
         </div>
         {err && <div className="err">{err}</div>}
-        <div className="field">
-          <label>{t.flow}</label>
-          <select value={flow} onChange={(e) => setFlow(e.target.value)}>
-            <option value="light">{t.flowLight}</option>
-            <option value="medium">{t.flowMedium}</option>
-            <option value="heavy">{t.flowHeavy}</option>
-          </select>
-        </div>
-        <div className="field">
-          <label>{t.end}</label>
-          <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
-        </div>
-        <div className="field">
-          <label>{t.note}</label>
-          <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
-            placeholder={t.notePlaceholder}
-            style={{ font: 'inherit', width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', resize: 'vertical' }} />
-        </div>
-        <div className="row">
-          <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
-          <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
-          {existing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
-          <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
-          <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
-        </div>
+        {inRange ? (
+          <>
+            <div className="field">
+              <label>{t.end}</label>
+              <div style={{ fontSize: 15, fontWeight: 600 }}>{date}</div>
+            </div>
+            <div className="row">
+              <button className="btn primary" disabled={busy} onClick={markEnd}>{t.markEndHere}</button>
+              <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+            </div>
+          </>
+        ) : (
+          <>
+            <div className="field">
+              <label>{t.flow}</label>
+              <select value={flow} onChange={(e) => setFlow(e.target.value)}>
+                <option value="light">{t.flowLight}</option>
+                <option value="medium">{t.flowMedium}</option>
+                <option value="heavy">{t.flowHeavy}</option>
+              </select>
+            </div>
+            <div className="field">
+              <label>{t.end}</label>
+              <input type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
+            </div>
+            <div className="field">
+              <label>{t.note}</label>
+              <textarea value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+                placeholder={t.notePlaceholder}
+                style={{ font: 'inherit', width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', resize: 'vertical' }} />
+            </div>
+            <div className="row">
+              <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
+              <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
+              {existing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+              <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
+              <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

@@ -33,6 +33,8 @@ export const t = {
   flowMedium: 'sedang',
   flowHeavy: 'deras',
   end: 'Selesai',
+  markEndHere: 'Tandai selesai di sini',
+  insideRange: 'Hari ini masih dalam rentang haid yang tercatat.',
   noLog: 'tanpa catatan = prediksi tetap kosong',
   logged: 'tercatat',
   // BC

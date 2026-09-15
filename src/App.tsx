@@ -101,6 +101,12 @@ export default function App() {
 
   const label = new Date(Date.UTC(ym.y, ym.m, 1)).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
   const existing = sel ? me?.periods.find((p) => p.start_date === sel) : undefined;
+  // Period whose logged range (start..end, or start+4 default) contains sel.
+  const active = sel ? me?.periods.find((p) => {
+    const s = p.start_date;
+    const e = p.end_date ?? new Date(Date.parse(s + 'T00:00:00Z') + 4 * 864e5).toISOString().slice(0, 10);
+    return sel >= s && sel <= e;
+  }) : undefined;
   const flags = me?.prediction.flags ?? [];
   const bcMode = me?.prediction.confidence === 'suppressed' || flags.includes('bc-suppressed');
   const ecHit = flags.includes('ec-disrupted');
@@ -206,7 +212,7 @@ export default function App() {
         <SettingsScreen profile={me.profile ?? null} onSaved={setMe} onLogout={doLogout} />
       )}
 
-      {sel && <LogSheet date={sel} existing={existing} onClose={() => setSel(null)} onSaved={setMe} />}
+      {sel && <LogSheet date={sel} existing={existing} active={active} onClose={() => setSel(null)} onSaved={setMe} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
       {ecOpen && <EcPanel onClose={() => setEcOpen(false)} onSaved={setMe} />}
 

@@ -29,6 +29,15 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   selected: string | null; onPick: (d: string) => void;
 }) {
   const logged = new Map(periods.map((p) => [p.start_date, p]));
+  // Expand each period start into its full range (end_date, or start+4 default) so
+  // in-progress periods paint every day, not just day 1.
+  const inPeriod = new Set<string>();
+  for (const p of periods) {
+    if (p.type !== 'menstruation') continue;
+    const s = Date.parse(p.start_date + 'T00:00:00Z');
+    const e = p.end_date ? Date.parse(p.end_date + 'T00:00:00Z') : s + 4 * 864e5;
+    for (let t = s; t <= e; t += 864e5) inPeriod.add(new Date(t).toISOString().slice(0, 10));
+  }
   const ovs = ovSet(prediction?.ov ?? null);
   const cells = monthCells(year, mon);
   return (
@@ -39,7 +48,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
           <div key={i} className="day">
             {d && (() => {
               const p = logged.get(d);
-              const cls = p && p.type === 'menstruation' ? 'logged'
+              const cls = inPeriod.has(d) ? 'logged'
                 : p ? '' // spotting: plain + dot below
                 : inRange(d, prediction?.lo ?? null, prediction?.hi ?? null) ? 'pred-period'
                 : ovs.has(d) ? 'pred-fertile' : '';
@@ -49,7 +58,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
                   style={d === selected ? { outline: '2px solid #111' } : undefined}
                   onClick={() => onPick(d)}
                   aria-label={d}
-                >{p && p.type === 'menstruation' ? '✓' : Number(d.slice(8))}</button>
+                >{inPeriod.has(d) ? '✓' : Number(d.slice(8))}</button>
               );
             })()}
             {d && logged.get(d)?.type === 'spotting' && <span className="dot" />}
