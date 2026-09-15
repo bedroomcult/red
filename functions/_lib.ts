@@ -1,5 +1,11 @@
 // New hashes are self-describing (algorithm$iterations$digest) so the cost can
 // be raised again later without a schema migration.
+// 100000 is a hard platform ceiling, not a preference: workerd throws
+// "NotSupportedError: Pbkdf2 failed: iteration counts above 100000 are not
+// supported" for anything higher, which surfaced as a 500 on every login.
+// Measured 2026-09-15 against the deployed worker (/api/_probe?n=...):
+// 50000 ok, 100000 ok, 200000 and 600000 throw. OWASP's 600000 is unreachable
+// on Pages Functions; 100000 is the strongest available here.
 const PBKDF2_ITERATIONS = 100000;
 // Pre-065fee3 hashes are a bare base64 digest derived at this cost.
 const LEGACY_PBKDF2_ITERATIONS = 50000;

@@ -23,6 +23,13 @@ describe('hashPw', () => {
     expect(h).toMatch(/^pbkdf2-sha256\$100000\$[A-Za-z0-9+/=]+$/);
   });
 
+  it('stays within the workerd PBKDF2 ceiling', async () => {
+    // workerd throws NotSupportedError for >100000 iterations, which would 500
+    // every login. Pin it so a future "raise the cost" change fails here first.
+    const h = await hashPw('password123', 'salt-a');
+    expect(Number(h.split('$')[1])).toBeLessThanOrEqual(100000);
+  });
+
   it('is deterministic for the same password and salt', async () => {
     const a = await hashPw('password123', 'salt-a');
     const b = await hashPw('password123', 'salt-a');
