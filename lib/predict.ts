@@ -1,20 +1,22 @@
-export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: boolean}) {
+export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: boolean, fallbackCycle?: number}) {
   if (opts.bcMode) return { next: null, lo: null, hi: null, ov: null, confidence: 'suppressed' as const, flags: ['bc-suppressed'] };
   const ds = starts.map(s => Date.parse(s+'T00:00:00Z'));
   if (ds.length === 0) return { next: null, lo: null, hi: null, ov: null, confidence: 'low' as const, flags: ['need-more-data'] };
   const flags:string[] = [];
-  // ponytail: 1 period -> assume 28d default, low confidence. Real average once 2+ logged.
+  // User's configured cycle length (from profile) is the fallback, else 28.
+  const fb = Math.min(60, Math.max(15, Math.round(opts.fallbackCycle ?? 28)));
+  // ponytail: 1 period -> assume fb default, low confidence. Real average once 2+ logged.
   const estimated = ds.length < 2;
   let cycles: number[] = [];
   if (estimated) {
-    cycles = [28];
+    cycles = [fb];
     flags.push('estimated');
   } else {
     for (let i=1;i<ds.length;i++) cycles.push(Math.round((ds[i]-ds[i-1])/86400000));
     // ponytail: drop implausible cycles (mis-taps, spotting logged as period).
-    // 15..60d covers real cycles; fallback 28 when nothing survives.
+    // 15..60d covers real cycles; fallback to the configured length when nothing survives.
     cycles = cycles.filter(c => c >= 15 && c <= 60);
-    if (!cycles.length) { cycles = [28]; flags.push('estimated'); }
+    if (!cycles.length) { cycles = [fb]; flags.push('estimated'); }
     cycles = cycles.slice(-6);
   }
   const mean = (a:number[])=>a.reduce((x,y)=>x+y,0)/a.length;

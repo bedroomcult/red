@@ -58,14 +58,15 @@ export async function buildState(env: any, userId: string) {
   ).bind(userId, cutoff).all();
   const starts = (periods as any[]).filter((p) => p.type === 'menstruation').map((p) => p.start_date as string);
   const ecType = (ec as any[]).length ? (ec as any[])[0].ec_type : null;
-  const prediction = predict(starts, { ecType, bcMode: !!bc });
+  const profile: any = await env.DB.prepare(
+    'SELECT display_name, cycle_len, period_len FROM users WHERE id=?'
+  ).bind(userId).first();
+  // Feed the user's configured cycle length into the prediction as the fallback.
+  const prediction = predict(starts, { ecType, bcMode: !!bc, fallbackCycle: profile?.cycle_len ?? 28 });
   const todayIso = new Date().toISOString().slice(0, 10);
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
-  const profile: any = await env.DB.prepare(
-    'SELECT display_name, cycle_len, period_len FROM users WHERE id=?'
-  ).bind(userId).first();
   const ins = insights(periods as any[], profile?.cycle_len ?? 28, profile?.period_len ?? 5);
   return {
     periods, bc: bc ?? null, ec, prediction,
