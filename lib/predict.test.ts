@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { predict } from './predict';
+import { predict, cycleStats, ecDisrupts } from './predict';
+
 describe('predict', () => {
   it('avgs 28,28,31 -> next Apr27 window ±2 high', () => {
     const r = predict(['2026-01-01','2026-01-29','2026-02-26','2026-03-29'], {});
@@ -40,5 +41,87 @@ describe('predict', () => {
     const r = predict(['2026-01-01','2026-01-29'], { bcMode: true });
     expect(r.next).toBeNull();
     expect(r.confidence).toBe('suppressed');
+  });
+});
+
+// cycleStats is the single definition of the user's cycle statistics; insights
+// imports it so the Wawasan screen and the prediction cannot disagree.
+describe('cycleStats', () => {
+  it('returns the fallback cycle and estimated flag for 0-1 periods', () => {
+    const none = cycleStats([]);
+    expect(none.ds.length).toBe(0);
+    expect(none.last).toBeNull();
+    expect(none.estimated).toBe(true);
+    expect(none.cycles).toEqual([28]);
+
+    const one = cycleStats(['2026-01-01'], 30);
+    expect(one.estimated).toBe(true);
+    expect(one.cycles).toEqual([30]);
+  });
+
+  it('computes avg and sd over real cycles', () => {
+    const s = cycleStats(['2026-01-01', '2026-01-29', '2026-02-26']);
+    expect(s.estimated).toBe(false);
+    expect(s.cycles).toEqual([28, 28]);
+    expect(s.avg).toBe(28);
+    expect(s.sd).toBe(0);
+    expect(s.range).toBe(0);
+  });
+
+  it('drops implausible cycles outside the 15..60d band', () => {
+    const s = cycleStats(['2026-01-01', '2026-01-09', '2026-02-06']);
+    expect(s.cycles).toEqual([28]);
+  });
+
+  it('flags estimated when every cycle is implausible', () => {
+    const s = cycleStats(['2026-01-01', '2026-01-05']);
+    expect(s.estimated).toBe(true);
+    expect(s.cycles).toEqual([28]);
+  });
+
+  it('drops a single outlier beyond 2 SD', () => {
+    // 6 cycles (the slice(-6) cap), last one 60d. With n=6 a lone outlier sits at
+    // |z| = sqrt(5) ~ 2.24, just past the 2 SD threshold, so it is dropped.
+    const s = cycleStats([
+      '2026-01-01', '2026-01-29', '2026-02-26', '2026-03-26', '2026-04-23', '2026-05-21', '2026-07-20',
+    ]);
+    expect(s.cycles).toEqual([28, 28, 28, 28, 28]);
+    expect(s.avg).toBe(28);
+  });
+});
+
+describe('ecDisrupts', () => {
+  const ago = (d: number) => new Date(Date.now() - d * 864e5).toISOString();
+  const agoDate = (d: number) => ago(d).slice(0, 10);
+
+  it('does not disrupt when there is no EC event', () => {
+    expect(ecDisrupts(null, '2026-01-01')).toBe(false);
+  });
+
+  it('does not disrupt on an unparseable intake date', () => {
+    expect(ecDisrupts('not-a-date', '2026-01-01')).toBe(false);
+  });
+
+  it('disrupts a recent dose with no period logged since', () => {
+    expect(ecDisrupts(ago(3), null)).toBe(true);
+  });
+
+  it('stops disrupting once a period is logged after the dose', () => {
+    expect(ecDisrupts(ago(3), agoDate(1))).toBe(false);
+  });
+
+  it('still disrupts when the last period predates the dose', () => {
+    expect(ecDisrupts(ago(3), agoDate(10))).toBe(true);
+  });
+
+  it('expires after two cycles at the given cycle length', () => {
+    expect(ecDisrupts(ago(60), null, 28)).toBe(false); // 56d window
+    expect(ecDisrupts(ago(40), null, 28)).toBe(true);
+    expect(ecDisrupts(ago(40), null, 15)).toBe(false); // 30d window
+  });
+
+  it('clamps the cycle length to the 15..60 range', () => {
+    expect(ecDisrupts(ago(40), null, 5)).toBe(false); // clamped to 15 -> 30d window
+    expect(ecDisrupts(ago(40), null, 999)).toBe(true); // clamped to 60 -> 120d window
   });
 });

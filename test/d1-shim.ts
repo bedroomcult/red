@@ -10,6 +10,10 @@
 //   UPDATE users SET pass_hash=? WHERE id=?
 //   INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)
 //   DELETE FROM sessions WHERE token=?
+//   SELECT display_name, cycle_len, period_len FROM users WHERE id=?
+//   SELECT id,start_date,end_date,flow,type FROM periods WHERE user_id=? ORDER BY start_date
+//   SELECT id,pill_type,regimen,pack_start_date FROM pill_regimens WHERE user_id=? ORDER BY pack_start_date DESC LIMIT 1
+//   SELECT id,ec_type,intake_at,upsi_at FROM ec_events WHERE user_id=? AND intake_at>? ORDER BY intake_at DESC
 
 type Row = Record<string, any>;
 
@@ -20,6 +24,10 @@ function norm(sql: string): string {
 export function makeDb() {
   const users: Row[] = [];
   const sessions: Row[] = [];
+  const periods: Row[] = [];
+  const regimens: Row[] = [];
+  const ec: Row[] = [];
+  const symptoms: Row[] = [];
 
   function run(sql: string, args: any[]) {
     const s = norm(sql);
@@ -67,6 +75,17 @@ export function makeDb() {
       const [email] = args;
       return users.find((u) => u.email === email) ?? null;
     }
+    if (s.startsWith('SELECT DISPLAY_NAME, CYCLE_LEN, PERIOD_LEN FROM USERS WHERE ID=?')) {
+      const [id] = args;
+      return users.find((u) => u.id === id) ?? null;
+    }
+    if (s.startsWith('SELECT ID,PILL_TYPE,REGIMEN,PACK_START_DATE FROM PILL_REGIMENS')) {
+      const [user_id] = args;
+      const rows = regimens
+        .filter((r) => r.user_id === user_id)
+        .sort((a, b) => String(b.pack_start_date).localeCompare(String(a.pack_start_date)));
+      return rows[0] ?? null;
+    }
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
 
@@ -74,6 +93,26 @@ export function makeDb() {
     const s = norm(sql);
     if (s.startsWith('SELECT ID FROM USERS')) {
       return { results: users.map((u) => ({ id: u.id })) };
+    }
+    if (s.startsWith('SELECT ID,START_DATE,END_DATE,FLOW,TYPE FROM PERIODS')) {
+      const [user_id] = args;
+      return {
+        results: periods
+          .filter((p) => p.user_id === user_id)
+          .sort((a, b) => String(a.start_date).localeCompare(String(b.start_date))),
+      };
+    }
+    if (s.startsWith('SELECT ID,EC_TYPE,INTAKE_AT,UPSI_AT FROM EC_EVENTS')) {
+      const [user_id, cutoff] = args;
+      return {
+        results: ec
+          .filter((e) => e.user_id === user_id && String(e.intake_at) > String(cutoff))
+          .sort((a, b) => String(b.intake_at).localeCompare(String(a.intake_at))),
+      };
+    }
+    if (s.startsWith('SELECT KIND FROM SYMPTOMS')) {
+      const [user_id, date] = args;
+      return { results: symptoms.filter((x) => x.user_id === user_id && x.date === date) };
     }
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
@@ -92,5 +131,5 @@ export function makeDb() {
     };
   }
 
-  return { prepare, users, sessions };
+  return { prepare, users, sessions, periods, regimens, ec, symptoms };
 }

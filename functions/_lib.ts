@@ -64,7 +64,7 @@ export function sessionToken(): string {
   return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
-import { predict } from './_predict';
+import { predict, cycleStats, ecDisrupts } from './_predict';
 import { insights } from './_insights';
 import { clientDate } from './_today';
 
@@ -118,22 +118,30 @@ export async function buildState(env: any, userId: string, request?: Request) {
   const bc = await env.DB.prepare(
     'SELECT id,pill_type,regimen,pack_start_date FROM pill_regimens WHERE user_id=? ORDER BY pack_start_date DESC LIMIT 1'
   ).bind(userId).first();
-  const cutoff = new Date(Date.now() - 60 * 864e5).toISOString();
+  const ecCutoff = new Date(Date.now() - 60 * 864e5).toISOString();
   const { results: ec } = await env.DB.prepare(
     'SELECT id,ec_type,intake_at,upsi_at FROM ec_events WHERE user_id=? AND intake_at>? ORDER BY intake_at DESC'
-  ).bind(userId, cutoff).all();
+  ).bind(userId, ecCutoff).all();
   const starts = (periods as any[]).filter((p) => p.type === 'menstruation').map((p) => p.start_date as string);
-  const ecType = (ec as any[]).length ? (ec as any[])[0].ec_type : null;
   const profile: any = await env.DB.prepare(
     'SELECT display_name, cycle_len, period_len FROM users WHERE id=?'
   ).bind(userId).first();
   // Feed the user's configured cycle length into the prediction as the fallback.
-  const prediction = predict(starts, { ecType, bcMode: !!bc, fallbackCycle: profile?.cycle_len ?? 28 });
+  const fallbackCycle = profile?.cycle_len ?? 28;
+  // One stats object is shared by the prediction and the insights screen so the
+  // two can never disagree on the observed cycle length.
+  const stats = cycleStats(starts, fallbackCycle);
+  const lastStart = starts.length ? starts[starts.length - 1] : null;
+  // EC only disrupts while it is the plausible explanation for the current cycle:
+  // stop once a period has been logged since the dose, or after two cycles.
+  // Without this, a 59-day-old dose kept suppressing ovulation forever.
+  const activeEc = (ec as any[]).find((e) => ecDisrupts(e.intake_at, lastStart, stats.avg)) ?? null;
+  const prediction = predict(starts, { ecType: activeEc?.ec_type ?? null, bcMode: !!bc, fallbackCycle }, stats);
   const todayIso = request ? clientDate(request) : new Date().toISOString().slice(0, 10);
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
-  const ins = insights(periods as any[], profile?.cycle_len ?? 28, profile?.period_len ?? 5);
+  const ins = insights(periods as any[], fallbackCycle, profile?.period_len ?? 5, stats);
   return {
     periods, bc: bc ?? null, ec, prediction,
     todaySymptoms: (symptoms as any[]).map((s) => s.kind),

@@ -2,6 +2,7 @@
 // ponytail: keep in sync with lib/insights.ts.
 // Cycle insights + stats for the "Wawasan" screen.
 // ponytail: pure math over logged period starts, no chart lib.
+import { cycleStats } from './_predict';
 
 export type Insights = {
   avgCycle: number | null;
@@ -10,6 +11,7 @@ export type Insights = {
   count: number;
   shortest: number | null;
   longest: number | null;
+  estimated: boolean; // true when the average is the fallback, not observed data
   next3: string[];
 };
 
@@ -20,13 +22,17 @@ const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 export function insights(
   periods: { start_date: string; end_date: string | null; type: string }[],
   fallbackCycle = 28,
-  fallbackPeriod = 5
+  fallbackPeriod = 5,
+  // Passed in by buildState so the estimate shown here is byte-identical to the
+  // prediction window. Without it the two screens disagree on cycle length.
+  statsIn?: ReturnType<typeof cycleStats>
 ): Insights {
   const mens = periods.filter((p) => p.type === 'menstruation').sort((a, b) => a.start_date.localeCompare(b.start_date));
-  const starts = mens.map((p) => parse(p.start_date));
+  const stats = statsIn ?? cycleStats(mens.map((p) => p.start_date), fallbackCycle);
 
-  const lens: number[] = [];
-  for (let i = 1; i < starts.length; i++) lens.push(Math.round((starts[i] - starts[i - 1]) / DAY));
+  // The same cycle list the prediction averages over: implausible entries and a
+  // single >2 SD outlier already removed by cycleStats.
+  const lens = stats.estimated ? [] : stats.cycles;
 
   const plens: number[] = [];
   for (const p of mens) {
@@ -34,12 +40,14 @@ export function insights(
   }
 
   const mean = (a: number[]) => a.reduce((x, y) => x + y, 0) / a.length;
-  const avgCycle = lens.length ? Math.round(mean(lens)) : null;
+  const avgCycle = lens.length ? Math.round(stats.avg) : null;
   const avgPeriod = plens.length ? Math.round(mean(plens)) : null;
-  const variability = lens.length >= 2 ? Math.round(Math.sqrt(mean(lens.map((c) => (c - mean(lens)) ** 2))) * 10) / 10 : null;
+  const variability = lens.length >= 2 ? Math.round(stats.sd * 10) / 10 : null;
 
-  const eff = avgCycle ?? fallbackCycle;
-  const last = starts.length ? starts[starts.length - 1] : null;
+  const eff = avgCycle ?? stats.fb;
+  // Fall back to the configured length for the projection when there is not
+  // enough data — the same thing predict() does, so next3[0] === prediction.next.
+  const last = stats.last;
   const next3: string[] = [];
   if (last !== null) for (let i = 1; i <= 3; i++) next3.push(iso(last + eff * i * DAY));
 
@@ -50,6 +58,7 @@ export function insights(
     count: lens.length,
     shortest: lens.length ? Math.min(...lens) : null,
     longest: lens.length ? Math.max(...lens) : null,
+    estimated: stats.estimated,
     next3,
   };
 }

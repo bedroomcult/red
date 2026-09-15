@@ -217,7 +217,7 @@ export default function App() {
       )}
 
       {me && tab === 'insights' && (
-        <InsightsScreen ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, next3: [] }} />
+        <InsightsScreen ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, estimated: true, next3: [] }} />
       )}
 
       {me && tab === 'settings' && (
