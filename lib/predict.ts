@@ -11,6 +11,10 @@ export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: 
     flags.push('estimated');
   } else {
     for (let i=1;i<ds.length;i++) cycles.push(Math.round((ds[i]-ds[i-1])/86400000));
+    // ponytail: drop implausible cycles (mis-taps, spotting logged as period).
+    // 15..60d covers real cycles; fallback 28 when nothing survives.
+    cycles = cycles.filter(c => c >= 15 && c <= 60);
+    if (!cycles.length) { cycles = [28]; flags.push('estimated'); }
     cycles = cycles.slice(-6);
   }
   const mean = (a:number[])=>a.reduce((x,y)=>x+y,0)/a.length;

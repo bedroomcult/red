@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cycleStatus } from './cycle';
+import { cycleStatus, predictionStale, periodDays } from './cycle';
 import { insights } from './insights';
 
 const P = [{ start_date: '2026-01-01', end_date: '2026-01-05' }];
@@ -27,6 +27,25 @@ describe('cycleStatus', () => {
   });
   it('cycleDay counts from last start', () => {
     expect(cycleStatus('2026-01-03', S, P, PRED, false).cycleDay).toBe(3);
+  });
+});
+
+describe('predictionStale', () => {
+  const logged = [{ start_date: '2026-01-01', end_date: '2026-01-07', type: 'menstruation' }];
+  it('overlapping window is stale (predicted 3-10, logged 1-7)', () => {
+    expect(predictionStale(logged, '2026-01-03', '2026-01-10')).toBe(true);
+  });
+  it('future window is not stale', () => {
+    expect(predictionStale(logged, '2026-01-20', '2026-01-27')).toBe(false);
+  });
+  it('window entirely before last period is stale', () => {
+    expect(predictionStale(logged, '2025-12-20', '2025-12-27')).toBe(true);
+  });
+  it('no logs -> not stale', () => {
+    expect(predictionStale([], '2026-01-03', '2026-01-10')).toBe(false);
+  });
+  it('periodDays honours end_date', () => {
+    expect(periodDays({ start_date: '2026-01-01', end_date: '2026-01-03' })).toEqual(['2026-01-01', '2026-01-02', '2026-01-03']);
   });
 });
 

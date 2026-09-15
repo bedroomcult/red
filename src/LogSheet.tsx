@@ -47,9 +47,11 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   }
 
   async function del() {
+    const target = existing ?? active;
+    if (!target) return;
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/periods?id=' + existing!.id, { method: 'DELETE' });
+      const r = await fetch('/api/periods?id=' + target.id, { method: 'DELETE' });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
       onSaved(await r.json());
       onClose();
@@ -67,6 +69,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
 
   // Tapped a day inside a logged period range but not its start => mark end here.
   const inRange = !!active && active.start_date !== date;
+  const removable = existing ?? active;
   const markEnd = () => post({
     id: active!.id,
     start_date: active!.start_date,
@@ -95,6 +98,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
             </div>
             <div className="row">
               <button className="btn primary" disabled={busy} onClick={markEnd}>{t.markEndHere}</button>
+              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
               <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
             </div>
           </>
@@ -121,7 +125,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
             <div className="row">
               <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
               <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
-              {existing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
               <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
               <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
             </div>

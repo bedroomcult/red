@@ -14,6 +14,32 @@ const DAY = 864e5;
 const parse = (d: string) => Date.parse(d + 'T00:00:00Z');
 const iso = (ms: number) => new Date(ms).toISOString().slice(0, 10);
 
+// Full range (inclusive) of a logged period: start..end, or start+defaultDays-1.
+export function periodDays(p: { start_date: string; end_date: string | null }, defaultDays = 5): string[] {
+  const s = parse(p.start_date);
+  const e = p.end_date ? parse(p.end_date) : s + (defaultDays - 1) * DAY;
+  const out: string[] = [];
+  for (let t = s; t <= e; t += DAY) out.push(iso(t));
+  return out;
+}
+
+// A predicted window is stale when a real logged period overlaps it, or the
+// window lies entirely before the latest logged period. Whole window hides.
+export function predictionStale(
+  periods: { start_date: string; end_date: string | null; type: string }[],
+  lo: string | null,
+  hi: string | null
+): boolean {
+  const mens = periods.filter((p) => p.type === 'menstruation');
+  if (!mens.length) return false;
+  const loggedDays = new Set(mens.flatMap((p) => periodDays(p)));
+  const lastStart = mens.reduce((m, p) => (p.start_date > m ? p.start_date : m), mens[0].start_date);
+  if (hi && hi < lastStart) return true;
+  if (!lo || !hi) return false;
+  for (let t = parse(lo); t <= parse(hi); t += DAY) if (loggedDays.has(iso(t))) return true;
+  return false;
+}
+
 export function cycleStatus(today: string, periodStarts: string[], periodRanges: { start_date: string; end_date: string | null }[], prediction: { next: string | null; ov: string | null; confidence: string } | null, bcMode: boolean): CycleStatus {
   if (bcMode) return { phase: 'bc', cycleDay: null, daysToNext: null, ov: null };
 
@@ -58,5 +84,14 @@ if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('cycle.ts')) {
   console.assert(cycleStatus('2026-01-20', starts, p, pred, false).phase === 'neutral', 'neutral');
   console.assert(cycleStatus('2026-01-20', starts, p, pred, true).phase === 'bc', 'bc');
   console.assert(cycleStatus('2026-01-03', starts, p, pred, false).cycleDay === 3, 'cycleDay');
+
+  // predictionStale: predicted 3-10, logged 1-7 => stale (8-10 must hide too).
+  const logged17 = [{ start_date: '2026-01-01', end_date: '2026-01-07', type: 'menstruation' }];
+  console.assert(predictionStale(logged17, '2026-01-03', '2026-01-10') === true, 'overlap stale');
+  console.assert(predictionStale(logged17, '2026-01-20', '2026-01-27') === false, 'future not stale');
+  console.assert(predictionStale(logged17, '2025-12-20', '2025-12-27') === true, 'behind last stale');
+  console.assert(predictionStale([], '2026-01-03', '2026-01-10') === false, 'no logs not stale');
+  console.assert(periodDays({ start_date: '2026-01-01', end_date: '2026-01-03' }).length === 3, 'periodDays');
+
   console.log('cycle.ts self-check passed');
 }

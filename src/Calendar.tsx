@@ -24,6 +24,8 @@ function ovSet(ov: string | null): Set<string> {
   return new Set([-5, -4, -3, -2, -1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
 }
 
+import { periodDays, predictionStale } from '../lib/cycle';
+
 export default function Calendar({ year, mon, periods, prediction, selected, onPick }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
   selected: string | null; onPick: (d: string) => void;
@@ -32,13 +34,15 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   // Expand each period start into its full range (end_date, or start+4 default) so
   // in-progress periods paint every day, not just day 1.
   const inPeriod = new Set<string>();
-  for (const p of periods) {
-    if (p.type !== 'menstruation') continue;
-    const s = Date.parse(p.start_date + 'T00:00:00Z');
-    const e = p.end_date ? Date.parse(p.end_date + 'T00:00:00Z') : s + 4 * 864e5;
-    for (let t = s; t <= e; t += 864e5) inPeriod.add(new Date(t).toISOString().slice(0, 10));
-  }
-  const ovs = ovSet(prediction?.ov ?? null);
+  for (const p of periods) if (p.type === 'menstruation') for (const d of periodDays(p)) inPeriod.add(d);
+
+  // Stale once a logged period overlaps the window, or the window is entirely
+  // behind the latest logged period. Hide the WHOLE window (see predictionStale).
+  const stale = predictionStale(periods, prediction?.lo ?? null, prediction?.hi ?? null);
+  const ovStale = predictionStale(periods, prediction?.ov ?? null, prediction?.ov ?? null);
+  const ovs = stale || ovStale ? new Set<string>() : ovSet(prediction?.ov ?? null);
+  const predLo = stale ? null : prediction?.lo ?? null;
+  const predHi = stale ? null : prediction?.hi ?? null;
   const cells = monthCells(year, mon);
   return (
     <div>
@@ -50,7 +54,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const p = logged.get(d);
               const cls = inPeriod.has(d) ? 'logged'
                 : p ? '' // spotting: plain + dot below
-                : inRange(d, prediction?.lo ?? null, prediction?.hi ?? null) ? 'pred-period'
+                : inRange(d, predLo, predHi) ? 'pred-period'
                 : ovs.has(d) ? 'pred-fertile' : '';
               return (
                 <button
