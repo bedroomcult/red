@@ -1,8 +1,11 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { type Theme, loadTheme, saveTheme } from './theme';
+import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
 
-export default function SettingsScreen({ profile, onSaved, onLogout }: {
+export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout }: {
   profile: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null;
+  nextPeriod: string | null;
   onSaved: (s: any) => void;
   onLogout: () => void;
 }) {
@@ -11,6 +14,10 @@ export default function SettingsScreen({ profile, onSaved, onLogout }: {
   const [period, setPeriod] = useState(profile?.period_len ?? 5);
   const [msg, setMsg] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  const [theme, setTheme] = useState<Theme>(loadTheme);
+  const [prefs, setPrefs] = useState<ReminderPrefs>(loadPrefs);
+  const [remMsg, setRemMsg] = useState<string | null>(null);
+  const [nativeOnly, setNativeOnly] = useState(false);
 
   async function save() {
     setBusy(true); setMsg(null);
@@ -23,6 +30,30 @@ export default function SettingsScreen({ profile, onSaved, onLogout }: {
       onSaved(await r.json());
       setMsg(t.setSaved);
     } catch (e: any) { setMsg(e.message); } finally { setBusy(false); }
+  }
+
+  function pickTheme(v: Theme) {
+    setTheme(v);
+    saveTheme(v);
+  }
+
+  async function applyReminders(next: ReminderPrefs) {
+    setPrefs(next);
+    savePrefs(next);
+    setRemMsg(null);
+    if (!next.pillEnabled && !next.periodEnabled) { await syncReminders(next, null); return; }
+    const ok = await requestPermission();
+    if (!ok) { setRemMsg(t.remDenied); return; }
+    const supported = await notificationsSupported();
+    if (!supported) setNativeOnly(true);
+    await syncReminders(next, nextPeriod);
+    setRemMsg(t.remSaved);
+  }
+
+  async function testNotify() {
+    const ok = await requestPermission();
+    if (!ok) { setRemMsg(t.remDenied); return; }
+    await notifyNow('Pelacak Haid', 'Notifikasi berfungsi ✓');
   }
 
   return (
@@ -44,6 +75,41 @@ export default function SettingsScreen({ profile, onSaved, onLogout }: {
         {msg && <div className="muted">{msg}</div>}
         <div className="row">
           <button className="btn primary" disabled={busy} onClick={save}>{t.setSave}</button>
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>{t.setAppearance}</h2>
+        <div className="row" style={{ marginTop: 0 }}>
+          {([['light', t.themeLight], ['dark', t.themeDark], ['system', t.themeSystem]] as const).map(([v, label]) => (
+            <button key={v} className={`btn ${theme === v ? 'primary' : ''}`} onClick={() => pickTheme(v)}>{label}</button>
+          ))}
+        </div>
+      </div>
+
+      <div className="card">
+        <h2>{t.setReminders}</h2>
+        <label className="check">
+          <input type="checkbox" checked={prefs.pillEnabled}
+            onChange={(e) => applyReminders({ ...prefs, pillEnabled: e.target.checked })} />
+          {t.remPill}
+        </label>
+        {prefs.pillEnabled && (
+          <div className="field" style={{ marginTop: 10 }}>
+            <label>{t.remPillTime}</label>
+            <input type="time" value={prefs.pillTime}
+              onChange={(e) => applyReminders({ ...prefs, pillTime: e.target.value })} />
+          </div>
+        )}
+        <label className="check">
+          <input type="checkbox" checked={prefs.periodEnabled}
+            onChange={(e) => applyReminders({ ...prefs, periodEnabled: e.target.checked })} />
+          {t.remPeriod}
+        </label>
+        {nativeOnly && <div className="muted" style={{ marginTop: 8 }}>{t.remNativeOnly}</div>}
+        {remMsg && <div className="muted" style={{ marginTop: 8 }}>{remMsg}</div>}
+        <div className="row">
+          <button className="btn" onClick={testNotify}>{t.remEnable}</button>
         </div>
       </div>
 

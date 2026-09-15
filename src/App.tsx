@@ -6,6 +6,8 @@ import EcPanel from './EcPanel';
 import Home from './Home';
 import InsightsScreen from './InsightsScreen';
 import SettingsScreen from './SettingsScreen';
+import Onboarding from './Onboarding';
+import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
 
@@ -24,6 +26,10 @@ export default function App() {
   const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
   const [login, setLogin] = useState({ email: '', password: '', mode: 'login' as 'login' | 'signup' });
   const [needLogin, setNeedLogin] = useState(false);
+  const [onboarding, setOnboarding] = useState(false);
+
+  // Apply saved theme on first paint.
+  useEffect(() => { applyTheme(loadTheme()); }, []);
 
   const load = useCallback(async () => {
     try {
@@ -52,6 +58,15 @@ export default function App() {
         return;
       }
       setLogin({ email: '', password: '', mode: 'login' });
+      const r2 = await fetch('/api/me');
+      const st = r2.ok ? await r2.json() : null;
+      // First run: no periods and no saved profile name => onboarding.
+      if (st && (!st.periods?.length) && !st.profile?.display_name) {
+        setMe(st);
+        setNeedLogin(false);
+        setOnboarding(true);
+        return;
+      }
       await load();
     } catch (e: any) { setErr(e.message); }
   };
@@ -63,6 +78,10 @@ export default function App() {
   };
 
   const jumpToday = () => { const d = new Date(); setYm({ y: d.getFullYear(), m: d.getMonth() }); setSel(today()); };
+
+  if (onboarding) {
+    return <Onboarding onDone={(s) => { setMe(s); setOnboarding(false); }} />;
+  }
 
   if (needLogin) {
     return (
@@ -133,7 +152,7 @@ export default function App() {
       {bcMode && <div className="banner warn">{t.bcSuppressed} — {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
       {ecHit && <div className="banner warn">{t.ecDisrupted}</div>}
 
-      {!me && !err && <div className="muted">{t.loading}</div>}
+      {!me && !err && <div className="spinner" role="status" aria-label={t.loading} />}
 
       {me && tab === 'home' && (
         <Home
@@ -209,7 +228,8 @@ export default function App() {
       )}
 
       {me && tab === 'settings' && (
-        <SettingsScreen profile={me.profile ?? null} onSaved={setMe} onLogout={doLogout} />
+        <SettingsScreen profile={me.profile ?? null} nextPeriod={me.prediction.next}
+          onSaved={setMe} onLogout={doLogout} />
       )}
 
       {sel && <LogSheet date={sel} existing={existing} active={active} onClose={() => setSel(null)} onSaved={setMe} />}

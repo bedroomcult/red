@@ -44,6 +44,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const predLo = stale ? null : prediction?.lo ?? null;
   const predHi = stale ? null : prediction?.hi ?? null;
   const cells = monthCells(year, mon);
+  const todayIso = new Date().toISOString().slice(0, 10);
   return (
     <div>
       <div className="grid">
@@ -58,7 +59,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
                 : ovs.has(d) ? 'pred-fertile' : '';
               return (
                 <button
-                  className={`dnum ${cls} ${d === selected ? 'sel' : ''}`}
+                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''}`}
                   style={d === selected ? { outline: '2px solid #111' } : undefined}
                   onClick={() => onPick(d)}
                   aria-label={d}
