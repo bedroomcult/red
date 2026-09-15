@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Period } from './Calendar';
 import { t } from './i18n';
+import { dateHeaders } from '../lib/today';
 
 export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   date: string; existing: Period | undefined; active: Period | undefined;
@@ -14,7 +15,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
 
   useEffect(() => {
     let on = true;
-    fetch('/api/notes?date=' + date)
+    fetch('/api/notes?date=' + date, { headers: dateHeaders() })
       .then((r) => (r.ok ? r.json() : { note: '' }))
       .then((j) => { if (on) setNote(j.note ?? ''); })
       .catch(() => {});
@@ -25,7 +26,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     setBusy(true); setErr(null);
     try {
       const r = await fetch('/api/notes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({ date, note }),
       });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
@@ -37,7 +38,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     setBusy(true); setErr(null);
     try {
       const r = await fetch('/api/periods', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
@@ -51,7 +52,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     if (!target) return;
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/periods?id=' + target.id, { method: 'DELETE' });
+      const r = await fetch('/api/periods?id=' + target.id, { method: 'DELETE', headers: dateHeaders() });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
       onSaved(await r.json());
       onClose();

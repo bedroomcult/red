@@ -3,6 +3,8 @@ import { predict as clientPredict } from './predict';
 import { predict as serverPredict } from '../functions/_predict';
 import { insights as clientInsights } from './insights';
 import { insights as serverInsights } from '../functions/_insights';
+import { localDate as clientLocalDate, isIsoDate as clientIsIsoDate } from './today';
+import { localDate as serverLocalDate, isIsoDate as serverIsIsoDate } from '../functions/_today';
 
 // functions/ must be self-contained for the Pages bundler, so predict.ts and
 // insights.ts each exist twice. The prediction is computed on both client and
@@ -58,4 +60,24 @@ describe('lib/insights.ts and functions/_insights.ts stay in sync', () => {
       expect(serverInsights(c.periods)).toEqual(clientInsights(c.periods));
     });
   }
+});
+
+// lib/today.ts is duplicated as functions/_today.ts for the same bundler reason.
+// The server copy adds clientDate(); the shared date helpers must not drift.
+describe('lib/today.ts and functions/_today.ts stay in sync', () => {
+  it('localDate agrees for every month edge', () => {
+    const dates = [
+      new Date(2026, 0, 1, 0, 0),
+      new Date(2026, 0, 15, 0, 30),
+      new Date(2026, 11, 31, 23, 59),
+      new Date(2026, 5, 5, 12, 0),
+    ];
+    for (const d of dates) expect(serverLocalDate(d)).toBe(clientLocalDate(d));
+  });
+
+  it('isIsoDate agrees across valid and invalid input', () => {
+    for (const v of ['2026-01-15', '2026-2-5', '2026-02-31', '', null, 20260115, undefined, '2026-01-15T00:00:00Z']) {
+      expect(serverIsIsoDate(v)).toBe(clientIsIsoDate(v));
+    }
+  });
 });

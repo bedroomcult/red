@@ -22,5 +22,5 @@ export async function onRequestPost({ request, env }: any) {
 
   await env.DB.prepare('UPDATE users SET display_name=?, cycle_len=?, period_len=? WHERE id=?')
     .bind(name, cycle, period, user.id).run();
-  return json(await buildState(env, user.id));
+  return json(await buildState(env, user.id, request));
 }

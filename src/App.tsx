@@ -10,10 +10,11 @@ import Onboarding from './Onboarding';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
+import { localDate, dateHeaders } from '../lib/today';
 
 type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
 
-const today = () => new Date().toISOString().slice(0, 10);
+const today = () => localDate();
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
 export default function App() {
@@ -33,7 +34,7 @@ export default function App() {
 
   const load = useCallback(async () => {
     try {
-      const r = await fetch('/api/me');
+      const r = await fetch('/api/me', { headers: dateHeaders() });
       if (r.status === 401) { setNeedLogin(true); setErr(null); return; }
       if (!r.ok) throw new Error(r.statusText);
       setNeedLogin(false);
@@ -48,7 +49,7 @@ export default function App() {
     setErr(null);
     try {
       const r = await fetch('/api/auth', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({ action: login.mode, email: login.email, password: login.password }),
       });
       const j = await r.json().catch(() => ({}));
@@ -58,7 +59,7 @@ export default function App() {
         return;
       }
       setLogin({ email: '', password: '', mode: 'login' });
-      const r2 = await fetch('/api/me');
+      const r2 = await fetch('/api/me', { headers: dateHeaders() });
       const st = r2.ok ? await r2.json() : null;
       // First run: no periods and no saved profile name => onboarding.
       if (st && (!st.periods?.length) && !st.profile?.display_name) {
@@ -72,7 +73,7 @@ export default function App() {
   };
 
   const doLogout = async () => {
-    await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'logout' }) });
+    await fetch('/api/auth', { method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() }, body: JSON.stringify({ action: 'logout' }) });
     setMe(null);
     setNeedLogin(true);
   };

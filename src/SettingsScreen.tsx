@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { dateHeaders } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
 
@@ -23,7 +24,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
     setBusy(true); setMsg(null);
     try {
       const r = await fetch('/api/profile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({ display_name: name, cycle_len: Number(cycle), period_len: Number(period) }),
       });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);

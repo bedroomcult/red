@@ -34,7 +34,7 @@ export async function onRequestPost({ request, env }: any) {
       'INSERT INTO periods (id,user_id,start_date,end_date,flow,type) VALUES (?,?,?,?,?,?)'
     ).bind(uid(), user.id, b.start_date, b.end_date ?? null, b.flow ?? null, type).run();
   }
-  return json(await buildState(env, user.id));
+  return json(await buildState(env, user.id, request));
 }
 
 export async function onRequestDelete({ request, env }: any) {
@@ -43,5 +43,5 @@ export async function onRequestDelete({ request, env }: any) {
   const id = new URL(request.url).searchParams.get('id');
   if (!id) return json({ error: 'id required' }, 400);
   await env.DB.prepare('DELETE FROM periods WHERE id=? AND user_id=?').bind(id, user.id).run();
-  return json(await buildState(env, user.id));
+  return json(await buildState(env, user.id, request));
 }

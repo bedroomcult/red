@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { hashPw, getCookie, sessCookie, rateLimited } from './_lib';
+import { clientDate } from './_today';
 
 describe('hashPw', () => {
   it('is deterministic for the same password and salt', async () => {
@@ -60,5 +61,21 @@ describe('rateLimited', () => {
   it('tracks each ip independently', () => {
     expect(rateLimited('other-test-ip-a')).toBe(false);
     expect(rateLimited('other-test-ip-b')).toBe(false);
+  });
+});
+
+describe('clientDate', () => {
+  const req = (headers?: Record<string, string>) =>
+    new Request('https://example.com/api/me', headers ? { headers } : undefined);
+
+  it('uses the validated X-Local-Date header', () => {
+    expect(clientDate(req({ 'X-Local-Date': '2026-01-15' }))).toBe('2026-01-15');
+  });
+
+  it('falls back to UTC when the header is absent or malformed', () => {
+    const utcToday = new Date().toISOString().slice(0, 10);
+    expect(clientDate(req())).toBe(utcToday);
+    expect(clientDate(req({ 'X-Local-Date': '2026-02-31' }))).toBe(utcToday);
+    expect(clientDate(req({ 'X-Local-Date': 'garbage' }))).toBe(utcToday);
   });
 });

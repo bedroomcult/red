@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { localDate, dateHeaders } from '../lib/today';
 
 export default function EcPanel({ onClose, onSaved }: {
   onClose: () => void; onSaved: (state: any) => void;
 }) {
   const [ecType, setEcType] = useState('LNG');
-  const [intake, setIntake] = useState(new Date().toISOString().slice(0, 10));
+  const [intake, setIntake] = useState(localDate());
   const [upsi, setUpsi] = useState('');
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
@@ -14,7 +15,7 @@ export default function EcPanel({ onClose, onSaved }: {
     setBusy(true); setErr(null);
     try {
       const r = await fetch('/api/ec', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({
           ec_type: ecType,
           intake_at: new Date(intake + 'T12:00:00Z').toISOString(),

@@ -25,6 +25,7 @@ function ovSet(ov: string | null): Set<string> {
 }
 
 import { periodDays, predictionStale, dateStale } from '../lib/cycle';
+import { localDate } from '../lib/today';
 
 export default function Calendar({ year, mon, periods, prediction, selected, onPick }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
@@ -45,7 +46,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const predLo = stale ? null : prediction?.lo ?? null;
   const predHi = stale ? null : prediction?.hi ?? null;
   const cells = monthCells(year, mon);
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = localDate();
   return (
     <div>
       <div className="grid">

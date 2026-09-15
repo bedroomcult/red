@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { localDate, dateHeaders } from '../lib/today';
 
 const REGIMENS = ['21/7', '24/4', 'continuous'] as const;
 
@@ -17,10 +18,10 @@ export default function BcPanel({ current, onClose, onSaved }: {
     setBusy(true); setErr(null);
     try {
       const r = await fetch('/api/bc', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({
           pill_type: pillType, regimen,
-          pack_start_date: new Date().toISOString().slice(0, 10),
+          pack_start_date: localDate(),
           taken,
         }),
       });
@@ -33,7 +34,7 @@ export default function BcPanel({ current, onClose, onSaved }: {
   async function stop() {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/bc', { method: 'DELETE' });
+      const r = await fetch('/api/bc', { method: 'DELETE', headers: dateHeaders() });
       if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
       onSaved(await r.json());
       onClose();

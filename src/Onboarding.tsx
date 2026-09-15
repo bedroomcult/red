@@ -1,11 +1,12 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { localDate, dateHeaders } from '../lib/today';
 
 // 4-step first-run flow: welcome -> name -> last period -> cycle length.
 export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   const [step, setStep] = useState(0);
   const [name, setName] = useState('');
-  const [last, setLast] = useState(() => new Date().toISOString().slice(0, 10));
+  const [last, setLast] = useState(() => localDate());
   const [cycle, setCycle] = useState(28);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -14,13 +15,13 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
     setBusy(true); setErr(null);
     try {
       const pr = await fetch('/api/profile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({ display_name: name || undefined, cycle_len: cycle, period_len: 5 }),
       });
       if (!pr.ok) throw new Error((await pr.json()).error ?? pr.statusText);
       if (withPeriod && last) {
         const pe = await fetch('/api/periods', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
           body: JSON.stringify({ start_date: last, type: 'menstruation', flow: 'medium' }),
         });
         if (!pe.ok) throw new Error((await pe.json()).error ?? pe.statusText);
@@ -58,7 +59,7 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
         )}
         {step === 2 && (
           <div className="field">
-            <input type="date" value={last} max={new Date().toISOString().slice(0, 10)}
+            <input type="date" value={last} max={localDate()}
               onChange={(e) => setLast(e.target.value)} />
           </div>
         )}

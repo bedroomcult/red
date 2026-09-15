@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { cycleStatus, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
+import { localDate, dateHeaders } from '../lib/today';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
 const symLabel: Record<string, string> = {
@@ -29,7 +30,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
 }) {
-  const today = me.today ?? new Date().toISOString().slice(0, 10);
+  const today = me.today ?? localDate();
   const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
   const ranges = me.periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
   const bcMode = me.prediction.confidence === 'suppressed';
@@ -41,7 +42,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
     setSyms(next); // optimistic
     try {
       const r = await fetch('/api/symptoms', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
         body: JSON.stringify({ date: today, kind }),
       });
       if (!r.ok) throw new Error('save failed');

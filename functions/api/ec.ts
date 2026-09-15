@@ -14,5 +14,5 @@ export async function onRequestPost({ request, env }: any) {
   await env.DB.prepare(
     'INSERT INTO ec_events (id,user_id,ec_type,intake_at,upsi_at) VALUES (?,?,?,?,?)'
   ).bind(uid(), user.id, b.ec_type, b.intake_at, b.upsi_at ?? null).run();
-  return json(await buildState(env, user.id));
+  return json(await buildState(env, user.id, request));
 }

@@ -6,5 +6,5 @@ const json = (o: unknown, status = 200) =>
 export async function onRequestGet({ request, env }: any) {
   const user = await requireUser(env, request);
   if (!user) return json({ error: 'unauthorized' }, 401);
-  return json(await buildState(env, user.id));
+  return json(await buildState(env, user.id, request));
 }

@@ -17,6 +17,7 @@ export function uid(): string {
 
 import { predict } from './_predict';
 import { insights } from './_insights';
+import { clientDate } from './_today';
 
 export function getCookie(request: Request, name: string): string | null {
   const h = request.headers.get('Cookie');
@@ -45,7 +46,7 @@ export function rateLimited(ip: string): boolean {
   return arr.length > 10;
 }
 
-export async function buildState(env: any, userId: string) {
+export async function buildState(env: any, userId: string, request?: Request) {
   const { results: periods } = await env.DB.prepare(
     'SELECT id,start_date,end_date,flow,type FROM periods WHERE user_id=? ORDER BY start_date'
   ).bind(userId).all();
@@ -63,7 +64,7 @@ export async function buildState(env: any, userId: string) {
   ).bind(userId).first();
   // Feed the user's configured cycle length into the prediction as the fallback.
   const prediction = predict(starts, { ecType, bcMode: !!bc, fallbackCycle: profile?.cycle_len ?? 28 });
-  const todayIso = new Date().toISOString().slice(0, 10);
+  const todayIso = request ? clientDate(request) : new Date().toISOString().slice(0, 10);
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
