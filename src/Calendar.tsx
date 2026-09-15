@@ -24,7 +24,7 @@ function ovSet(ov: string | null): Set<string> {
   return new Set([-5, -4, -3, -2, -1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
 }
 
-import { periodDays, predictionStale } from '../lib/cycle';
+import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 
 export default function Calendar({ year, mon, periods, prediction, selected, onPick }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
@@ -39,7 +39,8 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   // Stale once a logged period overlaps the window, or the window is entirely
   // behind the latest logged period. Hide the WHOLE window (see predictionStale).
   const stale = predictionStale(periods, prediction?.lo ?? null, prediction?.hi ?? null);
-  const ovStale = predictionStale(periods, prediction?.ov ?? null, prediction?.ov ?? null);
+  // ovStale: single date, only hides when behind the latest logged period.
+  const ovStale = dateStale(periods, prediction?.ov ?? null);
   const ovs = stale || ovStale ? new Set<string>() : ovSet(prediction?.ov ?? null);
   const predLo = stale ? null : prediction?.lo ?? null;
   const predHi = stale ? null : prediction?.hi ?? null;

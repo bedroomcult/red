@@ -34,7 +34,16 @@ export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: 
   if (opts.ecType==='UPA') w = 10;
   const lo = new Date(Date.parse(next)-w*86400000).toISOString().slice(0,10);
   const hi = new Date(Date.parse(next)+w*86400000).toISOString().slice(0,10);
-  const ov = opts.ecType ? null : new Date(Date.parse(next)-14*86400000).toISOString().slice(0,10);
+  // Ovulation = next period - 14d (luteal phase). On short cycles that lands
+  // inside the just-logged period, which then reads as "no fertile window".
+  // Clamp to the earliest plausible ovulation (day 8 of the cycle).
+  let ov: string | null = null;
+  if (!opts.ecType) {
+    let ovMs = Date.parse(next) - 14*86400000;
+    const minOv = last + 7*86400000;
+    if (ovMs < minOv) ovMs = minOv;
+    ov = new Date(ovMs).toISOString().slice(0,10);
+  }
   const confidence = (opts.ecType||estimated?'low':sd<2?'high':sd<4?'med':'low') as any;
   const range = Math.max(...cycles)-Math.min(...cycles);
   if (range>9) flags.push('irregular');

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cycleStatus, predictionStale, periodDays } from './cycle';
+import { cycleStatus, predictionStale, dateStale, periodDays } from './cycle';
 import { insights } from './insights';
 
 const P = [{ start_date: '2026-01-01', end_date: '2026-01-05' }];
@@ -30,8 +30,7 @@ describe('cycleStatus', () => {
   });
 });
 
-describe('predictionStale', () => {
-  const logged = [{ start_date: '2026-01-01', end_date: '2026-01-07', type: 'menstruation' }];
+describe('predictionStale', () => {  const logged = [{ start_date: '2026-01-01', end_date: '2026-01-07', type: 'menstruation' }];
   it('overlapping window is stale (predicted 3-10, logged 1-7)', () => {
     expect(predictionStale(logged, '2026-01-03', '2026-01-10')).toBe(true);
   });
@@ -68,5 +67,23 @@ describe('insights', () => {
   });
   it('empty -> nulls', () => {
     expect(insights([]).avgCycle).toBeNull();
+  });
+});
+
+describe('dateStale (single predicted date, e.g. ovulation)', () => {
+  const logged = [{ start_date: '2026-01-01', type: 'menstruation' }];
+  it('not stale when after latest logged period start', () => {
+    expect(dateStale(logged, '2026-01-23')).toBe(false);
+  });
+  it('stale when before latest logged period start', () => {
+    expect(dateStale(logged, '2025-12-20')).toBe(true);
+  });
+  it('overlapping a logged period is NOT stale (short-cycle ovulation)', () => {
+    const two = [{ start_date: '2026-01-01', type: 'menstruation' }, { start_date: '2026-01-19', type: 'menstruation' }];
+    expect(dateStale(two, '2026-01-19')).toBe(false);
+  });
+  it('no logs / null date -> not stale', () => {
+    expect(dateStale([], '2026-01-01')).toBe(false);
+    expect(dateStale(logged, null)).toBe(false);
   });
 });

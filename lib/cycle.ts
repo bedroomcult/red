@@ -23,8 +23,8 @@ export function periodDays(p: { start_date: string; end_date: string | null }, d
   return out;
 }
 
-// A predicted window is stale when a real logged period overlaps it, or the
-// window lies entirely before the latest logged period. Whole window hides.
+// A predicted period window is stale when a real logged period overlaps it, or
+// the window lies entirely before the latest logged period. Whole window hides.
 export function predictionStale(
   periods: { start_date: string; end_date: string | null; type: string }[],
   lo: string | null,
@@ -38,6 +38,21 @@ export function predictionStale(
   if (!lo || !hi) return false;
   for (let t = parse(lo); t <= parse(hi); t += DAY) if (loggedDays.has(iso(t))) return true;
   return false;
+}
+
+// Single predicted date (ovulation): stale only when it lies before the latest
+// logged period start. Overlap with a logged period is NOT enough to hide it —
+// a short cycle legitimately puts ovulation near the period, and hiding it left
+// users with no fertile window at all.
+export function dateStale(
+  periods: { start_date: string; type: string }[],
+  date: string | null
+): boolean {
+  if (!date) return false;
+  const mens = periods.filter((p) => p.type === 'menstruation');
+  if (!mens.length) return false;
+  const lastStart = mens.reduce((m, p) => (p.start_date > m ? p.start_date : m), mens[0].start_date);
+  return date < lastStart;
 }
 
 export function cycleStatus(today: string, periodStarts: string[], periodRanges: { start_date: string; end_date: string | null }[], prediction: { next: string | null; ov: string | null; confidence: string } | null, bcMode: boolean): CycleStatus {

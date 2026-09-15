@@ -25,6 +25,17 @@ describe('predict', () => {
     const r = predict(['2026-01-01','2026-01-29'], {});
     expect(r.ov).toBe('2026-02-12');
   });
+  it('short cycle clamps ov out of the logged period (day 8 floor)', () => {
+    // 18d cycle: unclamped ov 2026-01-23 falls inside the 01-19..01-23 period.
+    const r = predict(['2026-01-01','2026-01-19'], {});
+    expect(r.next).toBe('2026-02-06');
+    expect(r.ov).toBe('2026-01-26');
+    expect(r.ov! > '2026-01-23').toBe(true);
+  });
+  it('very short cycle still yields an ov after the period', () => {
+    const r = predict(['2026-01-01','2026-01-16'], {});
+    expect(r.ov).toBe('2026-01-23');
+  });
   it('bc suppresses everything', () => {
     const r = predict(['2026-01-01','2026-01-29'], { bcMode: true });
     expect(r.next).toBeNull();
