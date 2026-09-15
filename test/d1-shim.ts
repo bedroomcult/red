@@ -7,6 +7,7 @@
 //   INSERT INTO users (id,email,pass_hash,salt,created_at) VALUES (?,?,?,?,?)
 //   SELECT id FROM users WHERE email=?
 //   SELECT id,pass_hash,salt FROM users WHERE email=?
+//   UPDATE users SET pass_hash=? WHERE id=?
 //   INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)
 //   DELETE FROM sessions WHERE token=?
 
@@ -35,6 +36,14 @@ export function makeDb() {
     if (s.startsWith('INSERT INTO SESSIONS')) {
       const [token, user_id, expires_at] = args;
       sessions.push({ token, user_id, expires_at });
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('UPDATE USERS')) {
+      const [pass_hash, id] = args;
+      const u = users.find((x) => x.id === id);
+      if (!u) return { meta: { changes: 0 } };
+      u.pass_hash = pass_hash;
       return { meta: { changes: 1 } };
     }
 

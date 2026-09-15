@@ -1,7 +1,7 @@
-import { hashPw, uid, getCookie, sessCookie, rateLimited } from '../_lib';
+import { hashPw, verifyPw, uid, sessionToken, getCookie, sessCookie, rateLimited, withSecurityHeaders } from '../_lib';
 
 const json = (o: unknown, status = 200, extra?: HeadersInit) =>
-  new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...extra } });
+  withSecurityHeaders(new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...extra } }));
 
 export async function onRequestPost({ request, env }: any) {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'local';
@@ -18,27 +18,30 @@ export async function onRequestPost({ request, env }: any) {
   if (action === 'logout') {
     const token = getCookie(request, 'sess');
     if (token) await env.DB.prepare('DELETE FROM sessions WHERE token=?').bind(token).run();
-    return new Response('{}', {
-      headers: { 'Content-Type': 'application/json', 'Set-Cookie': sessCookie('', true) },
-    });
+    return json({}, 200, { 'Set-Cookie': sessCookie('', true) });
   }
 
   if (typeof email !== 'string' || typeof password !== 'string' || !email || !password)
     return json({ error: 'email+password required' }, 400);
   if (password.length < 8) return json({ error: 'password min 8 chars' }, 400);
+  // RFC 5321 practical maximum, and normalised once so every query agrees.
+  const em = email.trim().toLowerCase().slice(0, 254);
 
   if (action === 'signup') {
+    const existing = await env.DB.prepare('SELECT id FROM users WHERE email=?').bind(em).first();
+    if (existing) return json({ error: 'email taken' }, 409);
     const salt = uid();
     const pass_hash = await hashPw(password, salt);
     const id = uid();
     try {
       await env.DB.prepare('INSERT INTO users (id,email,pass_hash,salt,created_at) VALUES (?,?,?,?,?)')
-        .bind(id, email.toLowerCase(), pass_hash, salt, new Date().toISOString())
+        .bind(id, em, pass_hash, salt, new Date().toISOString())
         .run();
     } catch {
-      return json({ error: 'email taken' }, 409);
+      // Not a duplicate: the pre-check above handled that. Something is wrong.
+      return json({ error: 'signup failed' }, 500);
     }
-    const token = uid();
+    const token = sessionToken();
     await env.DB.prepare('INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)')
       .bind(token, id, new Date(Date.now() + 30 * 864e5).toISOString())
       .run();
@@ -47,12 +50,20 @@ export async function onRequestPost({ request, env }: any) {
 
   if (action === 'login') {
     const user: any = await env.DB.prepare('SELECT id,pass_hash,salt FROM users WHERE email=?')
-      .bind(email.toLowerCase())
+      .bind(em)
       .first();
-    if (!user) return json({ error: 'invalid login' }, 401);
-    const pass_hash = await hashPw(password, user.salt as string);
-    if (pass_hash !== user.pass_hash) return json({ error: 'invalid login' }, 401);
-    const token = uid();
+    // Always run one derivation, even for an unknown email, so response time
+    // does not reveal whether the account exists.
+    const salt = user ? (user.salt as string) : uid();
+    const stored = user ? (user.pass_hash as string) : '';
+    const { ok, legacy } = await verifyPw(password, salt, stored);
+    if (!user || !ok) return json({ error: 'invalid login' }, 401);
+    // Transparently re-hash to the current cost on successful login.
+    if (legacy) {
+      const fresh = await hashPw(password, salt);
+      await env.DB.prepare('UPDATE users SET pass_hash=? WHERE id=?').bind(fresh, user.id).run();
+    }
+    const token = sessionToken();
     await env.DB.prepare('INSERT INTO sessions (token,user_id,expires_at) VALUES (?,?,?)')
       .bind(token, user.id, new Date(Date.now() + 30 * 864e5).toISOString())
       .run();

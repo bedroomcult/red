@@ -1,7 +1,13 @@
-export async function hashPw(pw: string, salt: string): Promise<string> {
+// New hashes are self-describing (algorithm$iterations$digest) so the cost can
+// be raised again later without a schema migration.
+const PBKDF2_ITERATIONS = 210000;
+// Pre-065fee3 hashes are a bare base64 digest derived at this cost.
+const LEGACY_PBKDF2_ITERATIONS = 50000;
+
+async function pbkdf2(pw: string, salt: string, iterations: number): Promise<string> {
   const km = await crypto.subtle.importKey('raw', new TextEncoder().encode(pw), 'PBKDF2', false, ['deriveBits']);
   const bits = await crypto.subtle.deriveBits(
-    { name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations: 50000, hash: 'SHA-256' },
+    { name: 'PBKDF2', salt: new TextEncoder().encode(salt), iterations, hash: 'SHA-256' },
     km,
     256
   );
@@ -11,8 +17,51 @@ export async function hashPw(pw: string, salt: string): Promise<string> {
   return btoa(s);
 }
 
+export async function hashPw(pw: string, salt: string): Promise<string> {
+  return `pbkdf2-sha256$${PBKDF2_ITERATIONS}$${await pbkdf2(pw, salt, PBKDF2_ITERATIONS)}`;
+}
+
+// Constant-time string compare. `!==` exits at the first differing byte, which
+// leaks how many leading bytes matched via timing. Length is compared first,
+// which is unavoidable; hash digests are fixed-length so it reveals nothing.
+export function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+// Accepts both the current self-describing format and the legacy bare-base64
+// digest, so every pre-existing user can still log in. `legacy` lets the caller
+// transparently re-hash to the current cost.
+export async function verifyPw(pw: string, salt: string, stored: string): Promise<{ ok: boolean; legacy: boolean }> {
+  if (stored.startsWith('pbkdf2-sha256$')) {
+    const parts = stored.split('$');
+    const iterations = Number(parts[1]);
+    if (!Number.isInteger(iterations) || iterations <= 0) return { ok: false, legacy: false };
+    const digest = await pbkdf2(pw, salt, iterations);
+    return { ok: constantTimeEqual(digest, parts[2] ?? ''), legacy: false };
+  }
+  if (!stored) {
+    // Unknown account: still derive, so an unknown email costs the same as a
+    // wrong password and login timing does not enumerate accounts.
+    await pbkdf2(pw, salt, PBKDF2_ITERATIONS);
+    return { ok: false, legacy: false };
+  }
+  const digest = await pbkdf2(pw, salt, LEGACY_PBKDF2_ITERATIONS);
+  return { ok: constantTimeEqual(digest, stored), legacy: true };
+}
+
 export function uid(): string {
   return crypto.randomUUID();
+}
+
+// 256 bits of CSPRNG entropy, base64url. Session tokens are bearer credentials;
+// do not reuse uid() (a v4 UUID) for them.
+export function sessionToken(): string {
+  const b = new Uint8Array(32);
+  crypto.getRandomValues(b);
+  return btoa(String.fromCharCode(...b)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 }
 
 import { predict } from './_predict';
@@ -34,6 +83,22 @@ export function sessCookie(token: string, delete_ = false): string {
   return delete_
     ? 'sess=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure'
     : `sess=${token}; HttpOnly; Path=/; Max-Age=2592000; SameSite=Lax; Secure`;
+}
+
+// Baseline security headers for Function responses (public/_headers covers the
+// static assets). A JSON API needs no scripts, styles, images or frames.
+export const SECURITY_HEADERS: Record<string, string> = {
+  'X-Content-Type-Options': 'nosniff',
+  'Referrer-Policy': 'no-referrer',
+  'X-Frame-Options': 'DENY',
+  'Permissions-Policy': 'geolocation=(), camera=(), microphone=()',
+  'Content-Security-Policy': "default-src 'none'; frame-ancestors 'none'",
+};
+
+export function withSecurityHeaders(res: Response): Response {
+  const h = new Headers(res.headers);
+  for (const [k, v] of Object.entries(SECURITY_HEADERS)) h.set(k, v);
+  return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
 // ponytail: in-memory rate limit, per-worker only. D1/KV store if multi-isolate abuse matters.
