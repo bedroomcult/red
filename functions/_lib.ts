@@ -1,6 +1,6 @@
 // New hashes are self-describing (algorithm$iterations$digest) so the cost can
 // be raised again later without a schema migration.
-const PBKDF2_ITERATIONS = 210000;
+const PBKDF2_ITERATIONS = 100000;
 // Pre-065fee3 hashes are a bare base64 digest derived at this cost.
 const LEGACY_PBKDF2_ITERATIONS = 50000;
 

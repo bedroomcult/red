@@ -18,9 +18,9 @@ async function legacyHash(pw: string, salt: string): Promise<string> {
 }
 
 describe('hashPw', () => {
-  it('emits a self-describing pbkdf2-sha256 hash at 210000 iterations', async () => {
+  it('emits a self-describing pbkdf2-sha256 hash at 100000 iterations', async () => {
     const h = await hashPw('password123', 'salt-a');
-    expect(h).toMatch(/^pbkdf2-sha256\$210000\$[A-Za-z0-9+/=]+$/);
+    expect(h).toMatch(/^pbkdf2-sha256\$100000\$[A-Za-z0-9+/=]+$/);
   });
 
   it('is deterministic for the same password and salt', async () => {
