@@ -1,7 +1,6 @@
-import { requireUser, buildState, uid } from '../_lib';
+import { requireUser, buildState, uid, jsonResponse } from '../_lib';
 
-const json = (o: unknown, status = 200) =>
-  new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
+const json = jsonResponse;
 
 export async function onRequestPost({ request, env }: any) {
   const user = await requireUser(env, request);

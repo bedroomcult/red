@@ -1,8 +1,7 @@
-import { requireUser, buildState, uid } from '../_lib';
+import { requireUser, buildState, uid, jsonResponse } from '../_lib';
 import { clientDate } from '../_today';
 
-const json = (o: unknown, status = 200) =>
-  new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
+const json = jsonResponse;
 
 const isDate = (s: unknown) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + 'T00:00:00Z'));
 

@@ -107,6 +107,13 @@ export function withSecurityHeaders(res: Response): Response {
   return new Response(res.body, { status: res.status, statusText: res.statusText, headers: h });
 }
 
+// Single JSON helper for every endpoint, so no route can forget the headers.
+export function jsonResponse(o: unknown, status = 200, extra?: HeadersInit): Response {
+  return withSecurityHeaders(
+    new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...extra } })
+  );
+}
+
 // ponytail: in-memory rate limit, per-worker only. D1/KV store if multi-isolate abuse matters.
 const attempts = new Map<string, number[]>();
 export function rateLimited(ip: string): boolean {

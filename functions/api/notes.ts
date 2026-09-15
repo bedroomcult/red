@@ -1,7 +1,6 @@
-import { requireUser } from '../_lib';
+import { requireUser, jsonResponse } from '../_lib';
 
-const json = (o: unknown, status = 200) =>
-  new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
+const json = jsonResponse;
 
 const isDate = (s: unknown) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 

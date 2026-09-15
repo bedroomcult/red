@@ -1,7 +1,6 @@
-import { hashPw, verifyPw, uid, sessionToken, getCookie, sessCookie, rateLimited, withSecurityHeaders } from '../_lib';
+import { hashPw, verifyPw, uid, sessionToken, getCookie, sessCookie, rateLimited, jsonResponse } from '../_lib';
 
-const json = (o: unknown, status = 200, extra?: HeadersInit) =>
-  withSecurityHeaders(new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json', ...extra } }));
+const json = jsonResponse;
 
 export async function onRequestPost({ request, env }: any) {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'local';

@@ -1,7 +1,6 @@
-import { requireUser, buildState } from '../_lib';
+import { requireUser, buildState, jsonResponse } from '../_lib';
 
-const json = (o: unknown, status = 200) =>
-  new Response(JSON.stringify(o), { status, headers: { 'Content-Type': 'application/json' } });
+const json = jsonResponse;
 
 export async function onRequestGet({ request, env }: any) {
   const user = await requireUser(env, request);
