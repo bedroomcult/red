@@ -1,8 +1,8 @@
 import { requireUser, buildState, uid, jsonResponse } from '../_lib';
+import { isIsoDate } from '../_dates';
 
 const json = jsonResponse;
 
-const isDate = (s: unknown) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) && !isNaN(Date.parse(s + 'T00:00:00Z'));
 
 export async function onRequestGet({ request, env }: any) {
   const user = await requireUser(env, request);
@@ -18,8 +18,8 @@ export async function onRequestPost({ request, env }: any) {
   if (!user) return json({ error: 'unauthorized' }, 401);
   let b: any;
   try { b = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
-  if (!isDate(b?.start_date)) return json({ error: 'start_date YYYY-MM-DD required' }, 400);
-  if (b.end_date && !isDate(b.end_date)) return json({ error: 'end_date YYYY-MM-DD' }, 400);
+  if (!isIsoDate(b?.start_date)) return json({ error: 'start_date YYYY-MM-DD required' }, 400);
+  if (b.end_date && !isIsoDate(b.end_date)) return json({ error: 'end_date YYYY-MM-DD' }, 400);
   const type = b.type ?? 'menstruation';
   if (!['menstruation', 'spotting'].includes(type)) return json({ error: 'type menstruation|spotting' }, 400);
   if (b.id) {

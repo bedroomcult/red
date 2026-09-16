@@ -2,6 +2,8 @@ export type Prediction = { next: string | null; lo: string | null; hi: string | 
 
 export type Period = { id: string; start_date: string; end_date: string | null; flow: string | null; type: 'menstruation' | 'spotting' };
 
+export type Dose = { date: string; taken: boolean };
+
 // ponytail: string compare works, dates are YYYY-MM-DD UTC.
 const inRange = (d: string, lo: string | null, hi: string | null) =>
   !!lo && !!hi && d >= lo && d <= hi;
@@ -27,11 +29,12 @@ function ovSet(ov: string | null): Set<string> {
 import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 import { localDate } from '../lib/today';
 
-export default function Calendar({ year, mon, periods, prediction, selected, onPick }: {
+export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [] }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
-  selected: string | null; onPick: (d: string) => void;
+  selected: string | null; onPick: (d: string) => void; doses?: Dose[];
 }) {
   const logged = new Map(periods.map((p) => [p.start_date, p]));
+  const doseByDate = new Map(doses.map((d) => [d.date, d]));
   // Expand each period start into its full range (end_date, or start+4 default) so
   // in-progress periods paint every day, not just day 1.
   const inPeriod = new Set<string>();
@@ -55,13 +58,14 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
           <div key={i} className="day">
             {d && (() => {
               const p = logged.get(d);
+              const dose = doseByDate.get(d);
               const cls = inPeriod.has(d) ? 'logged'
                 : p ? '' // spotting: plain + dot below
                 : inRange(d, predLo, predHi) ? 'pred-period'
                 : ovs.has(d) ? 'pred-fertile' : '';
               return (
                 <button
-                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''}`}
+                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''}`}
                   onClick={() => onPick(d)}
                   aria-label={new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
                   aria-current={d === todayIso ? 'date' : undefined}

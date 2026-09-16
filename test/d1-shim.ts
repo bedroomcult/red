@@ -14,6 +14,9 @@
 //   SELECT id,start_date,end_date,flow,type FROM periods WHERE user_id=? ORDER BY start_date
 //   SELECT id,pill_type,regimen,pack_start_date FROM pill_regimens WHERE user_id=? ORDER BY pack_start_date DESC LIMIT 1
 //   SELECT id,ec_type,intake_at,upsi_at FROM ec_events WHERE user_id=? AND intake_at>? ORDER BY intake_at DESC
+//   SELECT date,taken FROM dose_logs WHERE user_id=? AND date>=? ORDER BY date
+//   SELECT user_id, expires_at FROM sessions WHERE token=?
+//   SELECT id, email FROM users WHERE id=?
 
 type Row = Record<string, any>;
 
@@ -28,6 +31,7 @@ export function makeDb() {
   const regimens: Row[] = [];
   const ec: Row[] = [];
   const symptoms: Row[] = [];
+  const doses: Row[] = [];
 
   function run(sql: string, args: any[]) {
     const s = norm(sql);
@@ -62,6 +66,21 @@ export function makeDb() {
       return { meta: { changes: before - sessions.length } };
     }
 
+    if (s.startsWith('DELETE FROM DOSE_LOGS')) {
+      const [user_id, date] = args;
+      const before = doses.length;
+      for (let i = doses.length - 1; i >= 0; i--) {
+        if (doses[i].user_id === user_id && doses[i].date === date) doses.splice(i, 1);
+      }
+      return { meta: { changes: before - doses.length } };
+    }
+
+    if (s.startsWith('INSERT INTO DOSE_LOGS')) {
+      const [id, user_id, date, taken] = args;
+      doses.push({ id, user_id, date, taken });
+      return { meta: { changes: 1 } };
+    }
+
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
 
@@ -74,6 +93,16 @@ export function makeDb() {
     if (s.startsWith('SELECT ID,PASS_HASH,SALT FROM USERS WHERE EMAIL=?')) {
       const [email] = args;
       return users.find((u) => u.email === email) ?? null;
+    }
+    if (s.startsWith('SELECT USER_ID, EXPIRES_AT FROM SESSIONS WHERE TOKEN=?')) {
+      const [token] = args;
+      const row = sessions.find((x) => x.token === token);
+      return row ? { user_id: row.user_id, expires_at: row.expires_at } : null;
+    }
+    if (s.startsWith('SELECT ID, EMAIL FROM USERS WHERE ID=?')) {
+      const [id] = args;
+      const u = users.find((x) => x.id === id);
+      return u ? { id: u.id, email: u.email } : null;
     }
     if (s.startsWith('SELECT DISPLAY_NAME, CYCLE_LEN, PERIOD_LEN FROM USERS WHERE ID=?')) {
       const [id] = args;
@@ -114,6 +143,15 @@ export function makeDb() {
       const [user_id, date] = args;
       return { results: symptoms.filter((x) => x.user_id === user_id && x.date === date) };
     }
+    if (s.startsWith('SELECT DATE,TAKEN FROM DOSE_LOGS')) {
+      const [user_id, from] = args;
+      return {
+        results: doses
+          .filter((d) => d.user_id === user_id && String(d.date) >= String(from))
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .map((d) => ({ date: d.date, taken: d.taken })),
+      };
+    }
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
 
@@ -131,5 +169,5 @@ export function makeDb() {
     };
   }
 
-  return { prepare, users, sessions, periods, regimens, ec, symptoms };
+  return { prepare, users, sessions, periods, regimens, ec, symptoms, doses };
 }

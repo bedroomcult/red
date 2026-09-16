@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import Calendar, { type Period, type Prediction } from './Calendar';
+import Calendar, { type Dose, type Period, type Prediction } from './Calendar';
 import DaySheet from './DaySheet';
 import LogSheet from './LogSheet';
 import BcPanel from './BcPanel';
@@ -17,7 +17,7 @@ import { periodForDate } from '../lib/cycle';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
 
-type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
+type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; doses?: Dose[]; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
 
 const today = () => localDate();
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -141,12 +141,14 @@ export default function App() {
               <strong>{label}</strong>
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
             </div>
-            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} />
+            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} />
             <div className="legend">
               <span><i className="chip period" />{t.legendPeriod}</span>
               <span><i className="chip fertile" />{t.legendFertile}</span>
               <span><i className="chip logged" />{t.legendPredicted}</span>
               <span><i className="chip spot" />{t.legendSpotting}</span>
+              <span><i className="chip dose-taken" />{t.legendDoseTaken}</span>
+              <span><i className="chip dose-missed" />{t.legendDoseMissed}</span>
             </div>
           </div>
 
@@ -208,6 +210,8 @@ export default function App() {
           periods={me?.periods ?? []}
           prediction={me?.prediction ?? null}
           bcMode={bcMode}
+          dose={me?.doses?.find((d) => d.date === sel)}
+          onDoseSaved={setMe}
           onLog={(d) => setLogDate(d)}
           onClose={() => setSel(null)}
         />

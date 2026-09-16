@@ -1,8 +1,7 @@
 import { requireUser, uid, jsonResponse } from '../_lib';
+import { isIsoDate } from '../_dates';
 
 const json = jsonResponse;
-
-const isDate = (s: unknown) => typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s);
 
 const KINDS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'];
 
@@ -22,7 +21,7 @@ export async function onRequestPost({ request, env }: any) {
   if (!user) return json({ error: 'unauthorized' }, 401);
   let b: any;
   try { b = await request.json(); } catch { return json({ error: 'bad json' }, 400); }
-  if (!isDate(b?.date)) return json({ error: 'date YYYY-MM-DD required' }, 400);
+  if (!isIsoDate(b?.date)) return json({ error: 'date YYYY-MM-DD required' }, 400);
   if (!KINDS.includes(b?.kind)) return json({ error: 'unknown symptom kind' }, 400);
   // Toggle: same (user,date,kind) removes it.
   const ex = await env.DB.prepare('SELECT id FROM symptoms WHERE user_id=? AND date=? AND kind=?').bind(user.id, b.date, b.kind).first();

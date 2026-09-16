@@ -32,6 +32,8 @@ export const t = {
   legendFertile: 'Masa subur',
   legendPredicted: 'Prediksi',
   legendSpotting: 'Flek',
+  legendDoseTaken: 'Minum pil',
+  legendDoseMissed: 'Pil terlewat',
   // prediction line
   nextPeriod: 'Haid berikutnya',
   notEnough: 'Data kurang — catat 2+ haid',
@@ -176,6 +178,15 @@ export const t = {
   dayNoSymptoms: 'tidak ada gejala tercatat',
   dayNoNote: 'tidak ada catatan',
   dayLogHere: 'Catat di hari ini',
+  // medication (BC pill) logging, editable on any date
+  dayDose: 'Pil KB',
+  doseTaken: 'Sudah minum',
+  doseMissed: 'Terlewat',
+  doseClear: 'Hapus',
+  doseNone: 'belum ada catatan',
+  doseTakenLabel: 'tercatat sudah minum',
+  doseMissedLabel: 'tercatat terlewat',
+  doseSaved: 'Catatan pil tersimpan',
   // reminders
   setReminders: 'Pengingat',
   remPill: 'Pengingat pil KB harian',

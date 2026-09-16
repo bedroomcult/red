@@ -161,11 +161,20 @@ export async function buildState(env: any, userId: string, request?: Request) {
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
+  // Last 90 days of pill logs. The calendar only ever shows one month, but the
+  // client has no month boundary to query on, so a fixed window is simpler than
+  // a per-month request. 90 days covers any month view plus the previous one.
+  const doseCutoff = new Date(Date.now() - 90 * 864e5).toISOString().slice(0, 10);
+  const { results: doses } = await env.DB.prepare(
+    'SELECT date,taken FROM dose_logs WHERE user_id=? AND date>=? ORDER BY date'
+  ).bind(userId, doseCutoff).all();
   const ins = insights(periods as any[], fallbackCycle, profile?.period_len ?? 5, stats);
   return {
     periods, bc: bc ?? null, ec, prediction,
     todaySymptoms: (symptoms as any[]).map((s) => s.kind),
     today: todayIso,
+    // taken is stored as 0/1; the client wants a boolean.
+    doses: (doses as any[]).map((d) => ({ date: d.date as string, taken: !!d.taken })),
     profile: profile ?? null,
     insights: ins,
   };

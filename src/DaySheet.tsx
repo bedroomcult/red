@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
-import type { Period, Prediction } from './Calendar';
+import type { Dose, Period, Prediction } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
 
@@ -24,16 +24,24 @@ const fmtLong = (d: string) =>
 // Read-only view of one day. Tapping a calendar cell lands here; editing a period
 // is an explicit second step via onLog. Showing the form first made every tap a
 // commitment to logging, and buried the symptoms/note already stored for the day.
-export default function DaySheet({ date, periods, prediction, bcMode, onLog, onClose }: {
+export default function DaySheet({ date, periods, prediction, bcMode, dose, onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
   bcMode: boolean;
+  dose: Dose | undefined;
+  onDoseSaved: (state: any) => void;
   onLog: (date: string) => void;
   onClose: () => void;
 }) {
   const [syms, setSyms] = useState<string[] | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [doseBusy, setDoseBusy] = useState(false);
+  const [doseErr, setDoseErr] = useState<string | null>(null);
+  // Local echo of the parent's dose, so the buttons update before the refetch.
+  const [doseLocal, setDoseLocal] = useState<boolean | null>(dose ? dose.taken : null);
+
+  useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
 
   useEffect(() => {
     let on = true;
@@ -53,6 +61,24 @@ export default function DaySheet({ date, periods, prediction, bcMode, onLog, onC
   const starts = periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
   const ranges = periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
   const st = cycleStatus(date, starts, ranges, prediction, bcMode);
+
+  // taken: true | false | null (null clears). Any date, past or future.
+  async function setDose(taken: boolean | null) {
+    setDoseBusy(true);
+    setDoseErr(null);
+    const prev = doseLocal;
+    setDoseLocal(taken);
+    try {
+      const r = await apiFetch('/api/doses', { method: 'POST', body: JSON.stringify({ date, taken }) });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onDoseSaved(await readJson(r));
+    } catch (e: any) {
+      setDoseLocal(prev);
+      setDoseErr(e.message);
+    } finally {
+      setDoseBusy(false);
+    }
+  }
 
   const startLog = periods.find((p) => p.start_date === date);
   const inRange = periodForDate(periods, date);
@@ -122,6 +148,24 @@ export default function DaySheet({ date, periods, prediction, bcMode, onLog, onC
               : note ? <span style={{ whiteSpace: 'pre-wrap' }}>{note}</span>
               : <span className="muted">{t.dayNoNote}</span>}
           </div>
+        </div>
+
+        <div className="day-info">
+          <div className="day-info-label">{t.dayDose}</div>
+          <div className="day-info-value">
+            {doseLocal === null ? <span className="muted">{t.doseNone}</span>
+              : doseLocal ? t.doseTakenLabel : t.doseMissedLabel}
+          </div>
+          <div className="row tight">
+            <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+              aria-pressed={doseLocal === true} onClick={() => setDose(true)}>{t.doseTaken}</button>
+            <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+              aria-pressed={doseLocal === false} onClick={() => setDose(false)}>{t.doseMissed}</button>
+            {doseLocal !== null && (
+              <button className="btn ghost" disabled={doseBusy} onClick={() => setDose(null)}>{t.doseClear}</button>
+            )}
+          </div>
+          {doseErr && <div className="err">{doseErr}</div>}
         </div>
 
         <div className="row">
