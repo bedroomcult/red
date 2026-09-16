@@ -48,9 +48,10 @@ export default function App() {
 
   useEffect(() => { load(); }, [load]);
 
-  // Returns an error message to show, or null on success. The form owns its own
-  // field state; this only performs the request.
-  const doAuth = async (mode: 'login' | 'signup', email: string, password: string): Promise<string | null> => {
+  // Performs the request only. It must not navigate: the login form shows a
+  // success message first and calls finish() afterwards, so the confirmation is
+  // visible before this screen unmounts.
+  const doAuth = async (mode: 'login' | 'signup', email: string, password: string): Promise<{ error: string | null; finish: () => void }> => {
     setErr(null);
     try {
       const r = await apiFetch('/api/auth', {
@@ -60,20 +61,20 @@ export default function App() {
       const j = await readJson(r).catch(() => ({}));
       if (!r.ok) {
         const msg = (j as any).error;
-        return msg === 'email taken' ? t.errTaken : msg === 'password min 8 chars' ? t.errMinPw : msg === 'invalid login' ? t.errLogin : (msg ?? t.errLogin);
+        const text = msg === 'email taken' ? t.errTaken : msg === 'password min 8 chars' ? t.errMinPw : msg === 'invalid login' ? t.errLogin : (msg ?? t.errLogin);
+        return { error: text, finish: () => {} };
       }
       const r2 = await apiFetch('/api/me');
       const st = r2.ok ? await readJson(r2) : null;
       // First run: no periods and no saved profile name => onboarding.
       if (st && (!st.periods?.length) && !st.profile?.display_name) {
-        setMe(st);
-        setNeedLogin(false);
-        setOnboarding(true);
-        return null;
+        return {
+          error: null,
+          finish: () => { setMe(st); setNeedLogin(false); setOnboarding(true); },
+        };
       }
-      await load();
-      return null;
-    } catch (e: any) { return e.message; }
+      return { error: null, finish: () => { void load(); } };
+    } catch (e: any) { return { error: e.message, finish: () => {} }; }
   };
 
   const doLogout = async () => {

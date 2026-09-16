@@ -239,6 +239,14 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .hint-inline { font-size: 12px; margin-top: 5px; color: var(--muted); }
 .hint-inline.ok { color: var(--green); }
 .hint-inline.err { color: var(--rose); }
+/* success banner on the auth form, shown briefly before it navigates away */
+.ok-msg {
+  color: var(--green); font-size: 13px; font-weight: 600;
+  background: var(--green-soft); border-radius: 10px; padding: 9px 12px;
+  animation: rise .25s ease both;
+}
+.btn.primary:disabled { opacity: .5; }
+.btn.primary.ok, .btn.primary.ok:disabled { background: var(--green); color: #fff; opacity: 1; }
 .auth-err { margin-top: 4px; }
 .auth-submit { width: 100%; margin-top: 14px; padding: 13px 16px; font-size: 15px; font-weight: 600; }
 .auth-switch { text-align: center; font-size: 13px; color: var(--muted); margin-top: 16px; }

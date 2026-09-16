@@ -2,24 +2,28 @@ import { useState } from 'react';
 import { apiFetch, readJson } from './api';
 import { t } from './i18n';
 
-export default function LoginScreen({ onAuth }: { onAuth: (mode: 'login' | 'signup', email: string, password: string) => Promise<string | null> }) {
+export default function LoginScreen({ onAuth }: { onAuth: (mode: 'login' | 'signup', email: string, password: string) => Promise<{ error: string | null; finish: () => void }> }) {
   const [mode, setMode] = useState<'login' | 'signup'>('login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirm, setConfirm] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [err, setErr] = useState<string | null>(null);
+  // Success is shown before the screen switches, so signup and login are
+  // acknowledged instead of the form silently disappearing.
+  const [ok, setOk] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   const isSignup = mode === 'signup';
   // Only complain about the confirmation once there is something to compare.
   const mismatch = isSignup && confirm.length > 0 && confirm !== password;
   const tooShort = password.length > 0 && password.length < 8;
-  const canSubmit = email.length > 0 && password.length >= 8 && (!isSignup || confirm === password);
+  const canSubmit = email.length > 0 && password.length >= 8 && (!isSignup || confirm === password) && !ok;
 
   function switchMode() {
     setMode(isSignup ? 'login' : 'signup');
     setErr(null);
+    setOk(null);
     setConfirm('');
   }
 
@@ -31,9 +35,16 @@ export default function LoginScreen({ onAuth }: { onAuth: (mode: 'login' | 'sign
       return;
     }
     setBusy(true);
-    const message = await onAuth(mode, email, password);
-    if (message) setErr(message);
-    setBusy(false);
+    const { error, finish } = await onAuth(mode, email, password);
+    if (error) {
+      setErr(error);
+      setBusy(false);
+      return;
+    }
+    setOk(isSignup ? t.signupSuccess : t.loginSuccess);
+    // Let the confirmation be readable, then hand control back to the caller.
+    // ponytail: fixed delay, no spinner coordination — one navigation, once.
+    window.setTimeout(finish, 900);
   }
 
   return (
@@ -139,9 +150,10 @@ export default function LoginScreen({ onAuth }: { onAuth: (mode: 'login' | 'sign
           )}
 
           {err && <div className="err auth-err" role="alert">{err}</div>}
+          {ok && <div className="ok-msg auth-err" role="status">{ok}</div>}
 
-          <button className="btn primary auth-submit" type="submit" disabled={busy || !canSubmit}>
-            {busy ? t.loading : isSignup ? t.signup : t.login}
+          <button className={`btn primary auth-submit ${ok ? 'ok' : ''}`} type="submit" disabled={busy || !canSubmit}>
+            {ok ? t.success : busy ? t.loading : isSignup ? t.signup : t.login}
           </button>
         </form>
 
