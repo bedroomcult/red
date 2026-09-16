@@ -74,15 +74,38 @@ jobs:
         run: node scripts/generate-icons.mjs
       - name: Stamp version
         run: node .github/scripts/android-version.mjs
+      # Persistent keystore. Without it Gradle signs with a debug key that is
+      # regenerated on every runner, so Android rejects the update as a
+      # signature conflict (INSTALL_FAILED_UPDATE_INCOMPATIBLE).
+      - name: Configure release signing
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          KEYSTORE_FILE: ${{ github.workspace }}/red-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -z "$KEYSTORE_BASE64" ]; then
+            echo "::error::ANDROID_KEYSTORE_BASE64 secret is not set. The APK would be signed with a throwaway debug key and could not be installed over a previous version."
+            exit 1
+          fi
+          echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
+          node .github/scripts/android-signing.mjs
       - run: npx cap sync android
-      - run: ./android/gradlew -p android assembleDebug
+      - name: Build signed release apk
+        env:
+          KEYSTORE_FILE: ${{ github.workspace }}/red-release.jks
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./android/gradlew -p android assembleRelease
       - name: Rename apk
         run: |
           V=$(node -p "require('./package.json').version")
-          cp android/app/build/outputs/apk/debug/app-debug.apk "red-$V.apk"
+          cp android/app/build/outputs/apk/release/app-release.apk "red-$V.apk"
       - uses: actions/upload-artifact@v4
         with:
-          name: red-debug-apk
+          name: red-release-apk
           path: red-*.apk
       - name: Create release
         uses: softprops/action-gh-release@v2
@@ -90,6 +113,6 @@ jobs:
           tag_name: ${{ github.ref_name }}
           name: Red ${{ github.ref_name }}
           body: |
-            APK debug otomatis dari commit ${{ github.sha }}.
+            APK rilis dari commit ${{ github.sha }}.
           files: red-*.apk
           prerelease: false

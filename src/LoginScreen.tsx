@@ -164,8 +164,6 @@ export default function LoginScreen({ onAuth }: { onAuth: (mode: 'login' | 'sign
           </button>
         </div>
       </div>
-
-      <footer className="disclaimer">{t.disclaimer}</footer>
     </div>
   );
 }
