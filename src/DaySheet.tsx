@@ -56,6 +56,11 @@ export default function DaySheet({ date, periods, prediction, bcMode, onLog, onC
 
   const startLog = periods.find((p) => p.start_date === date);
   const inRange = periodForDate(periods, date);
+  const inPredWindow = !!(prediction?.lo && prediction?.hi && date >= prediction.lo && date <= prediction.hi);
+  const ov = prediction?.ov ? Date.parse(prediction.ov + 'T00:00:00Z') : null;
+  const d = Date.parse(date + 'T00:00:00Z');
+  // Fertile window = ovulation -5d .. +1d, matching lib/cycle.ts.
+  const inFertile = ov !== null && d >= ov - 5 * 864e5 && d <= ov + 864e5;
 
   return (
     <>
@@ -87,25 +92,18 @@ export default function DaySheet({ date, periods, prediction, bcMode, onLog, onC
           </div>
         ) : null}
 
-        {!startLog && !inRange && prediction?.next && date >= (prediction.lo ?? date) && date <= (prediction.hi ?? date) && (
+        {!startLog && !inRange && inPredWindow && (
           <div className="day-info">
             <div className="day-info-label">{t.dayPredicted}</div>
             <div className="day-info-value">{t.dayPredictedValue}</div>
           </div>
         )}
 
-        {!startLog && !inRange && !(prediction?.next && date >= (prediction.lo ?? date) && date <= (prediction.hi ?? date)) && prediction?.ov && (
-          (() => {
-            const o = Date.parse(prediction.ov + 'T00:00:00Z');
-            const d = Date.parse(date + 'T00:00:00Z');
-            if (d >= o - 5 * 864e5 && d <= o + 864e5) return (
-              <div className="day-info">
-                <div className="day-info-label">{t.dayFertile}</div>
-                <div className="day-info-value">{date === prediction.ov ? t.dayOvulationValue : t.dayFertileValue}</div>
-              </div>
-            );
-            return null;
-          })()
+        {!startLog && !inRange && !inPredWindow && inFertile && (
+          <div className="day-info">
+            <div className="day-info-label">{t.dayFertile}</div>
+            <div className="day-info-value">{date === prediction!.ov ? t.dayOvulationValue : t.dayFertileValue}</div>
+          </div>
         )}
 
         <div className="day-info">
