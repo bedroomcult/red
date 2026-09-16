@@ -1,6 +1,6 @@
 // ponytail: single flat map, no i18n lib. Add a locale key prefix if a 2nd language lands.
 export const t = {
-  appName: 'Pelacak Haid',
+  appName: 'Red',
   loginSubtitle: 'Masuk atau buat akun',
   email: 'Email',
   password: 'Kata sandi (min 8)',

@@ -1,8 +1,8 @@
 import { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
-  appId: 'com.cycle.tracker',
-  appName: 'Period Tracker',
+  appId: 'com.red.tracker',
+  appName: 'Red',
   webDir: 'dist',
   server: {
     androidScheme: 'https'

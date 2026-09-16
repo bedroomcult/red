@@ -1,4 +1,4 @@
-# Period Tracker
+# Red
 
 Multi-user period tracker MVP: mode-aware predictions + calendar UI. Vite + React frontend, Cloudflare Pages Functions `/api/*`, D1 storage, pure `lib/predict.ts` shared client/server.
 

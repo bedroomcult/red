@@ -54,7 +54,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
   async function testNotify() {
     const ok = await requestPermission();
     if (!ok) { setRemMsg(t.remDenied); return; }
-    await notifyNow('Pelacak Haid', 'Notifikasi berfungsi ✓');
+    await notifyNow('Red', 'Notifikasi berfungsi ✓');
   }
 
   return (
