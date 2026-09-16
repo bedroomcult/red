@@ -9,6 +9,7 @@ import InsightsScreen from './InsightsScreen';
 import SettingsScreen from './SettingsScreen';
 import Onboarding from './Onboarding';
 import LoginScreen from './LoginScreen';
+import UpdateBanner from './UpdateBanner';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
@@ -73,6 +74,12 @@ export default function App() {
           finish: () => { setMe(st); setNeedLogin(false); setOnboarding(true); },
         };
       }
+      // Reuse the state already fetched here instead of calling load() again.
+      // A second /api/me that failed would leave the user on the login screen
+      // with no error at all.
+      if (st) {
+        return { error: null, finish: () => { setMe(st); setNeedLogin(false); } };
+      }
       return { error: null, finish: () => { void load(); } };
     } catch (e: any) { return { error: e.message, finish: () => {} }; }
   };
@@ -110,6 +117,8 @@ export default function App() {
       </div>
 
       {err && <div className="err">{err}</div>}
+
+      <UpdateBanner />
 
       {bcMode && <div className="banner warn">{t.bcSuppressed} — {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
       {ecHit && <div className="banner warn">{t.ecDisrupted}</div>}

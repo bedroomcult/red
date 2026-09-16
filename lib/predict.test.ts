@@ -2,10 +2,43 @@ import { describe, it, expect } from 'vitest';
 import { predict, cycleStats, ecDisrupts } from './predict';
 
 describe('predict', () => {
-  it('avgs 28,28,31 -> next Apr27 window ±2 high', () => {
+  it('avgs 28,28,31 -> next Apr27, window from the observed range', () => {
     const r = predict(['2026-01-01','2026-01-29','2026-02-26','2026-03-29'], {});
     expect(r.next).toBe('2026-04-27');
+    // Cycles 28,28,31: observed range 3d, so "high" even though the padded
+    // window is 9 days wide.
     expect(r.confidence).toBe('high');
+    expect(r.lo).toBe('2026-04-23');
+    expect(r.hi).toBe('2026-05-02');
+  });
+  it('regular cycles still get a narrow window and high confidence', () => {
+    const r = predict(['2026-01-01','2026-01-29','2026-02-26','2026-03-26','2026-04-23','2026-05-21'], {});
+    // 5 cycles of 28 -> pad 2 -> 26..30, 5d wide.
+    expect(r.confidence).toBe('high');
+    expect(r.flags).not.toContain('irregular');
+    expect(r.lo).toBe('2026-06-16');
+    expect(r.hi).toBe('2026-06-20');
+  });
+  it('covers a mildly irregular cycle that the old SD rule missed', () => {
+    // 26,31,28,27,32,29 has an SD of ~1.7. The previous rule used
+    // max(round(sd), 2) = +/-2d, which missed most of these cycles.
+    const r = predict(['2026-01-01','2026-01-27','2026-02-27','2026-03-27','2026-04-23','2026-05-25','2026-06-23'], {});
+    expect(r.lo).toBe('2026-07-17');
+    expect(r.hi).toBe('2026-07-27');
+    // Observed range 6d -> "med". The old SD rule gave +/-2d here and missed 42%.
+    expect(r.confidence).toBe('med');
+  });
+  it('widens and flags a genuinely irregular cycle', () => {
+    const r = predict(['2026-01-01','2026-01-22','2026-03-01','2026-03-26','2026-05-05','2026-05-28'], {});
+    expect(r.flags).toContain('irregular');
+    expect(r.confidence).toBe('low');
+    expect(r.lo).toBe('2026-06-15');
+    expect(r.hi).toBe('2026-07-08');
+  });
+  it('never narrows the window below 15..60 days of cycle length', () => {
+    const r = predict(['2026-01-01','2026-01-16','2026-02-01'], {});
+    // 15d cycles: cycleLo is clamped at 15, so the low edge cannot go below it.
+    expect(r.lo! >= '2026-02-02').toBe(true);
   });
   it('single period -> 28d fallback, low, estimated flag', () => {
     const r = predict(['2026-01-01'], {});

@@ -137,6 +137,14 @@ body {
 }
 .banner.warn { background: var(--amber); border: 1px solid var(--amber-line); }
 .banner.info { background: var(--rose-soft); border: 1px solid #f5c2c7; }
+/* update available: green, so it reads as an action rather than a warning */
+.banner.update {
+  background: var(--green-soft); border: 1px solid var(--green);
+  animation: rise .3s ease both;
+}
+.update-text { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
+.update-sub { color: var(--muted); font-size: 12px; }
+.banner.update .row { margin-top: 8px; }
 
 /* history */
 .list { list-style: none; margin: 0; padding: 0; }

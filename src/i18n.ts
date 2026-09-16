@@ -190,4 +190,10 @@ export const t = {
   themeLight: 'Terang',
   themeDark: 'Gelap',
   themeSystem: 'Ikuti sistem',
+  // updates
+  updateAvailable: 'Versi baru tersedia',
+  updateFrom: 'Anda memakai {a}, versi terbaru {b}.',
+  updateTapInstall: 'ketuk untuk mengunduh dan memasang',
+  updateNow: 'Perbarui',
+  updateLater: 'Nanti',
 } as const;
