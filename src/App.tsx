@@ -8,6 +8,7 @@ import Home from './Home';
 import InsightsScreen from './InsightsScreen';
 import SettingsScreen from './SettingsScreen';
 import Onboarding from './Onboarding';
+import LoginScreen from './LoginScreen';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
@@ -29,7 +30,6 @@ export default function App() {
   const [bcOpen, setBcOpen] = useState(false);
   const [ecOpen, setEcOpen] = useState(false);
   const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
-  const [login, setLogin] = useState({ email: '', password: '', mode: 'login' as 'login' | 'signup' });
   const [needLogin, setNeedLogin] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
 
@@ -48,21 +48,20 @@ export default function App() {
 
   useEffect(() => { load(); }, [load]);
 
-  const doAuth = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Returns an error message to show, or null on success. The form owns its own
+  // field state; this only performs the request.
+  const doAuth = async (mode: 'login' | 'signup', email: string, password: string): Promise<string | null> => {
     setErr(null);
     try {
       const r = await apiFetch('/api/auth', {
         method: 'POST',
-        body: JSON.stringify({ action: login.mode, email: login.email, password: login.password }),
+        body: JSON.stringify({ action: mode, email, password }),
       });
       const j = await readJson(r).catch(() => ({}));
       if (!r.ok) {
         const msg = (j as any).error;
-        setErr(msg === 'email taken' ? t.errTaken : msg === 'password min 8 chars' ? t.errMinPw : msg === 'invalid login' ? t.errLogin : (msg ?? t.errLogin));
-        return;
+        return msg === 'email taken' ? t.errTaken : msg === 'password min 8 chars' ? t.errMinPw : msg === 'invalid login' ? t.errLogin : (msg ?? t.errLogin);
       }
-      setLogin({ email: '', password: '', mode: 'login' });
       const r2 = await apiFetch('/api/me');
       const st = r2.ok ? await readJson(r2) : null;
       // First run: no periods and no saved profile name => onboarding.
@@ -70,10 +69,11 @@ export default function App() {
         setMe(st);
         setNeedLogin(false);
         setOnboarding(true);
-        return;
+        return null;
       }
       await load();
-    } catch (e: any) { setErr(e.message); }
+      return null;
+    } catch (e: any) { return e.message; }
   };
 
   const doLogout = async () => {
@@ -89,38 +89,7 @@ export default function App() {
   }
 
   if (needLogin) {
-    return (
-      <div className="app auth">
-        <h1>{t.appName}</h1>
-        <div className="sub">{t.loginSubtitle}</div>
-        <form onSubmit={doAuth}>
-          <div className="field">
-            <label htmlFor="auth-email">{t.email}</label>
-            <input id="auth-email" type="email" required autoComplete="email" value={login.email}
-              onChange={(e) => setLogin({ ...login, email: e.target.value })} />
-          </div>
-          <div className="field">
-            <label htmlFor="auth-pw">{t.password}</label>
-            <input id="auth-pw" type="password" required minLength={8}
-              autoComplete={login.mode === 'login' ? 'current-password' : 'new-password'}
-              value={login.password} onChange={(e) => setLogin({ ...login, password: e.target.value })} />
-          </div>
-          {err && <div className="err">{err}</div>}
-          <div className="row">
-            <button className="btn primary" type="submit" style={{ flex: 1 }}>
-              {login.mode === 'login' ? t.login : t.signup}
-            </button>
-          </div>
-          <div className="row tight">
-            <button className="btn ghost" type="button"
-              onClick={() => setLogin({ ...login, mode: login.mode === 'login' ? 'signup' : 'login' })}>
-              {login.mode === 'login' ? t.needAccount : t.haveAccount}
-            </button>
-          </div>
-        </form>
-        <footer className="disclaimer">{t.disclaimer}</footer>
-      </div>
-    );
+    return <LoginScreen onAuth={doAuth} />;
   }
 
   const label = new Date(Date.UTC(ym.y, ym.m, 1)).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });

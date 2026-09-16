@@ -70,6 +70,8 @@ jobs:
       # now fails installing the removed 'tools' package, so it is not needed.
       - run: npm ci && npm run build
       - run: test -d android || npx cap add android
+      - name: Generate app icon + splash
+        run: node scripts/generate-icons.mjs
       - name: Stamp version
         run: node .github/scripts/android-version.mjs
       - run: npx cap sync android
