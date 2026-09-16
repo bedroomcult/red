@@ -215,6 +215,20 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .sheet .hint { color: var(--muted); font-size: 13px; margin-bottom: 12px; line-height: 1.45; }
 .grabber { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 14px; }
 
+/* day info sheet: read-only summary rows, not a form */
+.day-info {
+  border-top: 1px solid var(--line); padding: 11px 0;
+}
+.day-info:first-of-type { border-top: 0; }
+.day-info-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
+.day-info-value { font-size: 14px; line-height: 1.5; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.sym-chip {
+  font-size: 12px; padding: 4px 10px; border-radius: 999px;
+  background: var(--rose-soft); color: var(--rose); font-weight: 600;
+}
+.sheet .row { margin-top: 16px; }
+
 /* bottom nav */
 .tabbar {
   position: fixed; inset: auto 0 0 0; background: rgba(255,255,255,.92);

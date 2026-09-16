@@ -23,6 +23,17 @@ export function periodDays(p: { start_date: string; end_date: string | null }, d
   return out;
 }
 
+// Logged period whose range (start..end, or start+defaultDays-1) contains date.
+// Shared by the day sheet, the log sheet and the calendar so all three agree on
+// what "this day is inside a period" means.
+export function periodForDate<T extends { start_date: string; end_date: string | null; type: string }>(
+  periods: T[],
+  date: string,
+  defaultDays = 5
+): T | undefined {
+  return periods.find((p) => p.type === 'menstruation' && periodDays(p, defaultDays).includes(date));
+}
+
 // A predicted period window is stale when a real logged period overlaps it, or
 // the window lies entirely before the latest logged period. Whole window hides.
 export function predictionStale(

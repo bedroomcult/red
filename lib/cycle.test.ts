@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cycleStatus, predictionStale, dateStale, periodDays } from './cycle';
+import { cycleStatus, predictionStale, dateStale, periodDays, periodForDate } from './cycle';
 import { insights } from './insights';
 
 const P = [{ start_date: '2026-01-01', end_date: '2026-01-05' }];
@@ -85,5 +85,39 @@ describe('dateStale (single predicted date, e.g. ovulation)', () => {
   it('no logs / null date -> not stale', () => {
     expect(dateStale([], '2026-01-01')).toBe(false);
     expect(dateStale(logged, null)).toBe(false);
+  });
+});
+
+describe('periodForDate', () => {
+  const P = (start: string, end: string | null, type = 'menstruation') => ({ start_date: start, end_date: end, type });
+
+  it('matches the start day', () => {
+    expect(periodForDate([P('2026-01-01', '2026-01-05')], '2026-01-01')?.start_date).toBe('2026-01-01');
+  });
+
+  it('matches an interior day', () => {
+    expect(periodForDate([P('2026-01-01', '2026-01-05')], '2026-01-03')?.start_date).toBe('2026-01-01');
+  });
+
+  it('matches the end day', () => {
+    expect(periodForDate([P('2026-01-01', '2026-01-05')], '2026-01-05')?.start_date).toBe('2026-01-01');
+  });
+
+  it('does not match the day after the end', () => {
+    expect(periodForDate([P('2026-01-01', '2026-01-05')], '2026-01-06')).toBeUndefined();
+  });
+
+  it('assumes 5 days when end_date is null', () => {
+    expect(periodForDate([P('2026-01-01', null)], '2026-01-05')?.start_date).toBe('2026-01-01');
+    expect(periodForDate([P('2026-01-01', null)], '2026-01-06')).toBeUndefined();
+  });
+
+  it('ignores spotting', () => {
+    expect(periodForDate([P('2026-01-01', '2026-01-05', 'spotting')], '2026-01-03')).toBeUndefined();
+  });
+
+  it('returns the containing period when several overlap', () => {
+    const ps = [P('2026-01-01', '2026-01-05'), P('2026-01-04', '2026-01-08')];
+    expect(periodForDate(ps, '2026-01-06')?.start_date).toBe('2026-01-04');
   });
 });

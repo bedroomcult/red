@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import Calendar, { type Period, type Prediction } from './Calendar';
+import DaySheet from './DaySheet';
 import LogSheet from './LogSheet';
 import BcPanel from './BcPanel';
 import EcPanel from './EcPanel';
@@ -10,6 +11,7 @@ import Onboarding from './Onboarding';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
+import { periodForDate } from '../lib/cycle';
 import { localDate, dateHeaders } from '../lib/today';
 
 type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
@@ -22,6 +24,7 @@ export default function App() {
   const [err, setErr] = useState<string | null>(null);
   const [ym, setYm] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [sel, setSel] = useState<string | null>(null);
+  const [logDate, setLogDate] = useState<string | null>(null);
   const [bcOpen, setBcOpen] = useState(false);
   const [ecOpen, setEcOpen] = useState(false);
   const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
@@ -120,13 +123,8 @@ export default function App() {
   }
 
   const label = new Date(Date.UTC(ym.y, ym.m, 1)).toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-  const existing = sel ? me?.periods.find((p) => p.start_date === sel) : undefined;
-  // Period whose logged range (start..end, or start+4 default) contains sel.
-  const active = sel ? me?.periods.find((p) => {
-    const s = p.start_date;
-    const e = p.end_date ?? new Date(Date.parse(s + 'T00:00:00Z') + 4 * 864e5).toISOString().slice(0, 10);
-    return sel >= s && sel <= e;
-  }) : undefined;
+  // Period whose logged range (start..end, or start+4 default) contains a date.
+  const activeFor = (d: string) => periodForDate(me?.periods ?? [], d);
   const flags = me?.prediction.flags ?? [];
   const bcMode = me?.prediction.confidence === 'suppressed' || flags.includes('bc-suppressed');
   const ecHit = flags.includes('ec-disrupted');
@@ -151,8 +149,7 @@ export default function App() {
         <Home
           me={me}
           onOpenCalendar={() => setTab('calendar')}
-          onLogToday={(d) => { const dt = new Date(d + 'T00:00:00Z'); setYm({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() }); setSel(d); }}
-          onSaved={setMe}
+          onLogToday={(d) => { const dt = new Date(d + 'T00:00:00Z'); setYm({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() }); setSel(d); setLogDate(d); }}
         />
       )}
 
@@ -225,7 +222,17 @@ export default function App() {
           onSaved={setMe} onLogout={doLogout} />
       )}
 
-      {sel && <LogSheet date={sel} existing={existing} active={active} onClose={() => setSel(null)} onSaved={setMe} />}
+      {sel && !logDate && (
+        <DaySheet
+          date={sel}
+          periods={me?.periods ?? []}
+          prediction={me?.prediction ?? null}
+          bcMode={bcMode}
+          onLog={(d) => setLogDate(d)}
+          onClose={() => setSel(null)}
+        />
+      )}
+      {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} onClose={() => setLogDate(null)} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); }} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
       {ecOpen && <EcPanel onClose={() => setEcOpen(false)} onSaved={setMe} />}
 

@@ -24,11 +24,10 @@ const GRAD: Record<Phase, string> = {
 };
 const LIGHT: Record<Phase, boolean> = { period: true, fertile: true, ovulation: true, pms: true, neutral: false, bc: false };
 
-export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
+export default function Home({ me, onOpenCalendar, onLogToday }: {
   me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
-  onSaved: (s: any) => void;
 }) {
   const today = me.today ?? localDate();
   const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
