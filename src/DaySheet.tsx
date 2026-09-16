@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
-import { dateHeaders } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 const PHASE_LABEL: Record<Phase, string> = {
   period: t.phasePeriod,
@@ -39,12 +39,12 @@ export default function DaySheet({ date, periods, prediction, bcMode, onLog, onC
     let on = true;
     setSyms(null);
     setNote(null);
-    fetch('/api/symptoms?date=' + date, { headers: dateHeaders() })
-      .then((r) => (r.ok ? r.json() : { symptoms: [] }))
+    apiFetch('/api/symptoms?date=' + date)
+      .then((r) => (r.ok ? readJson(r) : { symptoms: [] }))
       .then((j) => { if (on) setSyms((j.symptoms ?? []).map((s: any) => s.kind)); })
       .catch(() => { if (on) setSyms([]); });
-    fetch('/api/notes?date=' + date, { headers: dateHeaders() })
-      .then((r) => (r.ok ? r.json() : { note: '' }))
+    apiFetch('/api/notes?date=' + date)
+      .then((r) => (r.ok ? readJson(r) : { note: '' }))
       .then((j) => { if (on) setNote(j.note ?? ''); })
       .catch(() => { if (on) setNote(''); });
     return () => { on = false; };

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { t } from './i18n';
-import { localDate, dateHeaders } from '../lib/today';
+import { localDate } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 export default function EcPanel({ onClose, onSaved }: {
   onClose: () => void; onSaved: (state: any) => void;
@@ -14,16 +15,15 @@ export default function EcPanel({ onClose, onSaved }: {
   async function save() {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/ec', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({
+      const r = await apiFetch('/api/ec', {
+        method: 'POST',         body: JSON.stringify({
           ec_type: ecType,
           intake_at: new Date(intake + 'T12:00:00Z').toISOString(),
           upsi_at: upsi ? new Date(upsi + 'T12:00:00Z').toISOString() : undefined,
         }),
       });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }

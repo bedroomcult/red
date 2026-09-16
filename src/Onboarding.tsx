@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { t } from './i18n';
-import { localDate, dateHeaders } from '../lib/today';
+import { localDate } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 // 4-step first-run flow: welcome -> name -> last period -> cycle length.
 export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
@@ -14,20 +15,18 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   async function saveProfile(withPeriod: boolean) {
     setBusy(true); setErr(null);
     try {
-      const pr = await fetch('/api/profile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({ display_name: name || undefined, cycle_len: cycle, period_len: 5 }),
+      const pr = await apiFetch('/api/profile', {
+        method: 'POST',         body: JSON.stringify({ display_name: name || undefined, cycle_len: cycle, period_len: 5 }),
       });
-      if (!pr.ok) throw new Error((await pr.json()).error ?? pr.statusText);
+      if (!pr.ok) throw new Error((await readJson(pr)).error ?? pr.statusText);
       if (withPeriod && last) {
-        const pe = await fetch('/api/periods', {
-          method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-          body: JSON.stringify({ start_date: last, type: 'menstruation', flow: 'medium' }),
+        const pe = await apiFetch('/api/periods', {
+          method: 'POST',           body: JSON.stringify({ start_date: last, type: 'menstruation', flow: 'medium' }),
         });
-        if (!pe.ok) throw new Error((await pe.json()).error ?? pe.statusText);
-        onDone(await pe.json());
+        if (!pe.ok) throw new Error((await readJson(pe)).error ?? pe.statusText);
+        onDone(await readJson(pe));
       } else {
-        onDone(await pr.json());
+        onDone(await readJson(pr));
       }
     } catch (e: any) { setErr(e.message); setBusy(false); }
   }

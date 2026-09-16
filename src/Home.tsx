@@ -3,7 +3,8 @@ import type { ReactNode } from 'react';
 import { cycleStatus, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
-import { localDate, dateHeaders } from '../lib/today';
+import { localDate } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
 const symLabel: Record<string, string> = {
@@ -40,12 +41,11 @@ export default function Home({ me, onOpenCalendar, onLogToday }: {
     const next = syms.includes(kind) ? syms.filter((s) => s !== kind) : [...syms, kind];
     setSyms(next); // optimistic
     try {
-      const r = await fetch('/api/symptoms', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({ date: today, kind }),
+      const r = await apiFetch('/api/symptoms', {
+        method: 'POST',         body: JSON.stringify({ date: today, kind }),
       });
       if (!r.ok) throw new Error('save failed');
-      const j = await r.json();
+      const j = await readJson(r);
       setSyms(j.symptoms.map((s: any) => s.kind));
     } catch { setSyms(syms); }
   }

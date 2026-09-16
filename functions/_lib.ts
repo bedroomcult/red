@@ -86,9 +86,16 @@ export function getCookie(request: Request, name: string): string | null {
 }
 
 export function sessCookie(token: string, delete_ = false): string {
+  // SameSite=None, not Lax: the Android build calls the API from
+  // https://localhost, which is cross-site to the Pages domain, and Lax cookies
+  // are withheld on cross-site requests. SameSite=None requires Secure.
+  // CSRF exposure is contained because every mutating route parses a JSON body,
+  // so a cross-origin <form> post fails at `await request.json()` before any
+  // handler logic runs, and a cross-origin fetch is stopped by the CORS
+  // preflight in functions/api/_middleware.ts.
   return delete_
-    ? 'sess=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax; Secure'
-    : `sess=${token}; HttpOnly; Path=/; Max-Age=2592000; SameSite=Lax; Secure`;
+    ? 'sess=; HttpOnly; Path=/; Max-Age=0; SameSite=None; Secure'
+    : `sess=${token}; HttpOnly; Path=/; Max-Age=2592000; SameSite=None; Secure`;
 }
 
 // Baseline security headers for Function responses (public/_headers covers the

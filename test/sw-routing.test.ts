@@ -106,3 +106,18 @@ describe('public/sw.js routing', () => {
     expect(cachedUrls.some((u) => u.includes('/api/'))).toBe(false);
   });
 });
+
+// In the APK the bundle is served from https://localhost, so requests to the API
+// origin are cross-origin. The worker must leave them alone: the CORS headers
+// come from the network, and a cached response would lack them.
+describe('public/sw.js with the Capacitor origin', () => {
+  it('does not intercept a cross-origin API call from the app', async () => {
+    const { claimed } = await route('GET', 'https://cycle-tracker-3hg.pages.dev/api/me');
+    expect(claimed).toBe(false);
+  });
+
+  it('does not intercept a cross-origin API POST from the app', async () => {
+    const { claimed } = await route('POST', 'https://cycle-tracker-3hg.pages.dev/api/periods');
+    expect(claimed).toBe(false);
+  });
+});

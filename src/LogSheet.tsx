@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import type { Period } from './Calendar';
 import { t } from './i18n';
-import { dateHeaders } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   date: string; existing: Period | undefined; active: Period | undefined;
@@ -15,8 +15,8 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
 
   useEffect(() => {
     let on = true;
-    fetch('/api/notes?date=' + date, { headers: dateHeaders() })
-      .then((r) => (r.ok ? r.json() : { note: '' }))
+    apiFetch('/api/notes?date=' + date)
+      .then((r) => (r.ok ? readJson(r) : { note: '' }))
       .then((j) => { if (on) setNote(j.note ?? ''); })
       .catch(() => {});
     return () => { on = false; };
@@ -25,11 +25,10 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   async function saveNote() {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/notes', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({ date, note }),
+      const r = await apiFetch('/api/notes', {
+        method: 'POST',         body: JSON.stringify({ date, note }),
       });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
@@ -37,12 +36,11 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   async function post(body: any) {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/periods', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify(body),
+      const r = await apiFetch('/api/periods', {
+        method: 'POST',         body: JSON.stringify(body),
       });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
@@ -52,9 +50,9 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     if (!target) return;
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/periods?id=' + target.id, { method: 'DELETE', headers: dateHeaders() });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      const r = await apiFetch('/api/periods?id=' + target.id, { method: 'DELETE' });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }

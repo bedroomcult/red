@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { t } from './i18n';
-import { dateHeaders } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
+import { apiFetch, readJson } from './api';
 
 export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout }: {
   profile: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null;
@@ -23,12 +23,11 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
   async function save() {
     setBusy(true); setMsg(null);
     try {
-      const r = await fetch('/api/profile', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({ display_name: name, cycle_len: Number(cycle), period_len: Number(period) }),
+      const r = await apiFetch('/api/profile', {
+        method: 'POST',         body: JSON.stringify({ display_name: name, cycle_len: Number(cycle), period_len: Number(period) }),
       });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       setMsg(t.setSaved);
     } catch (e: any) { setMsg(e.message); } finally { setBusy(false); }
   }

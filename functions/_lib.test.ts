@@ -100,11 +100,13 @@ describe('getCookie', () => {
 });
 
 describe('sessCookie', () => {
-  it('sets an HttpOnly, SameSite=Lax, Secure session cookie', () => {
+  it('sets an HttpOnly, SameSite=None, Secure session cookie', () => {
     const c = sessCookie('tok');
     expect(c.startsWith('sess=tok')).toBe(true);
     expect(c).toContain('HttpOnly');
-    expect(c).toContain('SameSite=Lax');
+    // SameSite=None (not Lax) so the Android WebView, which is cross-site to the
+    // API origin, still sends it. None requires Secure.
+    expect(c).toContain('SameSite=None');
     expect(c).toContain('Secure');
   });
 

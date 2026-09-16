@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { t } from './i18n';
-import { localDate, dateHeaders } from '../lib/today';
+import { localDate } from '../lib/today';
+import { apiFetch, readJson } from './api';
 
 const REGIMENS = ['21/7', '24/4', 'continuous'] as const;
 
@@ -17,16 +18,15 @@ export default function BcPanel({ current, onClose, onSaved }: {
   async function save() {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/bc', {
-        method: 'POST', headers: { 'Content-Type': 'application/json', ...dateHeaders() },
-        body: JSON.stringify({
+      const r = await apiFetch('/api/bc', {
+        method: 'POST',         body: JSON.stringify({
           pill_type: pillType, regimen,
           pack_start_date: localDate(),
           taken,
         }),
       });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
@@ -34,9 +34,9 @@ export default function BcPanel({ current, onClose, onSaved }: {
   async function stop() {
     setBusy(true); setErr(null);
     try {
-      const r = await fetch('/api/bc', { method: 'DELETE', headers: dateHeaders() });
-      if (!r.ok) throw new Error((await r.json()).error ?? r.statusText);
-      onSaved(await r.json());
+      const r = await apiFetch('/api/bc', { method: 'DELETE' });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onSaved(await readJson(r));
       onClose();
     } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
   }
