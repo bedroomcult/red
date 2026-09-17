@@ -114,6 +114,9 @@ body {
 .dnum.dim { color: var(--muted); opacity: .55; }
 .dnum.pred-period { border-color: var(--rose); }
 .dnum.pred-fertile { border-color: var(--green); }
+/* Ovulation peak: same green ring, dashed, so it reads as one day inside the
+   window rather than a different kind of day. */
+.dnum.pred-ovulation { border-color: var(--green); border-style: dashed; }
 .dnum.logged { background: var(--rose); color: #fff; border-color: var(--rose); font-weight: 700; }
 .dnum.fertile-logged { background: var(--green); color: #fff; border-color: var(--green); font-weight: 700; }
 .dnum.sel { outline: 2px solid var(--rose); outline-offset: 1px; }
@@ -153,6 +156,7 @@ body {
 .chip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid transparent; }
 .chip.period { border-color: var(--rose); }
 .chip.fertile { border-color: var(--green); }
+.chip.ovulation { border-color: var(--green); border-style: dashed; }
 .chip.logged { background: var(--rose); border-color: var(--rose); }
 .chip.spot { background: var(--muted); width: 6px; height: 6px; }
 .chip.dose-taken, .chip.dose-missed { width: 13px; height: 5px; border-radius: 999px; border: none; }
@@ -423,6 +427,27 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   letter-spacing: .04em; text-transform: uppercase;
 }
 .home-lower { padding: 16px 16px 0; }
+
+/* pregnancy chance estimate */
+.chance-card { transition: border-color .2s ease; }
+.chance-head { display: flex; align-items: center; gap: 10px; margin-top: 4px; }
+.chance-badge {
+  font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px;
+}
+.chance-badge.risk-high { background: var(--rose-soft); color: var(--rose); }
+.chance-badge.risk-medium { background: var(--amber); color: var(--amber-line); }
+.chance-badge.risk-low { background: var(--green-soft); color: var(--green); }
+.chance-badge.risk-unknown { background: var(--grey-bg); color: var(--muted); }
+.chance-when { font-size: 12px; }
+.chance-bar {
+  height: 8px; border-radius: 999px; background: var(--grey-bg);
+  overflow: hidden; margin-top: 12px;
+}
+.chance-fill { height: 100%; border-radius: 999px; transition: width .3s ease; }
+.chance-fill.risk-high { background: var(--rose); }
+.chance-fill.risk-medium { background: var(--amber-line); }
+.chance-fill.risk-low { background: var(--green); }
+.chance-note { font-size: 11px; line-height: 1.5; margin-top: 8px; }
 
 /* spinner */
 .spinner {

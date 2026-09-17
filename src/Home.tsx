@@ -6,6 +6,7 @@ import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { needsEndPrompt } from '../lib/cycle';
 import OngoingPrompt from './OngoingPrompt';
+import ChanceCard from './ChanceCard';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -115,6 +116,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onLogout, onSaved
 
       <div className="home-lower">
         {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} />}
+        <ChanceCard date={today} prediction={me.prediction} bcMode={bcMode} />
         {(st.phase === 'period' || st.phase === 'pms' || st.phase === 'neutral') && (
           <div className="card">
             <h2>{t.homeSymptomsToday}</h2>

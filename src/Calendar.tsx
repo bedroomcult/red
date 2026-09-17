@@ -28,6 +28,10 @@ function ovSet(ov: string | null): Set<string> {
   return new Set([-5, -4, -3, -2, -1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
 }
 
+// The peak is one day inside the window, so it needs to read as the same family
+// (a green ring) but distinct. A dashed ring, not a fill: a fill already means
+// "logged" for periods, and the peak is a prediction.
+
 import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 import { localDate } from '../lib/today';
 import { t } from './i18n';
@@ -50,6 +54,8 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   // ovStale: single date, only hides when behind the latest logged period.
   const ovStale = dateStale(periods, prediction?.ov ?? null);
   const ovs = stale || ovStale ? new Set<string>() : ovSet(prediction?.ov ?? null);
+  // Peak day, only when the window itself is still valid.
+  const ovDay = stale || ovStale ? null : prediction?.ov ?? null;
   const predLo = stale ? null : prediction?.lo ?? null;
   const predHi = stale ? null : prediction?.hi ?? null;
   const cells = monthCells(year, mon);
@@ -67,6 +73,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const cls = inPeriod.has(d) ? 'logged'
                 : p ? '' // spotting: plain + dot below
                 : inRange(d, predLo, predHi) ? 'pred-period'
+                : d === ovDay ? 'pred-ovulation'
                 : ovs.has(d) ? 'pred-fertile' : '';
               // The heart turns green when the date falls in the fertile window,
               // matching the green used for the ovulation circle. That is the

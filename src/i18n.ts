@@ -30,6 +30,7 @@ export const t = {
   // calendar
   legendPeriod: 'Haid',
   legendFertile: 'Masa subur',
+  legendOvulation: 'Puncak ovulasi',
   legendPredicted: 'Prediksi',
   legendSpotting: 'Flek',
   legendDoseTaken: 'Minum pil',
@@ -179,7 +180,7 @@ export const t = {
   dayPredictedValue: 'Hari ini masuk rentang perkiraan haid berikutnya.',
   dayFertile: 'Masa subur',
   dayFertileValue: 'Perkiraan masa subur.',
-  dayOvulationValue: 'Perkiraan ovulasi — peluang hamil paling tinggi.',
+  dayOvulationValue: 'Puncak ovulasi — peluang hamil paling tinggi. Perkiraan, bukan hasil tes.',
   daySymptoms: 'Gejala',
   dayNoSymptoms: 'tidak ada gejala tercatat',
   dayNoNote: 'tidak ada catatan',
@@ -226,4 +227,19 @@ export const t = {
   ongoingBody: 'Haid Anda sudah {n} hari dan melewati perkiraan panjang haid. Masih berlanjut?',
   ongoingEnded: 'Sudah selesai',
   ongoingStill: 'Masih haid',
+  // pregnancy chance estimate
+  chanceTitle: 'Perkiraan peluang hamil hari ini',
+  chanceHigh: 'Tinggi',
+  chanceMedium: 'Sedang',
+  chanceLow: 'Rendah',
+  chanceUnknown: 'Tidak dapat diperkirakan',
+  chancePeak: 'Hari perkiraan ovulasi',
+  chanceBefore: '{n} hari sebelum perkiraan ovulasi',
+  chanceAfter: '{n} hari setelah perkiraan ovulasi',
+  chanceUnknownWhy: 'Prediksi ovulasi tidak tersedia, jadi peluang tidak bisa diperkirakan.',
+  // Deliberately never says "safe". No calendar method is reliable enough to
+  // justify that, and this app is not a contraceptive.
+  chanceSafeNote: 'Peluang rendah bukan berarti aman. Metode kalender tidak dapat mencegah kehamilan — gunakan kontrasepsi.',
+  chanceBcNote: 'Saat KB aktif, prediksi ovulasi dijeda sehingga peluang tidak diperkirakan.',
+  chanceDisclaimer: 'Perkiraan dari pola siklus, bukan hasil tes kesuburan.',
 } as const;

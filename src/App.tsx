@@ -165,6 +165,7 @@ export default function App() {
             <div className="legend">
               <span><i className="chip period" />{t.legendPeriod}</span>
               <span><i className="chip fertile" />{t.legendFertile}</span>
+              <span><i className="chip ovulation" />{t.legendOvulation}</span>
               <span><i className="chip logged" />{t.legendPredicted}</span>
               <span><i className="chip spot" />{t.legendSpotting}</span>
               <span><i className="chip dose-taken" />{t.legendDoseTaken}</span>
