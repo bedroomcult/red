@@ -30,7 +30,7 @@ export default function UpdateBanner() {
         <strong>{t.updateAvailable}</strong>
         <span className="update-sub">
           {t.updateFrom.replace('{a}', current).replace('{b}', info.latest)}
-          {isNative() ? ` — ${t.updateTapInstall}` : ''}
+          {isNative() ? ` (${t.updateTapInstall})` : ''}
         </span>
       </div>
       <div className="row tight">

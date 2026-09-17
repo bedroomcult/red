@@ -1,12 +1,16 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // This app must not tell anyone a day is "safe" for unprotected sex. No calendar
 // method is reliable enough for that, and a low estimate being read as
 // permission is the failure mode that matters most here. These tests pin the
 // wording, because it is the safety control — a future copy tweak could remove
 // it without breaking anything else.
-const ROOT = new URL('..', import.meta.url).pathname;
+//
+// fileURLToPath, not URL.pathname: on Windows pathname yields "/C:/...", and
+// prefixing that to a relative path produced "C:\C:\...", so every read failed.
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const I18N = readFileSync(ROOT + 'src/i18n.ts', 'utf8');
 const CARD = readFileSync(ROOT + 'src/ChanceCard.tsx', 'utf8');
 

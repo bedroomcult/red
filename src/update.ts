@@ -1,4 +1,4 @@
-import { apiFetch, readJson } from './api';
+import { readJson } from './api';
 
 // Latest published GitHub release. The repo is public, so this needs no token.
 // ponytail: read from the public releases API rather than bundling a manifest —
@@ -32,7 +32,10 @@ let cached: UpdateInfo | null | undefined;
 export async function checkForUpdate(current: string): Promise<UpdateInfo | null> {
   if (cached !== undefined) return cached && isNewer(cached.latest, current) ? cached : null;
   try {
-    const r = await apiFetch(RELEASES_API);
+    // Plain fetch, not apiFetch: RELEASES_API is already absolute, and apiFetch
+    // prepends API_BASE to its path, which produced
+    // "https://<pages-host>https://api.github.com/..." and never resolved.
+    const r = await fetch(RELEASES_API);
     if (!r.ok) throw new Error(`HTTP ${r.status}`);
     const j = await readJson<any>(r);
     const latest = String(j?.tag_name ?? '').replace(/^v/, '');

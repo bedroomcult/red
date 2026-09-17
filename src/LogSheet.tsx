@@ -22,17 +22,6 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     return () => { on = false; };
   }, [date]);
 
-  async function saveNote() {
-    setBusy(true); setErr(null);
-    try {
-      const r = await apiFetch('/api/notes', {
-        method: 'POST',         body: JSON.stringify({ date, note }),
-      });
-      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
-  }
-
   async function post(body: any) {
     setBusy(true); setErr(null);
     try {
@@ -146,12 +135,9 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
               <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
               <div className="btn-grid">
                 <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
-                <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
-              </div>
-              <div className="btn-grid">
-                {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
                 <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
               </div>
+              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
             </>
           )}
         </div>

@@ -25,8 +25,9 @@ Set `database_id` in `wrangler.toml` before deploy.
 
 ## Notes
 
-- Dates stored UTC `YYYY-MM-DD`, rendered local.
-- Red hollow = predicted period window, green hollow = predicted ovulation, solid + ✓ = logged.
-- No log = prediction stays hollow; predictions persist past expected date until confirmed.
-- BC regimen active → predictions suppressed (amber banner). EC within 60d → widened window, ovulation hidden (yellow banner + test guidance).
-- General info only, not medical advice. Predictions are estimates, not contraception guidance.
+- Dates are stored as UTC `YYYY-MM-DD` and rendered in the local date.
+- Red hollow is the predicted period window, green hollow is predicted ovulation, solid with a check is logged.
+- A day with no log keeps the prediction hollow. Predictions persist past the expected date until the user confirms.
+- While a BC regimen is active, predictions are suppressed and an amber banner explains why.
+- An EC event within 60 days widens the prediction window and hides ovulation. A yellow banner shows the test guidance.
+- General information only, not medical advice. Predictions are estimates and are not contraception guidance.

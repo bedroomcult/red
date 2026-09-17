@@ -14,6 +14,9 @@ export default function BcPanel({ current, onClose, onSaved }: {
   const [taken, setTaken] = useState(true);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
+  // Stopping contraception deletes the regimen and re-enables cycle predictions.
+  // It sits in the same visual slot as clearing a day's log, so it asks first.
+  const [confirmStop, setConfirmStop] = useState(false);
 
   async function save() {
     setBusy(true); setErr(null);
@@ -70,11 +73,21 @@ export default function BcPanel({ current, onClose, onSaved }: {
         </div>
 
         <div className="sheet-actions">
-          <button className="btn primary" disabled={busy} onClick={save}>{t.bcSave}</button>
-          <div className="btn-grid">
-            {current && <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStop}</button>}
-            <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
-          </div>
+          {confirmStop ? (
+            <>
+              <div className="hint" style={{ margin: 0 }}>{t.bcStopConfirm}</div>
+              <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStopYes}</button>
+              <button className="btn ghost" disabled={busy} onClick={() => setConfirmStop(false)}>{t.bcCancel}</button>
+            </>
+          ) : (
+            <>
+              <button className="btn primary" disabled={busy} onClick={save}>{t.bcSave}</button>
+              <div className="btn-grid">
+                {current && <button className="btn danger" disabled={busy} onClick={() => setConfirmStop(true)}>{t.bcStop}</button>}
+                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </>

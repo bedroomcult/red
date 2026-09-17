@@ -13,6 +13,15 @@ const PHASE_LABEL: Record<Phase, string> = {
   bc: t.phaseBc,
 };
 
+const PHASE_BADGE: Record<Phase, string> = {
+  period: '',
+  pms: 'amber',
+  fertile: 'green',
+  ovulation: 'green',
+  neutral: 'grey',
+  bc: 'grey',
+};
+
 const SYM_LABEL: Record<string, string> = {
   cramps: t.symCramps, bloating: t.symBloating, headache: t.symHeadache, mood: t.symMood,
   tired: t.symTired, breast: t.symBreast, acne: t.symAcne, craving: t.symCraving,
@@ -123,7 +132,10 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
         <h3 style={{ marginBottom: 4 }}>{fmtLong(date)}</h3>
 
         <div className="row tight" style={{ marginBottom: 12 }}>
-          <span className={`badge ${st.phase === 'neutral' || st.phase === 'bc' ? 'grey' : st.phase === 'period' || st.phase === 'pms' ? '' : 'green'}`}>
+          {/* One colour per phase family: rose = bleeding, amber = premenstrual
+              warning, green = fertile window, grey = no signal. PMS previously
+              reused the bleeding rose, so two unrelated phases looked alike. */}
+          <span className={`badge ${PHASE_BADGE[st.phase]}`}>
             {PHASE_LABEL[st.phase]}
           </span>
           {st.cycleDay !== null && <span className="badge grey">{t.dayCycle.replace('{n}', String(st.cycleDay))}</span>}
@@ -159,59 +171,63 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
           </div>
         )}
 
-        <div className="day-info">
-          <div className="day-info-label">{t.daySymptoms}</div>
-          <div className="day-info-value">
-            {syms === null ? t.loading
-              : syms.length === 0 ? <span className="muted">{t.dayNoSymptoms}</span>
-              : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
+        <div className="day-group">
+          <div className="day-info">
+            <div className="day-info-label">{t.daySymptoms}</div>
+            <div className="day-info-value">
+              {syms === null ? t.loading
+                : syms.length === 0 ? <span className="muted">{t.dayNoSymptoms}</span>
+                : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
+            </div>
+          </div>
+
+          <div className="day-info">
+            <div className="day-info-label">{t.note}</div>
+            <div className="day-info-value">
+              {note === null ? t.loading
+                : note ? <span style={{ whiteSpace: 'pre-wrap' }}>{note}</span>
+                : <span className="muted">{t.dayNoNote}</span>}
+            </div>
           </div>
         </div>
 
-        <div className="day-info">
-          <div className="day-info-label">{t.note}</div>
-          <div className="day-info-value">
-            {note === null ? t.loading
-              : note ? <span style={{ whiteSpace: 'pre-wrap' }}>{note}</span>
-              : <span className="muted">{t.dayNoNote}</span>}
+        <div className="day-group">
+          <div className="day-info">
+            <div className="day-info-label">{t.dayDose}</div>
+            <div className="day-info-value">
+              {doseLocal === null ? <span className="muted">{t.doseNone}</span>
+                : doseLocal ? t.doseTakenLabel : t.doseMissedLabel}
+            </div>
+            <div className="row tight">
+              <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === true} onClick={() => setDose(true)}>{t.doseTaken}</button>
+              <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === false} onClick={() => setDose(false)}>{t.doseMissed}</button>
+              {doseLocal !== null && (
+                <button className="btn ghost" disabled={doseBusy} onClick={() => setDose(null)}>{t.doseClear}</button>
+              )}
+            </div>
+            {doseErr && <div className="err">{doseErr}</div>}
           </div>
-        </div>
 
-        <div className="day-info">
-          <div className="day-info-label">{t.dayDose}</div>
-          <div className="day-info-value">
-            {doseLocal === null ? <span className="muted">{t.doseNone}</span>
-              : doseLocal ? t.doseTakenLabel : t.doseMissedLabel}
+          <div className="day-info">
+            <div className="day-info-label">{t.daySex}</div>
+            <div className="day-info-value">
+              {sexLocal === null ? <span className="muted">{t.sexNone}</span>
+                : sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel}
+              {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
+            </div>
+            <div className="row tight">
+              <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })}>{t.sexProtected}</button>
+              <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })}>{t.sexUnprotected}</button>
+              {sexLocal !== null && (
+                <button className="btn ghost" disabled={sexBusy} onClick={() => saveSex(null)}>{t.sexClear}</button>
+              )}
+            </div>
+            {sexErr && <div className="err">{sexErr}</div>}
           </div>
-          <div className="row tight">
-            <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
-              aria-pressed={doseLocal === true} onClick={() => setDose(true)}>{t.doseTaken}</button>
-            <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
-              aria-pressed={doseLocal === false} onClick={() => setDose(false)}>{t.doseMissed}</button>
-            {doseLocal !== null && (
-              <button className="btn ghost" disabled={doseBusy} onClick={() => setDose(null)}>{t.doseClear}</button>
-            )}
-          </div>
-          {doseErr && <div className="err">{doseErr}</div>}
-        </div>
-
-        <div className="day-info">
-          <div className="day-info-label">{t.daySex}</div>
-          <div className="day-info-value">
-            {sexLocal === null ? <span className="muted">{t.sexNone}</span>
-              : sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel}
-            {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
-          </div>
-          <div className="row tight">
-            <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
-              aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })}>{t.sexProtected}</button>
-            <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
-              aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })}>{t.sexUnprotected}</button>
-            {sexLocal !== null && (
-              <button className="btn ghost" disabled={sexBusy} onClick={() => saveSex(null)}>{t.doseClear}</button>
-            )}
-          </div>
-          {sexErr && <div className="err">{sexErr}</div>}
         </div>
 
         </div>

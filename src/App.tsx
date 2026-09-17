@@ -118,16 +118,15 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="top" style={tab === 'home' ? { display: 'none' } : undefined}>
+      <div className="top">
         <h1>{t.appName}</h1>
-        <button className="icon-btn" onClick={doLogout}>{t.logout}</button>
       </div>
 
       {err && <div className="err">{err}</div>}
 
       <UpdateBanner />
 
-      {bcMode && <div className="banner warn">{t.bcSuppressed} — {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
+      {bcMode && <div className="banner warn">{t.bcSuppressed}: {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
       {ecHit && (
         <div className="banner warn ec-banner">
           <div>
@@ -148,7 +147,6 @@ export default function App() {
           me={me}
           onOpenCalendar={() => setTab('calendar')}
           onLogToday={(d) => { const dt = new Date(d + 'T00:00:00Z'); setYm({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() }); setSel(d); setLogDate(d); }}
-          onLogout={doLogout}
           onSaved={setMe}
         />
       )}
@@ -163,14 +161,20 @@ export default function App() {
             </div>
             <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} />
             <div className="legend">
-              <span><i className="chip period" />{t.legendPeriod}</span>
-              <span><i className="chip fertile" />{t.legendFertile}</span>
-              <span><i className="chip ovulation" />{t.legendOvulation}</span>
-              <span><i className="chip logged" />{t.legendPredicted}</span>
-              <span><i className="chip spot" />{t.legendSpotting}</span>
-              <span><i className="chip dose-taken" />{t.legendDoseTaken}</span>
-              <span><i className="chip dose-missed" />{t.legendDoseMissed}</span>
-              <span><i className="chip sex" />{t.legendSex}</span>
+              <div className="legend-group">
+                <span><i className="chip logged" />{t.legendPeriod}</span>
+                <span><i className="chip spot" />{t.legendSpotting}</span>
+                <span><i className="chip sex" />{t.legendSex}</span>
+              </div>
+              <div className="legend-group">
+                <span><i className="chip period" />{t.legendPredicted}</span>
+                <span><i className="chip fertile" />{t.legendFertile}</span>
+                <span><i className="chip ovulation" />{t.legendOvulation}</span>
+              </div>
+              <div className="legend-group">
+                <span><i className="chip dose-taken" />{t.legendDoseTaken}</span>
+                <span><i className="chip dose-missed" />{t.legendDoseMissed}</span>
+              </div>
             </div>
           </div>
 
@@ -179,7 +183,7 @@ export default function App() {
             {me.prediction.next ? (
               <div className="pred">
                 <span className="big">{fmt(me.prediction.next)}</span>
-                <span className="badge">{fmt(me.prediction.lo!)} – {fmt(me.prediction.hi!)}</span>
+                <span className="badge">{fmt(me.prediction.lo!)} sampai {fmt(me.prediction.hi!)}</span>
               </div>
             ) : (
               <div className="muted">{t.notEnough}</div>

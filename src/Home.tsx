@@ -28,11 +28,10 @@ const GRAD: Record<Phase, string> = {
 };
 const LIGHT: Record<Phase, boolean> = { period: true, fertile: true, ovulation: true, pms: true, neutral: false, bc: false };
 
-export default function Home({ me, onOpenCalendar, onLogToday, onLogout, onSaved }: {
+export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
   me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
-  onLogout: () => void;
   onSaved: (s: any) => void;
 }) {
   const today = me.today ?? localDate();
@@ -82,7 +81,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onLogout, onSaved
     subtitle = `${Math.abs(st.daysToNext)} ${t.homeDays}`;
   } else if (st.daysToNext !== null) {
     title = <><span style={{ fontSize: 15, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t.homeNeutral}</span><span style={{ fontSize: 56, fontWeight: 800, lineHeight: 1 }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 8 }}>{t.homeDays}</span></>;
-    subtitle = me.prediction.next ? `${fmtShort(me.prediction.next)} · ${fmtShort(me.prediction.lo!)}–${fmtShort(me.prediction.hi!)}` : '';
+    subtitle = me.prediction.next ? `${fmtShort(me.prediction.next)} · ${fmtShort(me.prediction.lo!)} sampai ${fmtShort(me.prediction.hi!)}` : '';
   } else {
     title = <>{t.homeNoData}</>;
   }
@@ -96,13 +95,9 @@ export default function Home({ me, onOpenCalendar, onLogToday, onLogout, onSaved
   return (
     <div className="home-hero-wrap">
       <div className="hero" style={{ background: GRAD[st.phase], color: fg }}>
-        {/* The app name and logout live inside the hero so the gradient reaches
-            the top of the screen. A separate header bar above it left a strip
-            that was not part of the phase colour. */}
-        <div className="hero-top">
-          <span className="hero-app">{t.appName}</span>
-          <button className="hero-logout" onClick={onLogout}>{t.logout}</button>
-        </div>
+        {/* Full-bleed: the .app wrapper's 16px side padding is cancelled so the
+            gradient reaches both edges. The app name and logout live in the
+            shared header above, so the hero carries only phase status. */}
         <div className="hero-body">
           <div className="hero-title">{title}</div>
           {subtitle && <div className="hero-sub" style={{ color: sub }}>{subtitle}</div>}

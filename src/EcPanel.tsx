@@ -94,20 +94,29 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
           </div>
 
           {/* Existing events, so the user can see and correct the history
-              instead of only being able to add a new dose. */}
+              instead of only being able to add a new dose. Each row is one tap
+              target: the button fills the row, so the affordance is the row
+              rather than a small date chip inside it. Selected row is marked by
+              the shared grey fill, matching the app's other selected states. */}
           {events.length > 0 && (
             <div className="field">
               <label>{t.ecHistory}</label>
               <ul className="list">
                 {events.map((ev) => (
-                  <li key={ev.id} className={ev.id === editing?.id ? 'ec-row active' : 'ec-row'}>
-                    <button className="btn" style={{ padding: '6px 12px' }} onClick={() => loadInto(ev)} disabled={busy}>
-                      {toDateInput(ev.intake_at)}
+                  <li key={ev.id} className="ec-row-item">
+                    <button
+                      type="button"
+                      className={`ec-row ${ev.id === editing?.id ? 'on' : ''}`}
+                      onClick={() => loadInto(ev)}
+                      disabled={busy}
+                      aria-pressed={ev.id === editing?.id}
+                    >
+                      <span className="ec-row-date">{toDateInput(ev.intake_at)}</span>
+                      <span className="meta">
+                        {LABELS[ev.ec_type] ?? ev.ec_type}
+                        {ev.upsi_at ? ` · ${t.ecUpsi}: ${toDateInput(ev.upsi_at)}` : ''}
+                      </span>
                     </button>
-                    <span className="meta">
-                      {LABELS[ev.ec_type] ?? ev.ec_type}
-                      {ev.upsi_at ? ` · ${t.ecUpsi}: ${toDateInput(ev.upsi_at)}` : ''}
-                    </span>
                   </li>
                 ))}
               </ul>

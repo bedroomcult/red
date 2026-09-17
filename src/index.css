@@ -69,11 +69,6 @@ body {
 /* header */
 .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
 .top h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
-.icon-btn {
-  border: none; background: var(--card); border-radius: 12px; padding: 8px 12px;
-  font: inherit; font-size: 13px; color: var(--muted); cursor: pointer;
-  box-shadow: 0 1px 2px rgba(0,0,0,.04);
-}
 
 /* cards */
 .card {
@@ -109,7 +104,6 @@ body {
   transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
 }
 .dnum:active { transform: scale(.88); }
-.dnum.today { box-shadow: inset 0 0 0 2px var(--muted); }
 .dnum.today { box-shadow: inset 0 0 0 2px var(--muted); }
 .dnum.dim { color: var(--muted); opacity: .55; }
 .dnum.pred-period { border-color: var(--rose); }
@@ -151,7 +145,11 @@ body {
 .dnum.sex.logged.fertile .heart { stroke: #fff; }
 
 /* legend */
-.legend { display: flex; gap: 14px; flex-wrap: wrap; margin-top: 14px; font-size: 12px; color: var(--muted); }
+/* Legend: three families (log state, prediction, tracked events). Each family
+   hugs internally and separates from the next, so proximity carries the
+   grouping instead of a divider rule. */
+.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 12px; color: var(--muted); }
+.legend-group { display: flex; flex-wrap: wrap; gap: 8px 14px; }
 .legend span { display: flex; align-items: center; gap: 5px; }
 .chip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid transparent; }
 .chip.period { border-color: var(--rose); }
@@ -178,6 +176,7 @@ body {
   transition: background .2s ease, color .2s ease;
 }
 .badge.green { background: var(--green-soft); color: var(--green); }
+.badge.amber { background: var(--amber); color: var(--amber-line); }
 .badge.grey { background: var(--grey-bg); color: var(--muted); }
 
 /* banner */
@@ -198,8 +197,20 @@ body {
 .ec-banner .ec-hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .ec-banner .ec-when { color: var(--muted); font-weight: 400; }
 .ec-banner .row { margin-top: 8px; }
-.ec-row { display: flex; align-items: center; gap: 10px; }
-.ec-row.active { background: var(--grey-bg); border-radius: 10px; }
+/* EC history rows: the whole row is the tap target, so the button fills the
+   list item instead of being a small date chip inside it. The list item's own
+   padding is dropped; the button supplies it so the fill spans the row. */
+.list li.ec-row-item { padding: 0; }
+.ec-row {
+  display: flex; align-items: center; gap: 10px; width: 100%;
+  border: none; background: none; font: inherit; color: inherit;
+  text-align: left; cursor: pointer; padding: 10px; border-radius: 10px;
+  transition: background .18s ease;
+}
+.ec-row.on { background: var(--grey-bg); }
+.ec-row:disabled { opacity: .5; }
+.ec-row .ec-row-date { font-weight: 600; font-size: 14px; color: var(--ink); }
+.ec-row .meta { color: var(--muted); font-size: 12px; }
 
 /* history */
 .list { list-style: none; margin: 0; padding: 0; }
@@ -225,7 +236,7 @@ button { font-family: inherit; }
   transition: transform .12s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
 }
 .btn:active { transform: scale(.95); }
-.btn:focus-visible, .tab:focus-visible, .nav-btn:focus-visible, .icon-btn:focus-visible {
+.btn:focus-visible, .tab:focus-visible, .nav-btn:focus-visible {
   outline: 2px solid var(--rose); outline-offset: 2px;
 }
 .btn.primary { background: #c9333a; color: #fff; }
@@ -364,11 +375,16 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical;
 }
 
-/* day info sheet: read-only summary rows, not a form */
+/* Day info sheet: read-only summary rows, not a form. Related rows sit inside a
+   .day-group; a group is separated from the next by a rule and extra space, so
+   proximity groups the rows and a single line separates the families. */
 .day-info {
-  border-top: 1px solid var(--line); padding: 11px 0;
+  padding: 10px 0;
 }
-.day-info:first-of-type { border-top: 0; }
+.day-group + .day-group {
+  border-top: 1px solid var(--line);
+  margin-top: 14px; padding-top: 4px;
+}
 .day-info-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 .day-info-value { font-size: 14px; line-height: 1.5; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
@@ -377,9 +393,6 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   background: var(--rose-soft); color: var(--rose); font-weight: 600;
 }
 .sheet .row { margin-top: 16px; }
-
-/* Day sheet and medication rows reuse the sheet body/action layout. */
-.sheet .day-info:last-of-type { padding-bottom: 4px; }
 
 /* bottom nav */
 .tabbar {
@@ -403,22 +416,6 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   min-height: 240px; display: flex; flex-direction: column;
   transition: background .4s ease;
 }
-.hero-top {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 28px;
-}
-.hero-app { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
-.hero-logout {
-  border: none; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
-  padding: 7px 14px; border-radius: 999px;
-  /* Tinted from the hero text colour so it works on every phase gradient. */
-  background: color-mix(in srgb, currentColor 16%, transparent);
-  color: inherit;
-}
-@supports not (background: color-mix(in srgb, red 10%, transparent)) {
-  .hero-logout { background: rgba(255,255,255,.22); }
-}
-.hero-logout:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
 .hero-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
 .hero-title { font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em; }
 .hero-sub { margin-top: 10px; font-size: 14px; line-height: 1.5; }

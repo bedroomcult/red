@@ -69,7 +69,7 @@ export async function syncReminders(p: ReminderPrefs, nextPeriod: string | null)
   const jobs: Scheduled[] = [];
 
   if (p.pillEnabled) {
-    jobs.push({ id: ID_PILL, title: 'Waktunya minum pil KB', body: 'Jangan lupa minum pil hari ini.', at: atToday(p.pillTime) });
+    jobs.push({ id: ID_PILL, title: 'Waktunya minum pil KB', body: `Pil KB ${p.pillTime}. Ketuk untuk mencatat di aplikasi.`, at: atToday(p.pillTime) });
   }
   if (p.periodEnabled && nextPeriod) {
     // 2 days before the predicted window starts.

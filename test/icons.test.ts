@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync, existsSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 
 // The app icon is generated, not committed as a binary: android/ is not tracked,
 // so CI regenerates the launcher icons on every build. If the generator throws,
 // the APK silently ships Capacitor's default icon.
-const ROOT = new URL('..', import.meta.url).pathname;
+//
+// fileURLToPath, not URL.pathname: on Windows pathname yields "/C:/...", and
+// prefixing that to a relative path produced "C:\C:\...", so every read failed.
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 
 function pngSize(file: string): { w: number; h: number } {
   const d = readFileSync(file);

@@ -1,11 +1,15 @@
 import { describe, it, expect } from 'vitest';
 import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 
 // The calendar renders the fertile window as a solid green ring and the peak as
 // a dashed one. Both are pure CSS driven by the class list, so the classes and
 // their styles are the contract — a rename on one side would silently drop the
 // marker rather than fail a typecheck.
-const ROOT = new URL('..', import.meta.url).pathname;
+//
+// fileURLToPath, not URL.pathname: on Windows pathname yields "/C:/...", and
+// prefixing that to a relative path produced "C:\C:\...", so every read failed.
+const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CAL = readFileSync(ROOT + 'src/Calendar.tsx', 'utf8');
 const CSS = readFileSync(ROOT + 'src/index.css', 'utf8');
 

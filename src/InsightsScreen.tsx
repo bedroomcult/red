@@ -26,7 +26,7 @@ export default function InsightsScreen({ ins }: { ins: Insights }) {
               )}
             </div>
             <ul className="list" style={{ marginTop: 12 }}>
-              <li><span className="date">{t.insRange}</span><span className="meta" style={{ marginLeft: 'auto' }}>{ins.shortest}–{ins.longest} {t.insDays}</span></li>
+              <li><span className="date">{t.insRange}</span><span className="meta" style={{ marginLeft: 'auto' }}>{ins.shortest} sampai {ins.longest} {t.insDays}</span></li>
               <li><span className="date">{t.insCount}</span><span className="meta" style={{ marginLeft: 'auto' }}>{ins.count}</span></li>
             </ul>
           </>
