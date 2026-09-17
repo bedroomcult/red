@@ -5,6 +5,8 @@ import { insights as clientInsights } from './insights';
 import { insights as serverInsights } from '../functions/_insights';
 import { localDate as clientLocalDate, isIsoDate as clientIsIsoDate } from './today';
 import { localDate as serverLocalDate, isIsoDate as serverIsIsoDate } from '../functions/_today';
+import { periodToExtend as clientPeriodToExtend } from './cycle';
+import { periodToExtend as serverPeriodToExtend } from '../functions/_cycle';
 
 // functions/ must be self-contained for the Pages bundler, so predict.ts and
 // insights.ts each exist twice. The prediction is computed on both client and
@@ -80,4 +82,26 @@ describe('lib/today.ts and functions/_today.ts stay in sync', () => {
       expect(serverIsIsoDate(v)).toBe(clientIsIsoDate(v));
     }
   });
+});
+
+// lib/cycle.ts is duplicated as functions/_cycle.ts for the same bundler reason
+// as _predict.ts. The merge rule must not drift, or a bleed would merge on the
+// server but paint as two rows on the client.
+describe('lib/cycle.ts and functions/_cycle.ts stay in sync', () => {
+  const sets: { name: string; periods: any[]; start: string; len: number }[] = [
+    { name: 'start inside the range', periods: [{ start_date: '2026-09-01', end_date: null, type: 'menstruation' }], start: '2026-09-03', len: 5 },
+    { name: 'start within the gap', periods: [{ start_date: '2026-09-01', end_date: null, type: 'menstruation' }], start: '2026-09-07', len: 5 },
+    { name: 'start beyond the gap', periods: [{ start_date: '2026-09-01', end_date: null, type: 'menstruation' }], start: '2026-09-09', len: 5 },
+    { name: 'finished period is not merged', periods: [{ start_date: '2026-09-01', end_date: '2026-09-05', type: 'menstruation' }], start: '2026-09-07', len: 5 },
+    { name: 'longer period_len widens the gap', periods: [{ start_date: '2026-09-01', end_date: null, type: 'menstruation' }], start: '2026-09-10', len: 8 },
+    { name: 'no periods', periods: [], start: '2026-09-07', len: 5 },
+  ];
+
+  for (const c of sets) {
+    it(c.name, () => {
+      expect(serverPeriodToExtend(c.periods, c.start, c.len)).toEqual(
+        clientPeriodToExtend(c.periods, c.start, c.len)
+      );
+    });
+  }
 });

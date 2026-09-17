@@ -1,5 +1,6 @@
 import { requireUser, buildState, uid, jsonResponse } from '../_lib';
 import { isIsoDate } from '../_dates';
+import { periodToExtend } from '../_cycle';
 
 const json = jsonResponse;
 
@@ -29,9 +30,25 @@ export async function onRequestPost({ request, env }: any) {
     ).bind(b.end_date ?? null, b.flow ?? null, type, b.id, user.id).run();
     if (!res.meta?.changes) return json({ error: 'not found' }, 404);
   } else {
-    await env.DB.prepare(
-      'INSERT INTO periods (id,user_id,start_date,end_date,flow,type) VALUES (?,?,?,?,?,?)'
-    ).bind(uid(), user.id, b.start_date, b.end_date ?? null, b.flow ?? null, type).run();
+    // A start within MERGE_GAP_DAYS of an ongoing period extends that period
+    // instead of adding a row. Otherwise one continuous bleed becomes two
+    // rows, which paints overlapping blocks and resets the cycle-day counter.
+    const profile: any = await env.DB.prepare('SELECT period_len FROM users WHERE id=?').bind(user.id).first();
+    const periodLen = profile?.period_len ?? 5;
+    const { results: existing } = await env.DB.prepare(
+      'SELECT id,start_date,end_date,flow,type FROM periods WHERE user_id=? ORDER BY start_date'
+    ).bind(user.id).all();
+    const target = type === 'menstruation' ? periodToExtend(existing as any[], b.start_date, periodLen) : undefined;
+    if (target) {
+      // Extend to the later of the two start dates, so the episode spans both.
+      const end = b.start_date > target.start_date ? b.start_date : target.start_date;
+      await env.DB.prepare('UPDATE periods SET end_date=? WHERE id=? AND user_id=?')
+        .bind(end, target.id, user.id).run();
+    } else {
+      await env.DB.prepare(
+        'INSERT INTO periods (id,user_id,start_date,end_date,flow,type) VALUES (?,?,?,?,?,?)'
+      ).bind(uid(), user.id, b.start_date, b.end_date ?? null, b.flow ?? null, type).run();
+    }
   }
   return json(await buildState(env, user.id, request));
 }

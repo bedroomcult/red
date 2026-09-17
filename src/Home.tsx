@@ -4,6 +4,8 @@ import { cycleStatus, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
+import { needsEndPrompt } from '../lib/cycle';
+import OngoingPrompt from './OngoingPrompt';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -25,16 +27,19 @@ const GRAD: Record<Phase, string> = {
 };
 const LIGHT: Record<Phase, boolean> = { period: true, fertile: true, ovulation: true, pms: true, neutral: false, bc: false };
 
-export default function Home({ me, onOpenCalendar, onLogToday }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string };
+export default function Home({ me, onOpenCalendar, onLogToday, onLogout, onSaved }: {
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
+  onLogout: () => void;
+  onSaved: (s: any) => void;
 }) {
   const today = me.today ?? localDate();
   const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
   const ranges = me.periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
   const bcMode = me.prediction.confidence === 'suppressed';
-  const st = cycleStatus(today, starts, ranges, me.prediction, bcMode);
+  const periodLen = me.profile?.period_len ?? 5;
+  const st = cycleStatus(today, starts, ranges, me.prediction, bcMode, periodLen);
   const [syms, setSyms] = useState<string[]>(me.todaySymptoms ?? []);
 
   async function toggle(kind: string) {
@@ -81,24 +86,35 @@ export default function Home({ me, onOpenCalendar, onLogToday }: {
     title = <>{t.homeNoData}</>;
   }
 
+  // The ongoing period that has reached its expected length, if any. The user is
+  // asked whether it is still going rather than the app guessing either way.
+  const ongoing = me.periods.find(
+    (p) => p.type === 'menstruation' && !p.end_date && needsEndPrompt(p, periodLen, today)
+  );
+
   return (
-    <div style={{ margin: '0 -16px' }}>
-      <div style={{
-        background: GRAD[st.phase], color: fg, borderRadius: '0 0 28px 28px',
-        padding: '40px 24px 32px', minHeight: 240, display: 'flex',
-        flexDirection: 'column', justifyContent: 'center', position: 'relative',
-        transition: 'background .4s ease',
-      }}>
-        <div style={{ fontSize: 24, fontWeight: 700, lineHeight: 1.25, letterSpacing: '-0.02em' }}>{title}</div>
-        {subtitle && <div style={{ color: sub, marginTop: 10, fontSize: 14, lineHeight: 1.5 }}>{subtitle}</div>}
-        {st.cycleDay !== null && st.phase !== 'period' && (
-          <div style={{ color: sub, marginTop: 18, fontSize: 12, fontWeight: 600, letterSpacing: '.04em', textTransform: 'uppercase' }}>
-            {t.homeCycleDay} {st.cycleDay}
-          </div>
-        )}
+    <div className="home-hero-wrap">
+      <div className="hero" style={{ background: GRAD[st.phase], color: fg }}>
+        {/* The app name and logout live inside the hero so the gradient reaches
+            the top of the screen. A separate header bar above it left a strip
+            that was not part of the phase colour. */}
+        <div className="hero-top">
+          <span className="hero-app">{t.appName}</span>
+          <button className="hero-logout" onClick={onLogout}>{t.logout}</button>
+        </div>
+        <div className="hero-body">
+          <div className="hero-title">{title}</div>
+          {subtitle && <div className="hero-sub" style={{ color: sub }}>{subtitle}</div>}
+          {st.cycleDay !== null && st.phase !== 'period' && (
+            <div className="hero-meta" style={{ color: sub }}>
+              {t.homeCycleDay} {st.cycleDay}
+            </div>
+          )}
+        </div>
       </div>
 
-      <div style={{ padding: '16px 16px 0' }}>
+      <div className="home-lower">
+        {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} />}
         {(st.phase === 'period' || st.phase === 'pms' || st.phase === 'neutral') && (
           <div className="card">
             <h2>{t.homeSymptomsToday}</h2>

@@ -118,7 +118,7 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="top" style={tab === 'home' ? { marginBottom: 0 } : undefined}>
+      <div className="top" style={tab === 'home' ? { display: 'none' } : undefined}>
         <h1>{t.appName}</h1>
         <button className="icon-btn" onClick={doLogout}>{t.logout}</button>
       </div>
@@ -148,6 +148,8 @@ export default function App() {
           me={me}
           onOpenCalendar={() => setTab('calendar')}
           onLogToday={(d) => { const dt = new Date(d + 'T00:00:00Z'); setYm({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() }); setSel(d); setLogDate(d); }}
+          onLogout={doLogout}
+          onSaved={setMe}
         />
       )}
 

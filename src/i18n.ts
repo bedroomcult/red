@@ -221,4 +221,9 @@ export const t = {
   updateTapInstall: 'ketuk untuk mengunduh dan memasang',
   updateNow: 'Perbarui',
   updateLater: 'Nanti',
+  // ongoing period prompt
+  ongoingTitle: 'Masih haid?',
+  ongoingBody: 'Haid Anda sudah {n} hari dan melewati perkiraan panjang haid. Masih berlanjut?',
+  ongoingEnded: 'Sudah selesai',
+  ongoingStill: 'Masih haid',
 } as const;

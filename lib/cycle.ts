@@ -23,6 +23,67 @@ export function periodDays(p: { start_date: string; end_date: string | null }, d
   return out;
 }
 
+// An ongoing period (end_date null) has no known length. Painting it with the
+// user's period_len gives a bounded, honest guess; the UI then asks whether it
+// is still going instead of either truncating a long bleed or painting forever.
+// `today` bounds the guess so a period started weeks ago is not painted past
+// today.
+export function ongoingPeriodDays(
+  p: { start_date: string; end_date: string | null },
+  periodLen: number,
+  today: string
+): string[] {
+  const s = parse(p.start_date);
+  const byLen = s + (periodLen - 1) * DAY;
+  const t = parse(today);
+  const e = Math.min(byLen, t);
+  const out: string[] = [];
+  for (let d = s; d <= e; d += DAY) out.push(iso(d));
+  return out;
+}
+
+// Two bleeds within this many days are treated as one episode, so logging a new
+// start during (or right after) an ongoing period extends it rather than
+// creating a second row. Two rows would paint overlapping blocks, reset the
+// cycle-day counter mid-bleed, and split one episode across the history.
+// ponytail: fixed gap, not user-configurable — 2 days catches a one-day pause
+// without swallowing a genuinely separate episode.
+export const MERGE_GAP_DAYS = 2;
+
+// The logged period a new start date should extend, if any. Only an ongoing
+// period (no end_date) whose range reaches within MERGE_GAP_DAYS of the new
+// start qualifies; a finished period followed by a new bleed is a new cycle.
+export function periodToExtend<T extends { start_date: string; end_date: string | null; type: string }>(
+  periods: T[],
+  startDate: string,
+  periodLen: number
+): T | undefined {
+  const s = parse(startDate);
+  return periods.find((p) => {
+    if (p.type !== 'menstruation') return false;
+    if (p.end_date) return false;
+    const ps = parse(p.start_date);
+    if (s < ps) return false;
+    // End of the expected range. A start inside the range gives a negative gap,
+    // which is still <= the threshold, so it merges too.
+    const paintedEnd = ps + (periodLen - 1) * DAY;
+    const gap = Math.round((s - paintedEnd) / DAY);
+    return gap <= MERGE_GAP_DAYS;
+  });
+}
+
+// True when an ongoing period has reached its expected length and the user has
+// not confirmed the end. The UI prompts on this.
+export function needsEndPrompt(
+  p: { start_date: string; end_date: string | null },
+  periodLen: number,
+  today: string
+): boolean {
+  if (p.end_date) return false;
+  const elapsed = Math.round((parse(today) - parse(p.start_date)) / DAY) + 1;
+  return elapsed >= periodLen;
+}
+
 // Logged period whose range (start..end, or start+defaultDays-1) contains date.
 // Shared by the day sheet, the log sheet and the calendar so all three agree on
 // what "this day is inside a period" means.
@@ -66,7 +127,7 @@ export function dateStale(
   return date < lastStart;
 }
 
-export function cycleStatus(today: string, periodStarts: string[], periodRanges: { start_date: string; end_date: string | null }[], prediction: { next: string | null; ov: string | null; confidence: string } | null, bcMode: boolean): CycleStatus {
+export function cycleStatus(today: string, periodStarts: string[], periodRanges: { start_date: string; end_date: string | null }[], prediction: { next: string | null; ov: string | null; confidence: string } | null, bcMode: boolean, periodLen = 5): CycleStatus {
   if (bcMode) return { phase: 'bc', cycleDay: null, daysToNext: null, ov: null };
 
   const t = parse(today);
@@ -75,11 +136,13 @@ export function cycleStatus(today: string, periodStarts: string[], periodRanges:
   const last = past.length ? past[past.length - 1] : null;
   const cycleDay = last ? Math.floor((t - parse(last)) / DAY) + 1 : null;
 
-  // In a logged period range? (start .. end, default 5 days if no end yet)
+  // In a logged period range? An ongoing period uses the user's period_len, and
+  // is bounded by today, rather than the old hardcoded 5 days.
   for (const r of periodRanges) {
-    const s = parse(r.start_date);
-    const e = r.end_date ? parse(r.end_date) : s + 4 * DAY;
-    if (t >= s && t <= e) return { phase: 'period', cycleDay, daysToNext: null, ov: prediction?.ov ?? null };
+    const days = r.end_date
+      ? periodDays({ start_date: r.start_date, end_date: r.end_date })
+      : ongoingPeriodDays({ start_date: r.start_date, end_date: null }, periodLen, today);
+    if (days.includes(today)) return { phase: 'period', cycleDay, daysToNext: null, ov: prediction?.ov ?? null };
   }
 
   const ov = prediction?.ov ?? null;
@@ -120,4 +183,25 @@ if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('cycle.ts')) {
   console.assert(periodDays({ start_date: '2026-01-01', end_date: '2026-01-03' }).length === 3, 'periodDays');
 
   console.log('cycle.ts self-check passed');
+}
+
+// ponytail: assert-based self-check for the ongoing-period helpers, run with
+// `node --experimental-strip-types lib/cycle.ts`.
+if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('cycle.ts')) {
+  const D = (d: string) => d;
+  // ongoingPeriodDays is bounded by period_len and by today.
+  console.assert(ongoingPeriodDays({ start_date: '2026-09-01', end_date: null }, 5, '2026-09-20').length === 5, 'len cap');
+  console.assert(ongoingPeriodDays({ start_date: '2026-09-01', end_date: null }, 5, '2026-09-03').length === 3, 'today cap');
+  console.assert(ongoingPeriodDays({ start_date: '2026-09-01', end_date: null }, 5, '2026-09-20').at(-1) === '2026-09-05', 'last day');
+  // needsEndPrompt fires exactly at period_len.
+  console.assert(needsEndPrompt({ start_date: '2026-09-01', end_date: null }, 5, '2026-09-04') === false, 'before');
+  console.assert(needsEndPrompt({ start_date: '2026-09-01', end_date: null }, 5, '2026-09-05') === true, 'at');
+  console.assert(needsEndPrompt({ start_date: '2026-09-01', end_date: '2026-09-05' }, 5, '2026-09-20') === false, 'closed');
+  // periodToExtend merges a nearby start into an ongoing period.
+  const p = [{ start_date: '2026-09-01', end_date: null, type: 'menstruation' }];
+  console.assert(periodToExtend(p, '2026-09-03', 5)?.start_date === '2026-09-01', 'merge inside');
+  console.assert(periodToExtend(p, '2026-09-07', 5)?.start_date === '2026-09-01', 'merge gap');
+  console.assert(periodToExtend(p, '2026-09-08', 5) === undefined, 'too far');
+  console.assert(periodToExtend([{ start_date: '2026-09-01', end_date: '2026-09-05', type: 'menstruation' }], '2026-09-07', 5) === undefined, 'closed not merged');
+  console.log('ongoing-period self-check passed');
 }

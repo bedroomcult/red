@@ -5,7 +5,7 @@
 // NOTE: public/ is copied verbatim by Vite and is NOT typechecked. This file
 // must stay valid plain JavaScript — a stray `as` cast here makes the browser
 // refuse to parse the worker and registration fails silently.
-const CACHE = 'pt-v5';
+const CACHE = 'pt-v6';
 
 self.addEventListener('install', (e) => e.waitUntil(self.skipWaiting()));
 

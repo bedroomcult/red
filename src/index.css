@@ -390,8 +390,39 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   html[data-theme="system"] .tabbar { background: rgba(28,28,32,.92); }
 }
 
-/* phase hero */
-.hero { transition: background .5s ease; }
+/* phase hero. Full-bleed: the .app wrapper's 16px side padding is cancelled so
+   the gradient reaches both edges and the top of the screen. */
+.home-hero-wrap { margin: 0 -16px; }
+.hero {
+  border-radius: 0 0 28px 28px;
+  padding: calc(12px + env(safe-area-inset-top)) 24px 32px;
+  min-height: 240px; display: flex; flex-direction: column;
+  transition: background .4s ease;
+}
+.hero-top {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 28px;
+}
+.hero-app { font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.hero-logout {
+  border: none; cursor: pointer; font: inherit; font-size: 13px; font-weight: 600;
+  padding: 7px 14px; border-radius: 999px;
+  /* Tinted from the hero text colour so it works on every phase gradient. */
+  background: color-mix(in srgb, currentColor 16%, transparent);
+  color: inherit;
+}
+@supports not (background: color-mix(in srgb, red 10%, transparent)) {
+  .hero-logout { background: rgba(255,255,255,.22); }
+}
+.hero-logout:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.hero-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
+.hero-title { font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em; }
+.hero-sub { margin-top: 10px; font-size: 14px; line-height: 1.5; }
+.hero-meta {
+  margin-top: 18px; font-size: 12px; font-weight: 600;
+  letter-spacing: .04em; text-transform: uppercase;
+}
+.home-lower { padding: 16px 16px 0; }
 
 /* spinner */
 .spinner {

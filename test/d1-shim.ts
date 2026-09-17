@@ -15,6 +15,11 @@
 //   SELECT id,pill_type,regimen,pack_start_date FROM pill_regimens WHERE user_id=? ORDER BY pack_start_date DESC LIMIT 1
 //   SELECT id,ec_type,intake_at,upsi_at FROM ec_events WHERE user_id=? AND intake_at>? ORDER BY intake_at DESC
 //   SELECT date,taken FROM dose_logs WHERE user_id=? AND date>=? ORDER BY date
+//   SELECT period_len FROM users WHERE id=?
+//   INSERT INTO periods (id,user_id,start_date,end_date,flow,type) VALUES (?,?,?,?,?,?)
+//   UPDATE periods SET end_date=? WHERE id=? AND user_id=?
+//   UPDATE periods SET end_date=?, flow=?, type=? WHERE id=? AND user_id=?
+//   DELETE FROM periods WHERE id=? AND user_id=?
 //   SELECT date,protected FROM sex_events WHERE user_id=? AND date>=? ORDER BY date
 //   DELETE FROM sex_events WHERE user_id=? AND date=?
 //   INSERT INTO sex_events (id,user_id,date,protected,note,created_at) VALUES (?,?,?,?,?,?)
@@ -89,6 +94,37 @@ export function makeDb() {
       return { meta: { changes: 1 } };
     }
 
+    if (s.startsWith('INSERT INTO PERIODS')) {
+      const [id, user_id, start_date, end_date, flow, type] = args;
+      periods.push({ id, user_id, start_date, end_date, flow, type });
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('UPDATE PERIODS SET END_DATE=? WHERE ID=?')) {
+      const [end_date, id, user_id] = args;
+      const row = periods.find((p) => p.id === id && p.user_id === user_id);
+      if (!row) return { meta: { changes: 0 } };
+      row.end_date = end_date;
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('UPDATE PERIODS SET END_DATE=?, FLOW=?, TYPE=?')) {
+      const [end_date, flow, type, id, user_id] = args;
+      const row = periods.find((p) => p.id === id && p.user_id === user_id);
+      if (!row) return { meta: { changes: 0 } };
+      Object.assign(row, { end_date, flow, type });
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('DELETE FROM PERIODS')) {
+      const [id, user_id] = args;
+      const before = periods.length;
+      for (let i = periods.length - 1; i >= 0; i--) {
+        if (periods[i].id === id && periods[i].user_id === user_id) periods.splice(i, 1);
+      }
+      return { meta: { changes: before - periods.length } };
+    }
+
     if (s.startsWith('DELETE FROM SEX_EVENTS')) {
       const [user_id, date] = args;
       const before = sex.length;
@@ -158,6 +194,11 @@ export function makeDb() {
     if (s.startsWith('SELECT DISPLAY_NAME, CYCLE_LEN, PERIOD_LEN FROM USERS WHERE ID=?')) {
       const [id] = args;
       return users.find((u) => u.id === id) ?? null;
+    }
+    if (s.startsWith('SELECT PERIOD_LEN FROM USERS WHERE ID=?')) {
+      const [id] = args;
+      const u = users.find((x) => x.id === id);
+      return u ? { period_len: u.period_len ?? null } : null;
     }
     if (s.startsWith('SELECT ID,PILL_TYPE,REGIMEN,PACK_START_DATE FROM PILL_REGIMENS')) {
       const [user_id] = args;
