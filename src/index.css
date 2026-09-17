@@ -258,6 +258,11 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 /* auth */
 .auth { padding-top: 28px; }
 .auth-hero { text-align: center; margin-bottom: 22px; animation: rise .4s ease both; }
+.ob-mark {
+  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: 22px;
+  display: grid; place-items: center; color: var(--rose);
+  background: var(--rose-soft);
+}
 .auth-mark {
   width: 68px; height: 68px; margin: 0 auto 14px; border-radius: 22px;
   display: grid; place-items: center; color: #fff;
@@ -406,8 +411,10 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   transition: color .18s ease, transform .12s ease;
 }
 .tab:active { transform: scale(.92); }
-.tab .ico { font-size: 19px; transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
-.tab.active .ico { transform: translateY(-1px) scale(1.12); }
+/* The icon is an inline SVG using currentColor, so the active tab colours it via
+   .tab.active { color }. Emoji could not be recoloured reliably across OEMs. */
+.tab svg { transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
+.tab.active svg { transform: translateY(-1px) scale(1.12); }
 .tab.active { color: var(--rose); }
 
 footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.5; }

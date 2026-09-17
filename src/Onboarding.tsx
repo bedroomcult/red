@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import Icon from './Icon';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
 
@@ -46,7 +47,9 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   return (
     <div className="app auth" style={{ paddingTop: 60 }}>
       <div key={step} className="pop">
-        <div style={{ fontSize: 40, marginBottom: 16 }}>{['🌸', '👋', '📅', '🔄'][step]}</div>
+        <div className="ob-mark" aria-hidden="true">
+          <Icon name={(['home', 'home', 'calendar', 'insights'] as const)[step]} size={38} />
+        </div>
         <h1>{s.title}</h1>
         <div className="sub">{s.sub}</div>
 

@@ -26,6 +26,34 @@ describe('web app icons', () => {
     expect(m.icons.some((i: any) => i.sizes === '192x192')).toBe(true);
   });
 
+  it('the tab bar uses SVG icons, not emoji', () => {
+    // Emoji render differently per OEM and ignore `color`, so the active-tab
+    // accent could not be applied. The tab bar must stay on inline SVG.
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    expect(app).toContain('<Icon name=');
+  });
+
+  it('the onboarding steps use SVG icons, not emoji', () => {
+    const ob = readFileSync(ROOT + 'src/Onboarding.tsx', 'utf8');
+    expect(ob).not.toMatch(/[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}]/u);
+    expect(ob).toContain('<Icon name=');
+  });
+
+  it('every Icon name used in the app exists in Icon.tsx', () => {
+    const icon = readFileSync(ROOT + 'src/Icon.tsx', 'utf8');
+    const declared = new Set([...icon.matchAll(/^\s{2}(\w+):/gm)].map((m) => m[1]));
+    const used = new Set<string>();
+    for (const f of ['src/App.tsx', 'src/Onboarding.tsx']) {
+      for (const m of readFileSync(ROOT + f, 'utf8').matchAll(/<Icon name="(\w+)"/g)) used.add(m[1]);
+    }
+    for (const m of readFileSync(ROOT + 'src/Onboarding.tsx', 'utf8').matchAll(/'home'|'calendar'|'insights'|'history'|'settings'/g)) {
+      used.add(m[0].replace(/'/g, ''));
+    }
+    expect(used.size).toBeGreaterThan(0);
+    for (const u of used) expect(declared.has(u)).toBe(true);
+  });
+
   it('the generator is wired into the apk job', () => {
     const ci = readFileSync(ROOT + '.github/workflows/ci.yml', 'utf8');
     expect(ci).toContain('scripts/generate-icons.mjs');

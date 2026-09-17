@@ -9,6 +9,7 @@ import InsightsScreen from './InsightsScreen';
 import SettingsScreen from './SettingsScreen';
 import Onboarding from './Onboarding';
 import LoginScreen from './LoginScreen';
+import Icon from './Icon';
 import UpdateBanner from './UpdateBanner';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
@@ -250,19 +251,19 @@ export default function App() {
 
       <nav className="tabbar">
         <button className={`tab ${tab === 'home' ? 'active' : ''}`} aria-current={tab === 'home' ? 'page' : undefined} onClick={() => setTab('home')}>
-          <span className="ico" aria-hidden="true">💗</span>{t.navHome}
+          <Icon name="home" />{t.navHome}
         </button>
         <button className={`tab ${tab === 'calendar' ? 'active' : ''}`} aria-current={tab === 'calendar' ? 'page' : undefined} onClick={() => setTab('calendar')}>
-          <span className="ico" aria-hidden="true">📅</span>{t.navCalendar}
+          <Icon name="calendar" />{t.navCalendar}
         </button>
         <button className={`tab ${tab === 'insights' ? 'active' : ''}`} aria-current={tab === 'insights' ? 'page' : undefined} onClick={() => setTab('insights')}>
-          <span className="ico" aria-hidden="true">📊</span>{t.navInsights}
+          <Icon name="insights" />{t.navInsights}
         </button>
         <button className={`tab ${tab === 'history' ? 'active' : ''}`} aria-current={tab === 'history' ? 'page' : undefined} onClick={() => setTab('history')}>
-          <span className="ico" aria-hidden="true">🕘</span>{t.navHistory}
+          <Icon name="history" />{t.navHistory}
         </button>
         <button className={`tab ${tab === 'settings' ? 'active' : ''}`} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => setTab('settings')}>
-          <span className="ico" aria-hidden="true">⚙️</span>{t.navSettings}
+          <Icon name="settings" />{t.navSettings}
         </button>
       </nav>
     </div>
