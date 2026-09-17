@@ -242,4 +242,8 @@ export const t = {
   chanceSafeNote: 'Peluang rendah bukan berarti aman. Metode kalender tidak dapat mencegah kehamilan — gunakan kontrasepsi.',
   chanceBcNote: 'Saat KB aktif, prediksi ovulasi dijeda sehingga peluang tidak diperkirakan.',
   chanceDisclaimer: 'Perkiraan dari pola siklus, bukan hasil tes kesuburan.',
+  chanceBelowOne: '<1%',
+  // The percentage is a population average, not this person's probability, and it
+  // assumes the predicted ovulation day is right. Both limits are stated.
+  chanceAverageNote: 'Angka ini rata-rata populasi untuk satu kali hubungan pada hari tersebut, dan mengandaikan perkiraan ovulasi tepat. Ovulasi sebenarnya bisa bergeser beberapa hari.',
 } as const;

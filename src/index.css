@@ -439,6 +439,10 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .chance-badge.risk-low { background: var(--green-soft); color: var(--green); }
 .chance-badge.risk-unknown { background: var(--grey-bg); color: var(--muted); }
 .chance-when { font-size: 12px; }
+.chance-value { font-size: 30px; font-weight: 800; letter-spacing: -0.02em; line-height: 1; }
+.chance-value.risk-high { color: var(--rose); }
+.chance-value.risk-medium { color: var(--amber-line); }
+.chance-value.risk-low { color: var(--green); }
 .chance-bar {
   height: 8px; border-radius: 999px; background: var(--grey-bg);
   overflow: hidden; margin-top: 12px;

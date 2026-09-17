@@ -44,4 +44,25 @@ describe('pregnancy chance wording', () => {
   it('uses the word Perkiraan (estimate) in the card title', () => {
     expect(I18N).toMatch(/chanceTitle: 'Perkiraan/);
   });
+
+  it('states that the percentage is a population average, not personal', () => {
+    expect(I18N).toMatch(/rata-rata populasi/);
+  });
+
+  it('states that the ovulation day itself may be off', () => {
+    expect(I18N).toMatch(/Ovulasi sebenarnya bisa bergeser/);
+  });
+
+  it('does not present the number as a probability for this person', () => {
+    // "peluang Anda" (your chance) would overstate what the model knows.
+    expect(I18N).not.toMatch(/peluang anda \d/i);
+  });
+
+  it('renders the percentage and the safe-note in the same branch', () => {
+    const card = CARD;
+    const num = card.indexOf('chance-value');
+    const note = card.indexOf('chanceSafeNote');
+    expect(num).toBeGreaterThan(-1);
+    expect(note).toBeGreaterThan(num);
+  });
 });
