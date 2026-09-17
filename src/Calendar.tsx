@@ -10,14 +10,30 @@ export type SexLog = { date: string; protected: boolean };
 const inRange = (d: string, lo: string | null, hi: string | null) =>
   !!lo && !!hi && d >= lo && d <= hi;
 
-function monthCells(year: number, mon: number): (string | null)[] {
-  const first = new Date(Date.UTC(year, mon, 1));
-  // Mon-start offset
-  const off = (first.getUTCDay() + 6) % 7;
-  const days = new Date(Date.UTC(year, mon + 1, 0)).getUTCDate();
-  const cells: (string | null)[] = Array(off).fill(null);
-  for (let d = 1; d <= days; d++)
-    cells.push(`${year}-${String(mon + 1).padStart(2, '0')}-${String(d).padStart(2, '0')}`);
+// A calendar month, padded to whole weeks with the neighbouring months' days.
+// Padding with the real dates rather than blanks means the last row is not half
+// empty, and a day at the start of next month is visible without navigating.
+// Each cell carries whether it belongs to the displayed month, so the padding
+// can render dimmer.
+type Cell = { date: string; inMonth: boolean };
+
+function monthCells(year: number, mon: number): Cell[] {
+  const iso = (t: number) => new Date(t).toISOString().slice(0, 10);
+  const first = Date.UTC(year, mon, 1);
+  const daysInMonth = new Date(Date.UTC(year, mon + 1, 0)).getUTCDate();
+  const last = Date.UTC(year, mon, daysInMonth);
+  // Monday-first offset.
+  const lead = (new Date(first).getUTCDay() + 6) % 7;
+
+  const cells: Cell[] = [];
+  for (let i = lead; i > 0; i--) cells.push({ date: iso(first - i * 864e5), inMonth: false });
+  for (let d = 0; d < daysInMonth; d++) cells.push({ date: iso(first + d * 864e5), inMonth: true });
+  // Pad the final row to a whole week.
+  let t = last + 864e5;
+  while (cells.length % 7 !== 0) {
+    cells.push({ date: iso(t), inMonth: false });
+    t += 864e5;
+  }
   return cells;
 }
 
@@ -35,6 +51,7 @@ function ovSet(ov: string | null): Set<string> {
 // "logged" for periods, and the peak is a prediction.
 
 import { periodDays, predictionStale, dateStale } from '../lib/cycle';
+import { useEffect, useRef } from 'react';
 import { localDate } from '../lib/today';
 import { t } from './i18n';
 
@@ -68,6 +85,15 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const cells = monthCells(year, mon);
   const todayIso = localDate();
 
+  // Slide direction: track the previous month so the grid enters from the side
+  // the user came from. Right for forward, left for back.
+  const prevKey = useRef<string | null>(null);
+  const key = `${year}-${mon}`;
+  const slideClass = prevKey.current === null || prevKey.current === key
+    ? ''
+    : key > prevKey.current ? 'slide-next' : 'slide-prev';
+  useEffect(() => { prevKey.current = key; }, [key]);
+
   // Dates to mark as predicted periods. Prefer the multi-cycle projection: it
   // covers later months, which the single next window cannot.
   //
@@ -84,13 +110,16 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
       }
     }
   }
+  // Keying the grid on year-month restarts the slide animation on every change,
+  // in the direction the user moved.
   return (
     <div>
-      <div className="grid">
+      <div className={`grid ${slideClass}`} key={`${year}-${mon}`}>
         {['S', 'S', 'R', 'K', 'J', 'S', 'M'].map((d, i) => <div key={i} className="dow">{d}</div>)}
-        {cells.map((d, i) => (
+        {cells.map((cell, i) => (
           <div key={i} className="day">
-            {d && (() => {
+            {(() => {
+              const d = cell.date;
               const p = logged.get(d);
               const dose = doseByDate.get(d);
               const sexLog = sexByDate.get(d);
@@ -106,7 +135,7 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const heartClass = sexLog ? (ovs.has(d) ? 'sex fertile' : 'sex') : '';
               return (
                 <button
-                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''} ${heartClass}`}
+                  className={`dnum ${cls} ${cell.inMonth ? '' : 'dim'} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''} ${heartClass}`}
                   onClick={() => onPick(d)}
                   aria-label={`${new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}${sexLog ? `, ${t.legendSex}${sexLog.protected ? ` (${t.sexProtected})` : ''}` : ''}`}
                   aria-current={d === todayIso ? 'date' : undefined}
@@ -116,11 +145,13 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
                       <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
                     </svg>
                   )}
-                  <span className="dnum-num">{inPeriod.has(d) ? '✓' : Number(d.slice(8))}</span>
+                  {/* Always the day number. The checkmark that used to replace it
+                      removed the one piece of information the cell exists to show. */}
+                  <span className="dnum-num">{Number(d.slice(8))}</span>
                 </button>
               );
             })()}
-            {d && logged.get(d)?.type === 'spotting' && <span className="dot" />}
+            {logged.get(cell.date)?.type === 'spotting' && <span className="dot" />}
           </div>
         ))}
       </div>

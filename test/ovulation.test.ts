@@ -92,3 +92,44 @@ describe('predicted period paints the whole period', () => {
     expect(CAL).toMatch(/periodLen = 5/);
   });
 });
+
+// Reported: the Wawasan list showed periods that had already passed, the calendar
+// replaced the day number with a checkmark, and the grid left the last row half
+// empty instead of showing the start of the next month.
+describe('calendar and projection display fixes', () => {
+  it('keeps the day number on a logged day instead of a checkmark', () => {
+    expect(CAL).not.toContain("'✓'");
+    expect(CAL).toMatch(/dnum-num">\{Number\(d\.slice\(8\)\)\}/);
+  });
+
+  it('pads the grid with the neighbouring months, marked out of month', () => {
+    expect(CAL).toMatch(/inMonth: false/);
+    expect(CAL).toMatch(/cells\.length % 7 !== 0/);
+    expect(CAL).toMatch(/cell\.inMonth \? '' : 'dim'/);
+  });
+
+  it('still pads whole weeks when the month already ends on a Sunday', () => {
+    // No leading or trailing padding needed; the loop must simply not add any.
+    const src = CAL.slice(CAL.indexOf('function monthCells'), CAL.indexOf('const parse'));
+    expect(src).toMatch(/while \(cells\.length % 7 !== 0\)/);
+  });
+
+  it('animates the grid on month change, in the direction of travel', () => {
+    expect(CAL).toMatch(/slide-next|slide-prev/);
+    const css = readFileSync(ROOT + 'src/index.css', 'utf8');
+    expect(css).toMatch(/@keyframes slide-next/);
+    expect(css).toMatch(/@keyframes slide-prev/);
+  });
+
+  it('drops past dates from the projection at render time, not just on the server', () => {
+    const screen = readFileSync(ROOT + 'src/InsightsScreen.tsx', 'utf8');
+    expect(screen).toMatch(/next6\.filter\(\(d\) => d >= today\)/);
+  });
+
+  it('keeps the sheet scannable: no per-symptom history rows', () => {
+    const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
+    // The old version rendered a block per symptom kind.
+    expect(day).not.toMatch(/s\.count\}×/);
+    expect(day).toMatch(/symHistoryRecur/);
+  });
+});

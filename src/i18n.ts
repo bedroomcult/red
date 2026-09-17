@@ -210,6 +210,7 @@ export const t = {
   sexUnprotectedLabel: 'tercatat tanpa kontrasepsi',
   sexFertileWarn: 'masa subur',
   sexClear: 'Hapus',
+  symHistoryRecur: '{n} gejala berulang di siklus Anda',
   // reminders
   setReminders: 'Pengingat',
   remPill: 'Pengingat pil KB harian',

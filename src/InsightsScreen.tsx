@@ -2,6 +2,7 @@ import type { Insights } from '../lib/insights';
 import { symptomHistory } from '../lib/symptom-history';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
+import { localDate } from '../lib/today';
 
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 const fmtShort = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
@@ -20,13 +21,18 @@ const PHASE_LABEL: Record<string, string> = {
 // rather than by whatever count happens to be largest.
 const PHASE_ORDER = ['period', 'fertile', 'ovulation', 'pms', 'neutral', 'bc'];
 
-export default function InsightsScreen({ ins, periods = [], prediction = null, bcMode = false, symptomLog = [] }: {
+export default function InsightsScreen({ ins, periods = [], prediction = null, bcMode = false, symptomLog = [], today = localDate() }: {
   ins: Insights;
   periods?: Period[];
   prediction?: Prediction | null;
   bcMode?: boolean;
   symptomLog?: { date: string; kind: string }[];
+  today?: string;
 }) {
+  // Drop projected dates that have already passed. The server rolls the list
+  // forward, but this screen renders whatever is in the cached state, and a tab
+  // left open past midnight would otherwise keep showing yesterday's list.
+  const next = ins.next6.filter((d) => d >= today);
   const irregular = ins.variability !== null && ins.variability > 4;
   const hist = symptomHistory(symptomLog, periods, prediction, bcMode);
   // Largest per-phase count, so each bar can be scaled against the tallest.
@@ -59,11 +65,11 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
         )}
       </div>
 
-      {ins.next6.length > 0 && (
+      {next.length > 0 && (
         <div className="card">
           <h2>{t.insNext6}</h2>
           <ul className="list">
-            {ins.next6.map((d, i) => (
+            {next.map((d, i) => (
               <li key={d}>
                 <span className="date">{fmt(d)}</span>
                 {/* Confidence falls with distance: the projection compounds the

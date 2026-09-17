@@ -201,29 +201,29 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                 : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
             </div>
             {/* How often this day's symptoms recur, so one bad day reads against
-                the user's own history rather than in isolation. Only shown when
-                there is enough history to say something. */}
-            {syms && syms.length > 0 && hist && (
-              <div className="muted" style={{ marginTop: 6 }}>
-                {syms.map((k) => {
-                  const s = hist.stats.find((x) => x.kind === k);
-                  if (!s || s.count < 2) return null;
-                  return (
-                    <div key={k}>
-                      {SYM_LABEL[k] ?? k}: {s.count}×
-                      {s.topPhase && <> · {t.symHistoryTopPhase.replace('{phase}', PHASE_LABEL[s.topPhase] ?? s.topPhase)}</>}
-                    </div>
-                  );
-                })}
-              </div>
-            )}
+                the user's own history. One compact line rather than a row per
+                symptom: the sheet had grown into a wall of text. */}
+            {syms && syms.length > 0 && hist && (() => {
+              const known = syms
+                .map((k) => ({ k, s: hist.stats.find((x) => x.kind === k) }))
+                .filter((x) => x.s && x.s.count >= 2);
+              if (!known.length) return null;
+              return (
+                <div className="muted day-info-sub">
+                  {t.symHistoryRecur.replace('{n}', String(known.length))}
+                  {known[0].s?.topPhase && (
+                    <> · {t.symHistoryTopPhase.replace('{phase}', PHASE_LABEL[known[0].s.topPhase] ?? known[0].s.topPhase)}</>
+                  )}
+                </div>
+              );
+            })()}
           </div>
 
           <div className="day-info">
             <div className="day-info-label">{t.note}</div>
             <div className="day-info-value">
-              {note === null ? t.loading
-                : note ? <span style={{ whiteSpace: 'pre-wrap' }}>{note}</span>
+              {note === null ? <span className="muted">{t.loading}</span>
+                : note ? <span className="day-note-text">{note}</span>
                 : <span className="muted">{t.dayNoNote}</span>}
             </div>
           </div>
@@ -234,7 +234,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
             <div className="day-info-label">{t.dayDose}</div>
             <div className="day-info-value">
               {doseLocal === null ? <span className="muted">{t.doseNone}</span>
-                : doseLocal ? t.doseTakenLabel : t.doseMissedLabel}
+                : <span className="day-status">{doseLocal ? t.doseTaken : t.doseMissed}</span>}
             </div>
             <div className="row tight">
               <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
@@ -252,7 +252,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
             <div className="day-info-label">{t.daySex}</div>
             <div className="day-info-value">
               {sexLocal === null ? <span className="muted">{t.sexNone}</span>
-                : sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel}
+                : <span className="day-status">{sexLocal.protected ? t.sexProtected : t.sexUnprotected}</span>}
               {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
             </div>
             <div className="row tight">
