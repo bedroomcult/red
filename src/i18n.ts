@@ -38,6 +38,7 @@ export const t = {
   legendSex: 'Berhubungan',
   // prediction line
   nextPeriod: 'Haid berikutnya',
+  nextWindow: 'rentang perkiraan',
   notEnough: 'Data kurang, catat 2+ haid',
   estimated: 'perkiraan awal (siklus 28 hari)',
   irregular: 'siklus tidak teratur, rentang lebar',

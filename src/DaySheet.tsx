@@ -147,16 +147,26 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       <div className="sheet" role="dialog" aria-modal="true" aria-label={fmtLong(date)}>
         <div className="sheet-body">
         <div className="grabber" />
-        <h3 style={{ marginBottom: 4 }}>{fmtLong(date)}</h3>
 
-        <div className="row tight" style={{ marginBottom: 12 }}>
-          {/* One colour per phase family: rose = bleeding, amber = premenstrual
-              warning, green = fertile window, grey = no signal. PMS previously
-              reused the bleeding rose, so two unrelated phases looked alike. */}
-          <span className={`badge ${PHASE_BADGE[st.phase]}`}>
-            {PHASE_LABEL[st.phase]}
-          </span>
-          {st.cycleDay !== null && <span className="badge grey">{t.dayCycle.replace('{n}', String(st.cycleDay))}</span>}
+        {/* Date header: the day number and month lead, so the sheet is
+            identifiable at a glance without reading a long formatted string. */}
+        <div className="day-head">
+          <div className="day-head-date">
+            <span className="day-head-num">{Number(date.slice(8, 10))}</span>
+            <span className="day-head-mon">
+              {new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { month: 'long' })}
+              <span className="day-head-year">{date.slice(0, 4)}</span>
+            </span>
+          </div>
+          <div className="day-head-right">
+            {/* One colour per phase family: rose = bleeding, amber = premenstrual
+                warning, green = fertile window, grey = no signal. PMS previously
+                reused the bleeding rose, so two unrelated phases looked alike. */}
+            <span className={`badge ${PHASE_BADGE[st.phase]}`}>{PHASE_LABEL[st.phase]}</span>
+            {st.cycleDay !== null && (
+              <span className="day-head-day">{t.dayCycle.replace('{n}', String(st.cycleDay))}</span>
+            )}
+          </div>
         </div>
 
         {startLog ? (

@@ -11,6 +11,7 @@ import Onboarding from './Onboarding';
 import LoginScreen from './LoginScreen';
 import Icon from './Icon';
 import UpdateBanner from './UpdateBanner';
+import Loading from './Loading';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
@@ -22,6 +23,7 @@ type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null
 
 const today = () => localDate();
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+const fmtShort = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
 export default function App() {
   const [me, setMe] = useState<Me | null>(null);
@@ -140,7 +142,7 @@ export default function App() {
         </div>
       )}
 
-      {!me && !err && <div className="spinner" role="status" aria-label={t.loading} />}
+      {!me && !err && <Loading />}
 
       {me && tab === 'home' && (
         <Home
@@ -159,7 +161,7 @@ export default function App() {
               <strong>{label}</strong>
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
             </div>
-            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} />
+            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} />
             <div className="legend">
               <div className="legend-group">
                 <span><i className="chip logged" />{t.legendPeriod}</span>
@@ -178,7 +180,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="card">
+          <div className="card next-card">
             <h2>{t.nextPeriod}</h2>
             {(() => {
               // Never show a prediction whose date has already passed. The server
@@ -186,18 +188,27 @@ export default function App() {
               // clock ahead of the API could still deliver one.
               const next = me.prediction.next;
               const today = me.today ?? localDate();
-              const usable = !!next && next >= today;
-              if (!usable) {
+              if (!next || next < today) {
                 return <div className="muted">{next ? t.noPredictionPast : t.notEnough}</div>;
               }
+              // Lead with how many days away it is: that is the number people
+              // actually want, and it reads at a glance where a date does not.
+              const days = Math.round((Date.parse(next + 'T00:00:00Z') - Date.parse(today + 'T00:00:00Z')) / 864e5);
               return (
-                <div className="pred">
-                  <span className="big">{fmt(next!)}</span>
-                  <span className="badge">{fmt(me.prediction.lo!)} sampai {fmt(me.prediction.hi!)}</span>
-                </div>
+                <>
+                  <div className="next-count">
+                    <span className="next-num">{days}</span>
+                    <span className="next-unit">{days === 0 ? t.homeToday : t.insDays}</span>
+                  </div>
+                  <div className="next-date">{fmt(next)}</div>
+                  <div className="next-range">
+                    <span className="next-range-label">{t.nextWindow}</span>
+                    <span className="next-range-value">{fmtShort(me.prediction.lo!)} - {fmtShort(me.prediction.hi!)}</span>
+                  </div>
+                </>
               );
             })()}
-            <div className="row tight">
+            <div className="row tight next-badges">
               <span className={`badge ${conf === 'high' ? 'green' : conf === 'med' ? '' : 'grey'}`}>{t.confidence[conf] ?? t.confidence.low}</span>
               {flags.includes('estimated') && <span className="badge grey">{t.estimated}</span>}
               {flags.includes('disrupted') && <span className="badge">{t.disrupted}</span>}

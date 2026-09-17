@@ -192,7 +192,15 @@ body {
 }
 .update-text { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .update-sub { color: var(--muted); font-size: 12px; }
-.banner.update .row { margin-top: 8px; }
+/* update notice modal */
+.update-sheet .update-mark {
+  width: 56px; height: 56px; margin: 4px auto 12px; border-radius: 18px;
+  display: grid; place-items: center; color: var(--green); background: var(--green-soft);
+}
+.update-title { text-align: center; font-size: 17px; margin: 0 0 6px; }
+.update-sub { text-align: center; font-size: 14px; font-weight: 600; }
+.update-hint { text-align: center; margin-top: 4px; }
+.update-notes { text-align: center; margin-top: 10px; }
 /* active emergency contraception status */
 .ec-banner .ec-hint { color: var(--muted); font-size: 12px; margin-top: 2px; }
 .ec-banner .ec-when { color: var(--muted); font-weight: 400; }
@@ -409,10 +417,15 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 
 /* phase hero. Full-bleed: the .app wrapper's 16px side padding is cancelled so
    the gradient reaches both edges and the top of the screen. */
-.home-hero-wrap { margin: 0 -16px; }
+.home-hero-wrap {
+  /* Cancel the .app padding on all three sides the hero touches, including the
+     top: leaving the top padding in place put a strip of page background above
+     the gradient, which read as a gap under the status bar. */
+  margin: -16px -16px 0;
+}
 .hero {
   border-radius: 0 0 28px 28px;
-  padding: calc(12px + env(safe-area-inset-top)) 24px 32px;
+  padding: calc(10px + env(safe-area-inset-top)) 20px 28px;
   min-height: 240px; display: flex; flex-direction: column;
   transition: background .4s ease;
 }
@@ -449,17 +462,47 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .chance-fill.risk-medium { background: var(--amber-line); }
 .chance-fill.risk-low { background: var(--green); }
 .chance-note { font-size: 11px; line-height: 1.5; margin-top: 8px; }
+
+/* next period: lead with the countdown, then the date, then the window */
+.next-count { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
+.next-num { font-size: 44px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; color: var(--rose); }
+.next-unit { font-size: 15px; font-weight: 600; color: var(--muted); }
+.next-date { margin-top: 6px; font-size: 16px; font-weight: 600; }
+.next-range {
+  display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);
+  font-size: 13px;
+}
+.next-range-label { color: var(--muted); }
+.next-range-value { font-weight: 600; }
+.next-badges { margin-top: 10px; }
 /* projection list: later cycles are marked as approximate */
 .ins-approx { color: var(--muted); font-style: italic; }
 .ins-note { font-size: 11px; line-height: 1.5; margin-top: 10px; }
 
-/* spinner */
-.spinner {
-  width: 22px; height: 22px; border-radius: 50%;
-  border: 2.5px solid var(--line); border-top-color: var(--rose);
-  animation: spin .7s linear infinite; margin: 24px auto;
+/* first-load screen */
+.loading-screen {
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center; min-height: 70vh; text-align: center;
+}
+.loading-mark { position: relative; display: grid; place-items: center; width: 96px; height: 96px; }
+.loading-mark svg { color: var(--rose); animation: breathe 1.6s ease-in-out infinite; }
+.loading-ring {
+  position: absolute; inset: 0; border-radius: 50%;
+  border: 2px solid var(--rose-soft); border-top-color: var(--rose);
+  animation: spin 1s linear infinite;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
+@keyframes breathe { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+.loading-name { margin-top: 18px; font-size: 20px; font-weight: 700; letter-spacing: -0.02em; }
+.loading-dots { display: flex; gap: 6px; margin-top: 14px; }
+.loading-dots i {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--rose);
+  animation: dotpulse 1.2s ease-in-out infinite;
+}
+.loading-dots i:nth-child(2) { animation-delay: .15s; }
+.loading-dots i:nth-child(3) { animation-delay: .3s; }
+@keyframes dotpulse { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
 
 /* success pop */
 .pop { animation: pop .35s cubic-bezier(.34,1.56,.64,1) both; }

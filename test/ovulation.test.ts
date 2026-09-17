@@ -49,3 +49,22 @@ describe('ovulation peak marker', () => {
     expect(CSS).toMatch(/\.chip\.ovulation\s*\{[^}]*border-style:\s*dashed/);
   });
 });
+
+// The calendar marks projected periods from insights.next6, not just the single
+// next window. Without that, browsing a later month showed nothing, which is why
+// November's prediction was invisible.
+describe('calendar multi-cycle projection', () => {
+  it('accepts futureStarts and marks them', () => {
+    expect(CAL).toContain('futureStarts');
+    expect(CAL).toContain('predDays');
+  });
+
+  it('filters out dates that have already passed', () => {
+    expect(CAL).toMatch(/futureStarts \?\? \[\]\)\.filter\(\(d\) => d >= todayIso\)/);
+  });
+
+  it('is fed from the insights projection in App', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toMatch(/futureStarts=\{me\.insights\?\.next6/);
+  });
+});
