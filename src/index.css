@@ -393,6 +393,19 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   border-top: 1px solid var(--line);
   margin-top: 14px; padding-top: 4px;
 }
+/* Day sheet header: the day number and month lead at a readable size, with the
+   phase badge and cycle day on the right. */
+.day-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  margin-bottom: 12px;
+}
+.day-head-date { display: flex; align-items: baseline; gap: 8px; }
+.day-head-num { font-size: 30px; font-weight: 800; line-height: 1; letter-spacing: -0.03em; }
+.day-head-mon { font-size: 14px; font-weight: 600; color: var(--muted); display: flex; flex-direction: column; line-height: 1.2; }
+.day-head-year { font-size: 11px; font-weight: 500; }
+.day-head-right { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.day-head-day { font-size: 11px; color: var(--muted); font-weight: 600; }
+
 .day-info-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 .day-info-value { font-size: 14px; line-height: 1.5; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
