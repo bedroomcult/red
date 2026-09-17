@@ -92,6 +92,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, onDo
     <>
       <div className="overlay" onClick={onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-label={fmtLong(date)}>
+        <div className="sheet-body">
         <div className="grabber" />
         <h3 style={{ marginBottom: 4 }}>{fmtLong(date)}</h3>
 
@@ -168,7 +169,9 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, onDo
           {doseErr && <div className="err">{doseErr}</div>}
         </div>
 
-        <div className="row">
+        </div>
+
+        <div className="sheet-actions">
           <button className="btn primary" onClick={() => onLog(date)}>{t.dayLogHere}</button>
           <button className="btn ghost" onClick={onClose}>{t.bcClose}</button>
         </div>

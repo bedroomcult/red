@@ -31,7 +31,8 @@ export default function EcPanel({ onClose, onSaved }: {
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={t.ecTitle}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={t.ecTitle}>
+        <div className="sheet-body">
         <div className="grabber" />
         <h3>{t.ecTitle}</h3>
         <div className="hint">{t.ecHint}</div>
@@ -52,7 +53,9 @@ export default function EcPanel({ onClose, onSaved }: {
           <label>{t.ecUpsi}</label>
           <input type="date" value={upsi} onChange={(e) => setUpsi(e.target.value)} />
         </div>
-        <div className="row">
+        </div>
+
+        <div className="sheet-actions">
           <button className="btn primary" disabled={busy} onClick={save}>{t.ecSave}</button>
           <button className="btn ghost" disabled={busy} onClick={onClose}>{t.ecClose}</button>
         </div>

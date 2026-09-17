@@ -44,7 +44,8 @@ export default function BcPanel({ current, onClose, onSaved }: {
   return (
     <>
       <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-label={t.bcTitle}>
+      <div className="sheet" role="dialog" aria-modal="true" aria-label={t.bcTitle}>
+        <div className="sheet-body">
         <div className="grabber" />
         <h3>{t.bcTitle}</h3>
         <div className="hint">{t.bcHint}</div>
@@ -66,10 +67,14 @@ export default function BcPanel({ current, onClose, onSaved }: {
           <input type="checkbox" checked={taken} onChange={(e) => setTaken(e.target.checked)} />
           {t.bcTakenToday}
         </label>
-        <div className="row">
+        </div>
+
+        <div className="sheet-actions">
           <button className="btn primary" disabled={busy} onClick={save}>{t.bcSave}</button>
-          {current && <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStop}</button>}
-          <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
+          <div className="btn-grid">
+            {current && <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStop}</button>}
+            <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
+          </div>
         </div>
       </div>
     </>

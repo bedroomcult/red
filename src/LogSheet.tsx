@@ -58,13 +58,25 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   }
 
   // id present => UPDATE existing (lets user set period end), else INSERT.
-  const save = (type: string) => post({
-    id: existing?.id,
-    start_date: date,
-    type,
-    flow,
-    end_date: endDate || undefined,
-  });
+  // The note is saved in the same action: it is one form, and a note typed then
+  // lost because the user tapped "Catat haid" instead of "Simpan catatan" is a
+  // silent data loss bug.
+  async function save(type: string) {
+    setBusy(true); setErr(null);
+    try {
+      const r = await apiFetch('/api/periods', {
+        method: 'POST',
+        body: JSON.stringify({ id: existing?.id, start_date: date, type, flow, end_date: endDate || undefined }),
+      });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      if (note.trim()) {
+        const n = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note }) });
+        if (!n.ok) throw new Error((await readJson(n)).error ?? n.statusText);
+      }
+      onSaved(await readJson(r));
+      onClose();
+    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+  }
 
   // Tapped a day inside a logged period range but not its start => mark end here.
   const inRange = !!active && active.start_date !== date;
@@ -81,55 +93,68 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
     <>
       <div className="overlay" onClick={onClose} />
       <div className="sheet" role="dialog" aria-modal="true" aria-label={new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}>
-        <div className="grabber" />
-        <h3>{date}</h3>
-        <div className="hint">
-          {inRange
-            ? t.insideRange
-            : existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
-        </div>
-        {err && <div className="err">{err}</div>}
-        {inRange ? (
-          <>
+        <div className="sheet-body">
+          <div className="grabber" />
+          <h3>{date}</h3>
+          <div className="hint">
+            {inRange
+              ? t.insideRange
+              : existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
+          </div>
+          {err && <div className="err">{err}</div>}
+          {inRange ? (
             <div className="field">
               <label>{t.end}</label>
-              <div style={{ fontSize: 15, fontWeight: 600 }}>{date}</div>
+              <div className="field-static">{date}</div>
             </div>
-            <div className="row">
+          ) : (
+            <>
+              <div className="field">
+                <label htmlFor="ls-flow">{t.flow}</label>
+                <select id="ls-flow" value={flow} onChange={(e) => setFlow(e.target.value)}>
+                  <option value="light">{t.flowLight}</option>
+                  <option value="medium">{t.flowMedium}</option>
+                  <option value="heavy">{t.flowHeavy}</option>
+                </select>
+              </div>
+              <div className="field">
+                <label htmlFor="ls-end">{t.end}</label>
+                <input id="ls-end" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
+              </div>
+              <div className="field">
+                <label htmlFor="ls-note">{t.note}</label>
+                <textarea id="ls-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3}
+                  placeholder={t.notePlaceholder} className="textarea" />
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Actions live in their own bar so they never wrap unpredictably or
+            scroll out of reach behind a long note. */}
+        <div className="sheet-actions">
+          {inRange ? (
+            <>
               <button className="btn primary" disabled={busy} onClick={markEnd}>{t.markEndHere}</button>
-              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
-              <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="field">
-              <label htmlFor="ls-flow">{t.flow}</label>
-              <select id="ls-flow" value={flow} onChange={(e) => setFlow(e.target.value)}>
-                <option value="light">{t.flowLight}</option>
-                <option value="medium">{t.flowMedium}</option>
-                <option value="heavy">{t.flowHeavy}</option>
-              </select>
-            </div>
-            <div className="field">
-              <label htmlFor="ls-end">{t.end}</label>
-              <input id="ls-end" type="date" value={endDate} min={date} onChange={(e) => setEndDate(e.target.value)} />
-            </div>
-            <div className="field">
-              <label htmlFor="ls-note">{t.note}</label>
-              <textarea id="ls-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3}
-                placeholder={t.notePlaceholder}
-                style={{ font: 'inherit', width: '100%', padding: '11px 12px', borderRadius: 12, border: '1px solid var(--line)', background: 'var(--bg)', color: 'var(--ink)', resize: 'vertical' }} />
-            </div>
-            <div className="row">
+              <div className="btn-grid">
+                {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+              </div>
+            </>
+          ) : (
+            <>
               <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
-              <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
-              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
-              <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
-              <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
-            </div>
-          </>
-        )}
+              <div className="btn-grid">
+                <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
+                <button className="btn" disabled={busy} onClick={saveNote}>{t.noteSave}</button>
+              </div>
+              <div className="btn-grid">
+                {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+              </div>
+            </>
+          )}
+        </div>
       </div>
     </>
   );

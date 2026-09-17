@@ -285,14 +285,43 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .sheet {
   position: fixed; inset: auto 0 0 0; background: var(--card); z-index: 11;
-  border-radius: 20px 20px 0 0; padding: 20px 16px calc(20px + env(safe-area-inset-bottom));
+  border-radius: 20px 20px 0 0;
   max-width: 480px; margin: 0 auto; box-shadow: 0 -8px 30px rgba(0,0,0,.15);
   animation: up .18s ease-out;
+  /* Cap the height so the action bar is always on screen. Without this a long
+     note pushes the buttons past the bottom of the viewport. */
+  display: flex; flex-direction: column;
+  max-height: 88dvh;
+}
+@supports not (height: 100dvh) {
+  .sheet { max-height: 88vh; }
 }
 @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
+.sheet-body {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 20px 16px 12px;
+}
 .sheet h3 { margin: 0 0 4px; font-size: 16px; }
 .sheet .hint { color: var(--muted); font-size: 13px; margin-bottom: 12px; line-height: 1.45; }
 .grabber { width: 36px; height: 4px; border-radius: 2px; background: var(--line); margin: 0 auto 14px; }
+
+/* Action bar: pinned below the scrollable body, above the home indicator. The
+   buttons never wrap into an unreadable row. */
+.sheet-actions {
+  flex: 0 0 auto; display: flex; flex-direction: column; gap: 8px;
+  padding: 12px 16px calc(12px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line); background: var(--card);
+}
+.sheet-actions .btn { width: 100%; padding: 13px 16px; font-size: 15px; font-weight: 600; }
+.sheet-actions .btn:not(.primary):not(.danger) { background: var(--grey-bg); }
+.btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+/* A single child spans both columns rather than sitting in a half-width cell. */
+.btn-grid > :only-child { grid-column: 1 / -1; }
+.field-static { font-size: 15px; font-weight: 600; }
+.textarea {
+  font: inherit; width: 100%; padding: 11px 12px; border-radius: 12px;
+  border: 1px solid var(--line); background: var(--bg); color: var(--ink); resize: vertical;
+}
 
 /* day info sheet: read-only summary rows, not a form */
 .day-info {
@@ -307,6 +336,9 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   background: var(--rose-soft); color: var(--rose); font-weight: 600;
 }
 .sheet .row { margin-top: 16px; }
+
+/* Day sheet and medication rows reuse the sheet body/action layout. */
+.sheet .day-info:last-of-type { padding-bottom: 4px; }
 
 /* bottom nav */
 .tabbar {
