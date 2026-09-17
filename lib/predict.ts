@@ -7,14 +7,19 @@ export function cycleStats(starts: string[], fallbackCycle = 28) {
   const estimated = ds.length < 2;
   let allImplausible = false;
   let cycles: number[];
+  // Gaps that were logged but rejected as cycle lengths. Kept so the caller can
+  // tell "no data yet" apart from "data exists but the cycle was disrupted" -
+  // previously both collapsed into estimated=true and the disruption vanished.
+  let rejected: number[] = [];
   if (estimated) {
     cycles = [fb];
   } else {
-    cycles = [];
-    for (let i = 1; i < ds.length; i++) cycles.push(Math.round((ds[i] - ds[i - 1]) / 86400000));
+    const raw: number[] = [];
+    for (let i = 1; i < ds.length; i++) raw.push(Math.round((ds[i] - ds[i - 1]) / 86400000));
     // ponytail: drop implausible cycles (mis-taps, spotting logged as period).
     // 15..60d covers real cycles; fallback to the configured length when nothing survives.
-    cycles = cycles.filter((c) => c >= 15 && c <= 60);
+    cycles = raw.filter((c) => c >= 15 && c <= 60);
+    rejected = raw.filter((c) => c < 15 || c > 60);
     if (!cycles.length) { cycles = [fb]; allImplausible = true; }
     cycles = cycles.slice(-6);
   }
@@ -45,6 +50,7 @@ export function cycleStats(starts: string[], fallbackCycle = 28) {
     ds,
     fb,
     estimated: estimated || allImplausible,
+    rejected,
     cycles,
     avg,
     sd,
@@ -56,10 +62,16 @@ export function cycleStats(starts: string[], fallbackCycle = 28) {
   };
 }
 
+// A bleed this soon after the dose is the expected withdrawal bleed, not a return
+// to a normal cycle. Treating it as normalization hid the disruption: the user
+// saw a "regular" cycle right after taking emergency contraception.
+export const WITHDRAWAL_WINDOW_DAYS = 10;
+
 // EC widens the next prediction and hides ovulation, but only while it is still
 // the plausible explanation for what the cycle is doing (spec §5: "next cycle
-// normalizes"). It stops applying once a period has been logged after the dose,
-// or once more than two cycles have passed with nothing logged.
+// normalizes"). It stops applying once a cycle has clearly resumed - a period
+// logged well after the dose, past the withdrawal-bleed window - or once more
+// than two cycles have passed.
 export function ecDisrupts(ecIntakeAt: string | null, lastStart: string | null, cycleLen = 28): boolean {
   if (!ecIntakeAt) return false;
   const intake = Date.parse(ecIntakeAt);
@@ -67,19 +79,32 @@ export function ecDisrupts(ecIntakeAt: string | null, lastStart: string | null, 
   const len = Math.min(60, Math.max(15, Math.round(cycleLen)));
   if (lastStart) {
     const last = Date.parse(lastStart + 'T00:00:00Z');
-    if (Number.isFinite(last) && last > intake) return false; // a bleed since the dose
+    // A bleed more than the withdrawal window after the dose is a real cycle
+    // resuming, so the disruption is over.
+    if (Number.isFinite(last) && last > intake && (last - intake) / 86400000 > WITHDRAWAL_WINDOW_DAYS) return false;
   }
   return (Date.now() - intake) / 86400000 <= 2 * len;
 }
 
-export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: boolean, fallbackCycle?: number}, statsIn?: ReturnType<typeof cycleStats>) {
+export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: boolean, fallbackCycle?: number, today?: string}, statsIn?: ReturnType<typeof cycleStats>) {
   if (opts.bcMode) return { next: null, lo: null, hi: null, ov: null, confidence: 'suppressed' as const, flags: ['bc-suppressed'] };
   const stats = statsIn ?? cycleStats(starts, opts.fallbackCycle ?? 28);
   if (!stats.ds.length) return { next: null, lo: null, hi: null, ov: null, confidence: 'low' as const, flags: ['need-more-data'] };
-  const { estimated, cycles, avg, sd, cycleLo, cycleHi, spread, range, last } = stats;
+  const { estimated, rejected, cycles, avg, sd, cycleLo, cycleHi, spread, range, last } = stats;
   const flags: string[] = [];
   if (estimated) flags.push('estimated');
-  const next = new Date(last! + Math.round(avg) * 86400000).toISOString().slice(0, 10);
+  // Advance past any cycles that have already elapsed. Anchoring on the last
+  // logged period alone produced a "next period" in the past for anyone who had
+  // not logged recently, which the UI then showed as the upcoming date.
+  const step = Math.max(1, Math.round(avg));
+  let nextMs = last! + step * 86400000;
+  if (opts.today) {
+    const todayMs = Date.parse(opts.today + 'T00:00:00Z');
+    if (Number.isFinite(todayMs)) {
+      while (nextMs < todayMs) nextMs += step * 86400000;
+    }
+  }
+  const next = new Date(nextMs).toISOString().slice(0, 10);
   // Window comes from the observed cycle range (see cycleStats), not the SD.
   let loOff = avg - cycleLo;
   let hiOff = cycleHi - avg;
@@ -103,6 +128,11 @@ export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: 
   // Flag on the observed spread, not the padded window: padding exists to widen
   // coverage, and counting it here would call a 26-32 day cycle irregular.
   if (range > 9) flags.push('irregular');
+  // A logged gap too short to be a cycle is a disruption, not nothing. Without
+  // this the app reported a perfectly regular cycle right after emergency
+  // contraception, because the short gap had been filtered out silently. Kept as
+  // its own flag so the copy can say why the cycle looks irregular.
+  if (rejected.length) flags.push('disrupted');
   if (opts.ecType) flags.push('ec-disrupted');
   return { next, lo, hi, ov, confidence, flags };
 }

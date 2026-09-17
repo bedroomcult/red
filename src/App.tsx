@@ -180,17 +180,27 @@ export default function App() {
 
           <div className="card">
             <h2>{t.nextPeriod}</h2>
-            {me.prediction.next ? (
-              <div className="pred">
-                <span className="big">{fmt(me.prediction.next)}</span>
-                <span className="badge">{fmt(me.prediction.lo!)} sampai {fmt(me.prediction.hi!)}</span>
-              </div>
-            ) : (
-              <div className="muted">{t.notEnough}</div>
-            )}
+            {(() => {
+              // Never show a prediction whose date has already passed. The server
+              // rolls the window forward, but a stale cached state or a device
+              // clock ahead of the API could still deliver one.
+              const next = me.prediction.next;
+              const today = me.today ?? localDate();
+              const usable = !!next && next >= today;
+              if (!usable) {
+                return <div className="muted">{next ? t.noPredictionPast : t.notEnough}</div>;
+              }
+              return (
+                <div className="pred">
+                  <span className="big">{fmt(next!)}</span>
+                  <span className="badge">{fmt(me.prediction.lo!)} sampai {fmt(me.prediction.hi!)}</span>
+                </div>
+              );
+            })()}
             <div className="row tight">
               <span className={`badge ${conf === 'high' ? 'green' : conf === 'med' ? '' : 'grey'}`}>{t.confidence[conf] ?? t.confidence.low}</span>
               {flags.includes('estimated') && <span className="badge grey">{t.estimated}</span>}
+              {flags.includes('disrupted') && <span className="badge">{t.disrupted}</span>}
               {flags.includes('irregular') && <span className="badge grey">{t.irregular}</span>}
             </div>
             <div className="row">

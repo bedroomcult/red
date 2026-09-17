@@ -167,8 +167,8 @@ export async function buildState(env: any, userId: string, request?: Request) {
   // stop once a period has been logged since the dose, or after two cycles.
   // Without this, a 59-day-old dose kept suppressing ovulation forever.
   const activeEc = (ec as any[]).find((e) => ecDisrupts(e.intake_at, lastStart, stats.avg)) ?? null;
-  const prediction = predict(starts, { ecType: activeEc?.ec_type ?? null, bcMode: !!bc, fallbackCycle }, stats);
   const todayIso = request ? clientDate(request) : new Date().toISOString().slice(0, 10);
+  const prediction = predict(starts, { ecType: activeEc?.ec_type ?? null, bcMode: !!bc, fallbackCycle, today: todayIso }, stats);
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
@@ -190,7 +190,7 @@ export async function buildState(env: any, userId: string, request?: Request) {
   const { results: sex } = await env.DB.prepare(
     'SELECT date,protected FROM sex_events WHERE user_id=? AND date>=? ORDER BY date'
   ).bind(userId, doseCutoff).all();
-  const ins = insights(periods as any[], fallbackCycle, profile?.period_len ?? 5, stats);
+  const ins = insights(periods as any[], fallbackCycle, profile?.period_len ?? 5, stats, todayIso);
   return {
     periods, bc: bc ?? null, ec, prediction,
     todaySymptoms: (symptoms as any[]).map((s) => s.kind),

@@ -139,8 +139,17 @@ describe('ecDisrupts', () => {
     expect(ecDisrupts(ago(3), null)).toBe(true);
   });
 
-  it('stops disrupting once a period is logged after the dose', () => {
-    expect(ecDisrupts(ago(3), agoDate(1))).toBe(false);
+  it('keeps disrupting for a withdrawal bleed right after the dose', () => {
+    // 2 days after the dose is inside WITHDRAWAL_WINDOW_DAYS, so it is the
+    // expected bleed, not a resumed cycle. Returning false here hid the
+    // disruption for exactly the user who had just taken EC.
+    expect(ecDisrupts(ago(3), agoDate(1))).toBe(true);
+  });
+
+  it('stops disrupting once a real cycle resumes past the withdrawal window', () => {
+    // Period 20 days after a 25-day-old dose: past the window, so it is a real
+    // cycle resuming.
+    expect(ecDisrupts(ago(25), agoDate(5))).toBe(false);
   });
 
   it('still disrupts when the last period predates the dose', () => {
@@ -156,5 +165,69 @@ describe('ecDisrupts', () => {
   it('clamps the cycle length to the 15..60 range', () => {
     expect(ecDisrupts(ago(40), null, 5)).toBe(false); // clamped to 15 -> 30d window
     expect(ecDisrupts(ago(40), null, 999)).toBe(true); // clamped to 60 -> 120d window
+  });
+});
+
+// The reported case: haid 13-18 Aug, sex 19 Aug, morning pill 20 Aug, haid lagi
+// 25-31 Aug. The 12-day gap is too short to be a cycle, and the bleed 5 days
+// after the dose is the expected withdrawal bleed. Before this, the app dropped
+// the gap silently and reported a regular cycle with no disruption flag.
+describe('emergency contraception withdrawal bleed', () => {
+  const STARTS = ['2026-08-13', '2026-08-25'];
+
+  it('keeps the EC disruption flag even though a bleed followed the dose', () => {
+    const stats = cycleStats(STARTS);
+    // 25 Aug is 5 days after the 20 Aug dose: inside the withdrawal window.
+    const active = ecDisrupts('2026-08-20T12:00:00.000Z', '2026-08-25', stats.avg);
+    expect(active).toBe(true);
+    const r = predict(STARTS, { ecType: 'LNG', today: '2026-09-17' }, stats);
+    expect(r.flags).toContain('ec-disrupted');
+  });
+
+  it('marks the cycle disrupted rather than reporting it as regular', () => {
+    const r = predict(STARTS, { today: '2026-09-17' });
+    // The 12-day gap is not a cycle length, but it is not nothing either.
+    expect(r.flags).toContain('disrupted');
+  });
+
+  it('does not present the rejected gap as a cycle average', () => {
+    const stats = cycleStats(STARTS);
+    expect(stats.rejected).toEqual([12]);
+    expect(stats.estimated).toBe(true);
+    expect(stats.avg).toBe(28); // fallback cycle length, not 12
+  });
+
+  it('widens the window while EC is active', () => {
+    const stats = cycleStats(STARTS);
+    const withEc = predict(STARTS, { ecType: 'LNG', today: '2026-09-17' }, stats);
+    const span = (r: { lo: string | null; hi: string | null }) =>
+      Math.round((Date.parse(r.hi! + 'T00:00:00Z') - Date.parse(r.lo! + 'T00:00:00Z')) / 864e5) + 1;
+    expect(span(withEc)).toBeGreaterThanOrEqual(15);
+  });
+});
+
+// A prediction whose date has already passed must not be shown as upcoming.
+describe('past predictions roll forward', () => {
+  it('advances to the next future cycle', () => {
+    // Last logged period 3 months ago: the naive next date is in the past.
+    const r = predict(['2026-06-01'], { fallbackCycle: 28, today: '2026-09-17' });
+    expect(r.next! >= '2026-09-17').toBe(true);
+    expect(r.next).toBe('2026-09-21');
+  });
+
+  it('leaves a future prediction alone', () => {
+    const r = predict(['2026-09-01'], { fallbackCycle: 28, today: '2026-09-17' });
+    expect(r.next).toBe('2026-09-29');
+  });
+
+  it('advances by whole cycles, not to today', () => {
+    const r = predict(['2026-06-01'], { fallbackCycle: 28, today: '2026-09-17' });
+    // 2026-06-01 + 4 x 28d = 2026-09-21, the first cycle at or after today.
+    expect(r.next).toBe('2026-09-21');
+  });
+
+  it('does not roll forward without a today argument', () => {
+    // Callers that omit `today` keep the old anchor, so the change is opt-in.
+    expect(predict(['2026-06-01'], { fallbackCycle: 28 }).next).toBe('2026-06-29');
   });
 });

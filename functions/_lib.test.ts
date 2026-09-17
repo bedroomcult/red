@@ -219,10 +219,23 @@ describe('buildState', () => {
     expect(s.prediction.ov).not.toBeNull();
   });
 
-  it('expires EC disruption once a period is logged after the dose', async () => {
+  it('keeps disrupting when the bleed is the withdrawal bleed', async () => {
+    // A bleed 2 days after the dose is the expected withdrawal bleed, not a
+    // resumed cycle. Treating it as normalization hid the disruption, so a user
+    // right after emergency contraception saw a "regular" cycle.
     const { DB } = env();
     DB.periods.push({ id: 'p1', user_id: USER, start_date: agoDate(1), end_date: null, flow: 'medium', type: 'menstruation' });
     DB.ec.push({ id: 'e1', user_id: USER, ec_type: 'LNG', intake_at: agoIso(3), upsi_at: null });
+    const s = await buildState({ DB }, USER);
+    expect(s.prediction.flags).toContain('ec-disrupted');
+  });
+
+  it('expires EC disruption once a real cycle resumes past the withdrawal window', async () => {
+    const { DB } = env();
+    // Period 20 days after the dose: past the 10-day withdrawal window, so a
+    // genuine cycle has resumed.
+    DB.periods.push({ id: 'p1', user_id: USER, start_date: agoDate(5), end_date: null, flow: 'medium', type: 'menstruation' });
+    DB.ec.push({ id: 'e1', user_id: USER, ec_type: 'LNG', intake_at: agoIso(25), upsi_at: null });
     const s = await buildState({ DB }, USER);
     expect(s.prediction.flags).not.toContain('ec-disrupted');
   });
@@ -247,15 +260,16 @@ describe('buildState', () => {
 
   it('agrees between the prediction and the insights screen', async () => {
     const { DB } = env();
+    // Relative to now: buildState uses the real clock, and a fixed past date
+    // would be rolled forward by the projection.
     DB.periods.push(
-      { id: 'p1', user_id: USER, start_date: '2026-01-01', end_date: '2026-01-05', flow: 'medium', type: 'menstruation' },
-      { id: 'p2', user_id: USER, start_date: '2026-01-29', end_date: '2026-02-02', flow: 'medium', type: 'menstruation' },
-      { id: 'p3', user_id: USER, start_date: '2026-02-26', end_date: '2026-03-02', flow: 'medium', type: 'menstruation' }
+      { id: 'p1', user_id: USER, start_date: agoDate(84), end_date: agoDate(80), flow: 'medium', type: 'menstruation' },
+      { id: 'p2', user_id: USER, start_date: agoDate(56), end_date: agoDate(52), flow: 'medium', type: 'menstruation' },
+      { id: 'p3', user_id: USER, start_date: agoDate(28), end_date: agoDate(24), flow: 'medium', type: 'menstruation' }
     );
     const s = await buildState({ DB }, USER);
     expect(s.insights.avgCycle).toBe(28);
     expect(s.insights.next6[0]).toBe(s.prediction.next);
-    expect(s.insights.next6[0]).toBe('2026-03-26');
   });
 
   it('uses the client date header for today and today symptoms', async () => {

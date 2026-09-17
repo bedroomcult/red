@@ -63,13 +63,15 @@ describe('insights', () => {
     expect(r.avgPeriod).toBe(5);
     expect(r.count).toBe(2);
   });
-  it('projects next 3', () => {
-    const r = insights(p);
+  it('projects next 6', () => {
+    // todayIn pins the roll-forward; without it the fixed dates below are in the
+    // past relative to the machine clock and the list shifts.
+    const r = insights(p, 28, 5, undefined, '2026-03-05');
     expect(r.next6).toHaveLength(6);
     expect(r.next6[0]).toBe('2026-03-26');
   });
   it('empty -> nulls', () => {
-    expect(insights([]).avgCycle).toBeNull();
+    expect(insights([], 28, 5, undefined, '2026-03-05').avgCycle).toBeNull();
   });
 });
 

@@ -29,7 +29,10 @@ export function insights(
   fallbackPeriod = 5,
   // Passed in by buildState so the estimate shown here is byte-identical to the
   // prediction window. Without it the two screens disagree on cycle length.
-  statsIn?: ReturnType<typeof cycleStats>
+  statsIn?: ReturnType<typeof cycleStats>,
+  // The client's local date. Passed in so the projection does not use UTC on a
+  // device in another timezone.
+  todayIn?: string
 ): Insights {
   const mens = periods.filter((p) => p.type === 'menstruation').sort((a, b) => a.start_date.localeCompare(b.start_date));
   const stats = statsIn ?? cycleStats(mens.map((p) => p.start_date), fallbackCycle);
@@ -53,7 +56,17 @@ export function insights(
   // enough data — the same thing predict() does, so next6[0] === prediction.next.
   const last = stats.last;
   const next6: string[] = [];
-  if (last !== null) for (let i = 1; i <= 6; i++) next6.push(iso(last + eff * i * DAY));
+  if (last !== null) {
+    // Skip cycles that have already elapsed, then project six from the first one
+    // still in the future. Anchoring on the last logged period alone meant a user
+    // who had not logged for months saw a list of past dates instead of the next
+    // six periods.
+    const today = todayIn ?? new Date().toISOString().slice(0, 10);
+    const todayMs = parse(today);
+    let ms = last + eff * DAY;
+    if (Number.isFinite(todayMs)) while (ms < todayMs) ms += eff * DAY;
+    for (let i = 0; i < 6; i++) next6.push(iso(ms + eff * i * DAY));
+  }
 
   return {
     avgCycle,

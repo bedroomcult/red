@@ -41,6 +41,8 @@ export const t = {
   notEnough: 'Data kurang, catat 2+ haid',
   estimated: 'perkiraan awal (siklus 28 hari)',
   irregular: 'siklus tidak teratur, rentang lebar',
+  disrupted: 'siklus terganggu (ada jeda pendek, mis. perdarahan pil darurat)',
+  noPredictionPast: 'Prediksi sebelumnya sudah lewat. Catat haid terbaru untuk memperbarui.',
   confidence: { high: 'akurasi tinggi', med: 'akurasi sedang', low: 'akurasi rendah', suppressed: 'prediksi dijeda' },
   // panels
   logPeriod: 'Catat haid',
