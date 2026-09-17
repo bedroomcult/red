@@ -249,4 +249,47 @@ export const t = {
   // The percentage is a population average, not this person's probability, and it
   // assumes the predicted ovulation day is right. Both limits are stated.
   chanceAverageNote: 'Angka ini rata-rata populasi untuk satu kali hubungan pada hari tersebut, dan mengandaikan perkiraan ovulasi tepat. Ovulasi sebenarnya bisa bergeser beberapa hari.',
+  // Predictions: the day sheet explains WHY a date carries the prediction it
+  // does, so a 2-day window from six logged cycles reads differently from a
+  // 10-day window from two.
+  predWhy: 'Kenapa tanggal ini',
+  predWindowTitle: 'Jendela perkiraan haid',
+  predWindowRange: '{a} sampai {b}',
+  predWindowWidth: 'lebar {n} hari',
+  predBasis: 'Dasar perhitungan',
+  predBasisObserved: '{n} siklus tercatat, rata-rata {avg} hari',
+  predBasisEstimated: 'Belum cukup data, memakai {avg} hari dari pengaturan',
+  predSpread: 'Rentang siklus {n} hari',
+  predSpreadStable: 'Panjang siklus Anda konsisten sejauh ini',
+  predSpreadIrregular: 'rentang lebar, perkiraan kurang tepat',
+  predOffsetPeak: 'Hari perkiraan haid',
+  predOffsetBefore: '{n} hari sebelum perkiraan haid',
+  predOffsetAfter: '{n} hari setelah perkiraan haid',
+  predFertileReason: 'Perkiraan ovulasi {ov}, masa subur sekitar 6 hari',
+  predOutside: 'Di luar jendela perkiraan haid',
+  predOutsideNext: 'Perkiraan haid berikutnya {d}',
+  predNoData: 'Belum ada cukup data untuk memperkirakan tanggal ini.',
+  predNeedTwo: 'Catat 2 haid atau lebih supaya perkiraan bisa dihitung.',
+  predBcPaused: 'Prediksi siklus dijeda selama KB aktif, jadi tanggal ini tidak diperkirakan.',
+  predConfidenceNote: 'Perkiraan dari pola siklus, bukan hasil tes.',
+  // Symptom history
+  symHistoryTitle: 'Pola gejala',
+  symHistoryEmpty: 'Belum ada gejala tercatat. Tandai gejala di beranda atau di hari mana pun.',
+  symHistoryRange: '{first} sampai {last}',
+  symHistoryDays: '{n} hari dengan catatan',
+  symHistoryTotal: '{n} catatan gejala',
+  symHistoryTopPhase: 'paling sering saat {phase}',
+  symHistoryNoPhase: 'belum ada pola yang jelas',
+  symByPhaseTitle: 'Gejala per fase',
+  // Account
+  setPrivacy: 'Data Anda',
+  setExport: 'Unduh data saya',
+  setExportHint: 'Semua catatan Anda dalam satu berkas JSON.',
+  setExportErr: 'Unduhan gagal',
+  setDelete: 'Hapus akun',
+  setDeleteHint: 'Menghapus akun dan seluruh catatan Anda. Tidak bisa dibatalkan.',
+  setDeleteConfirmLabel: 'Ketik email Anda untuk mengonfirmasi',
+  setDeleteConfirm: 'Hapus akun saya',
+  setDeleteCancel: 'Batal',
+  setDeleteErr: 'Penghapusan gagal',
 } as const;

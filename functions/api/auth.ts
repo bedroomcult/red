@@ -4,7 +4,7 @@ const json = jsonResponse;
 
 export async function onRequestPost({ request, env }: any) {
   const ip = request.headers.get('CF-Connecting-IP') ?? 'local';
-  if (rateLimited(ip)) return json({ error: 'too many attempts' }, 429);
+  if (await rateLimited(env, ip)) return json({ error: 'too many attempts' }, 429);
 
   let body: any;
   try {

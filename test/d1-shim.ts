@@ -29,6 +29,10 @@
 //   DELETE FROM ec_events WHERE id=? AND user_id=?
 //   SELECT user_id, expires_at FROM sessions WHERE token=?
 //   SELECT id, email FROM users WHERE id=?
+//   DELETE FROM auth_attempts WHERE at < ?
+//   SELECT COUNT(*) AS n FROM auth_attempts WHERE ip=? AND at>=?
+//   INSERT INTO auth_attempts (ip,at) VALUES (?,?)
+//   SELECT DATE,KIND FROM SYMPTOMS WHERE user_id=? ORDER BY date DESC LIMIT 400
 
 type Row = Record<string, any>;
 
@@ -45,9 +49,48 @@ export function makeDb() {
   const symptoms: Row[] = [];
   const doses: Row[] = [];
   const sex: Row[] = [];
+  const authAttempts: Row[] = [];
+  const notes: Row[] = [];
 
   function run(sql: string, args: any[]) {
     const s = norm(sql);
+
+    if (s.startsWith('DELETE FROM USERS WHERE ID=?')) {
+      const [id] = args;
+      const before = users.length;
+      for (let i = users.length - 1; i >= 0; i--) if (users[i].id === id) users.splice(i, 1);
+      return { meta: { changes: before - users.length } };
+    }
+
+    if (s.startsWith('DELETE FROM AUTH_ATTEMPTS')) {
+      const [cutoff] = args;
+      const before = authAttempts.length;
+      for (let i = authAttempts.length - 1; i >= 0; i--) if (authAttempts[i].at < cutoff) authAttempts.splice(i, 1);
+      return { meta: { changes: before - authAttempts.length } };
+    }
+
+    // Account deletion clears every user-keyed table with a bare `WHERE user_id=?`.
+    // The match is exact (no trailing AND) so it cannot swallow a scoped delete
+    // like `WHERE user_id=? AND date=?`, which the per-table handlers below own.
+    // An unrecognised table falls through to the guard instead of being skipped.
+    if (/^DELETE FROM (\w+) WHERE USER_ID=\?$/.test(s)) {
+      const table = s.slice('DELETE FROM '.length, s.indexOf(' WHERE'));
+      const [user_id] = args;
+      const store = ({
+        PERIODS: periods, PILL_REGIMENS: regimens, DOSE_LOGS: doses, EC_EVENTS: ec,
+        SYMPTOMS: symptoms, SEX_EVENTS: sex, SESSIONS: sessions, DAY_NOTES: notes,
+      } as Record<string, Row[]>)[table];
+      if (!store) throw new Error('d1-shim: unsupported DELETE table: ' + table);
+      const before = store.length;
+      for (let i = store.length - 1; i >= 0; i--) if (store[i].user_id === user_id) store.splice(i, 1);
+      return { meta: { changes: before - store.length } };
+    }
+
+    if (s.startsWith('INSERT INTO AUTH_ATTEMPTS')) {
+      const [ip, at] = args;
+      authAttempts.push({ ip, at });
+      return { meta: { changes: 1 } };
+    }
 
     if (s.startsWith('INSERT INTO USERS')) {
       const [id, email, pass_hash, salt, created_at] = args;
@@ -168,6 +211,10 @@ export function makeDb() {
 
   function first(sql: string, args: any[]) {
     const s = norm(sql);
+    if (s.startsWith('SELECT COUNT(*) AS N FROM AUTH_ATTEMPTS')) {
+      const [ip, cutoff] = args;
+      return { n: authAttempts.filter((a) => a.ip === ip && a.at >= cutoff).length };
+    }
     if (s.startsWith('SELECT ID FROM USERS WHERE EMAIL=?')) {
       const [email] = args;
       return users.find((u) => u.email === email) ?? null;
@@ -190,6 +237,10 @@ export function makeDb() {
       const [id] = args;
       const u = users.find((x) => x.id === id);
       return u ? { id: u.id, email: u.email } : null;
+    }
+    if (s.startsWith('SELECT DISPLAY_NAME,CYCLE_LEN,PERIOD_LEN,CREATED_AT FROM USERS WHERE ID=?')) {
+      const [id] = args;
+      return users.find((u) => u.id === id) ?? null;
     }
     if (s.startsWith('SELECT DISPLAY_NAME, CYCLE_LEN, PERIOD_LEN FROM USERS WHERE ID=?')) {
       const [id] = args;
@@ -231,9 +282,62 @@ export function makeDb() {
           .sort((a, b) => String(b.intake_at).localeCompare(String(a.intake_at))),
       };
     }
+    if (s.startsWith('SELECT DATE,KIND FROM SYMPTOMS WHERE USER_ID=? ORDER BY DATE DESC')) {
+      const [user_id] = args;
+      return {
+        results: symptoms
+          .filter((x) => x.user_id === user_id)
+          .sort((a, b) => String(b.date).localeCompare(String(a.date)))
+          .slice(0, 400)
+          .map((x) => ({ date: x.date, kind: x.kind })),
+      };
+    }
+    if (s.startsWith('SELECT DATE,KIND FROM SYMPTOMS WHERE USER_ID=? ORDER BY DATE')) {
+      const [user_id] = args;
+      return {
+        results: symptoms.filter((x) => x.user_id === user_id)
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .map((x) => ({ date: x.date, kind: x.kind })),
+      };
+    }
+    // Export queries: whole-table reads scoped to the user.
+    if (s.startsWith('SELECT PILL_TYPE,REGIMEN,PACK_START_DATE FROM PILL_REGIMENS')) {
+      const [user_id] = args;
+      return { results: regimens.filter((r) => r.user_id === user_id) };
+    }
+    if (s.startsWith('SELECT EC_TYPE,INTAKE_AT,UPSI_AT FROM EC_EVENTS')) {
+      const [user_id] = args;
+      return {
+        results: ec.filter((e) => e.user_id === user_id)
+          .sort((a, b) => String(a.intake_at).localeCompare(String(b.intake_at))),
+      };
+    }
+    if (s.startsWith('SELECT DATE,NOTE FROM DAY_NOTES')) {
+      const [user_id] = args;
+      return {
+        results: notes.filter((n) => n.user_id === user_id)
+          .sort((a, b) => String(a.date).localeCompare(String(b.date))),
+      };
+    }
     if (s.startsWith('SELECT KIND FROM SYMPTOMS')) {
       const [user_id, date] = args;
       return { results: symptoms.filter((x) => x.user_id === user_id && x.date === date) };
+    }
+    if (s.startsWith('SELECT DATE,TAKEN FROM DOSE_LOGS WHERE USER_ID=? ORDER BY DATE')) {
+      const [user_id] = args;
+      return {
+        results: doses.filter((d) => d.user_id === user_id)
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .map((d) => ({ date: d.date, taken: d.taken })),
+      };
+    }
+    if (s.startsWith('SELECT DATE,PROTECTED FROM SEX_EVENTS WHERE USER_ID=? ORDER BY DATE')) {
+      const [user_id] = args;
+      return {
+        results: sex.filter((x) => x.user_id === user_id)
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .map((x) => ({ date: x.date, protected: x.protected })),
+      };
     }
     if (s.startsWith('SELECT DATE,TAKEN FROM DOSE_LOGS')) {
       const [user_id, from] = args;
@@ -270,5 +374,5 @@ export function makeDb() {
     };
   }
 
-  return { prepare, users, sessions, periods, regimens, ec, symptoms, doses, sex };
+  return { prepare, users, sessions, periods, regimens, ec, symptoms, doses, sex, notes, authAttempts };
 }

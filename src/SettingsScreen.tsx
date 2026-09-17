@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { t } from './i18n';
+import { localDate } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
 import { apiFetch, readJson } from './api';
@@ -19,6 +20,41 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
   const [prefs, setPrefs] = useState<ReminderPrefs>(loadPrefs);
   const [remMsg, setRemMsg] = useState<string | null>(null);
   const [nativeOnly, setNativeOnly] = useState(false);
+  const [exportErr, setExportErr] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleteEmail, setDeleteEmail] = useState('');
+  const [deleteErr, setDeleteErr] = useState<string | null>(null);
+
+  // Download everything the account holds as a JSON file. Built as a blob
+  // rather than opening the endpoint, so the session cookie stays in the app
+  // and the browser gets a real file with a name.
+  async function doExport() {
+    setBusy(true); setExportErr(null);
+    try {
+      const r = await apiFetch('/api/account');
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      const data = await readJson(r);
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `red-export-${localDate()}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (e: any) { setExportErr(e instanceof Error ? e.message : t.setExportErr); } finally { setBusy(false); }
+  }
+
+  const canDelete = deleteEmail.trim().length > 0;
+
+  async function doDelete() {
+    setBusy(true); setDeleteErr(null);
+    try {
+      const r = await apiFetch('/api/account?confirm=' + encodeURIComponent(deleteEmail.trim()), { method: 'DELETE' });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      // The account is gone and the session cookie is cleared server-side.
+      onLogout();
+    } catch (e: any) { setDeleteErr(e instanceof Error ? e.message : t.setDeleteErr); setBusy(false); }
+  }
 
   async function save() {
     setBusy(true); setMsg(null);
@@ -111,6 +147,37 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
         <div className="row">
           <button className="btn" onClick={testNotify}>{t.remEnable}</button>
         </div>
+      </div>
+
+      <div className="card">
+        <h2>{t.setPrivacy}</h2>
+        <div className="muted" style={{ marginTop: -6, marginBottom: 10 }}>{t.setExportHint}</div>
+        <div className="row" style={{ marginTop: 0 }}>
+          <button className="btn" disabled={busy} onClick={doExport}>{t.setExport}</button>
+        </div>
+        {exportErr && <div className="err">{exportErr}</div>}
+
+        {/* Deleting needs the account email typed out. A single tap must not be
+            able to destroy years of logged health data. */}
+        <div className="muted" style={{ marginTop: 16, marginBottom: 10 }}>{t.setDeleteHint}</div>
+        {!confirmDelete ? (
+          <div className="row" style={{ marginTop: 0 }}>
+            <button className="btn danger" onClick={() => setConfirmDelete(true)}>{t.setDelete}</button>
+          </div>
+        ) : (
+          <>
+            <div className="field">
+              <label htmlFor="set-del-email">{t.setDeleteConfirmLabel}</label>
+              <input id="set-del-email" type="email" value={deleteEmail}
+                onChange={(e) => setDeleteEmail(e.target.value)} autoComplete="off" spellCheck={false} />
+            </div>
+            <div className="row" style={{ marginTop: 0 }}>
+              <button className="btn danger" disabled={busy || !canDelete} onClick={doDelete}>{t.setDeleteConfirm}</button>
+              <button className="btn ghost" onClick={() => { setConfirmDelete(false); setDeleteEmail(''); }}>{t.setDeleteCancel}</button>
+            </div>
+            {deleteErr && <div className="err">{deleteErr}</div>}
+          </>
+        )}
       </div>
 
       <div className="card">

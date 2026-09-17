@@ -121,14 +121,25 @@ export function jsonResponse(o: unknown, status = 200, extra?: HeadersInit): Res
   );
 }
 
-// ponytail: in-memory rate limit, per-worker only. D1/KV store if multi-isolate abuse matters.
-const attempts = new Map<string, number[]>();
-export function rateLimited(ip: string): boolean {
+// Persistent rate limit in D1. The previous in-memory Map was per-isolate, so
+// the 10-attempt window only held within a single isolate and an attacker
+// rotating across isolates got a fresh counter each time.
+//
+// ponytail: one row per attempt, pruned on write. At most a few hundred rows
+// live at once; a counter table with a time bucket would be fewer rows but
+// cannot express a sliding window without extra bookkeeping.
+export async function rateLimited(env: any, ip: string): Promise<boolean> {
   const now = Date.now();
-  const arr = (attempts.get(ip) ?? []).filter((t) => now - t < 10 * 60 * 1000);
-  arr.push(now);
-  attempts.set(ip, arr);
-  return arr.length > 10;
+  const cutoff = now - 10 * 60 * 1000;
+  // Prune first so the window is genuinely sliding and the table stays small.
+  await env.DB.prepare('DELETE FROM auth_attempts WHERE at < ?').bind(cutoff).run();
+  const row: any = await env.DB.prepare('SELECT COUNT(*) AS n FROM auth_attempts WHERE ip=? AND at>=?')
+    .bind(ip, cutoff)
+    .first();
+  const n = Number(row?.n ?? 0);
+  if (n >= 10) return true;
+  await env.DB.prepare('INSERT INTO auth_attempts (ip,at) VALUES (?,?)').bind(ip, now).run();
+  return false;
 }
 
 export async function buildState(env: any, userId: string, request?: Request) {
@@ -161,6 +172,13 @@ export async function buildState(env: any, userId: string, request?: Request) {
   const { results: symptoms } = await env.DB.prepare(
     'SELECT kind FROM symptoms WHERE user_id=? AND date=?'
   ).bind(userId, todayIso).all();
+  // Full symptom history, so the insights screen can show patterns over time.
+  // The old query filtered on today only, which made every past symptom
+  // unreadable. Capped at 400 rows to match /api/symptoms; the client folds
+  // these into per-kind counts and phase attribution.
+  const { results: symptomLog } = await env.DB.prepare(
+    'SELECT date,kind FROM symptoms WHERE user_id=? ORDER BY date DESC LIMIT 400'
+  ).bind(userId).all();
   // Last 90 days of pill logs. The calendar only ever shows one month, but the
   // client has no month boundary to query on, so a fixed window is simpler than
   // a per-month request. 90 days covers any month view plus the previous one.
@@ -177,6 +195,8 @@ export async function buildState(env: any, userId: string, request?: Request) {
     periods, bc: bc ?? null, ec, prediction,
     todaySymptoms: (symptoms as any[]).map((s) => s.kind),
     today: todayIso,
+    // Oldest first, so the client can compute a range without re-sorting.
+    symptomLog: (symptomLog as any[]).map((s) => ({ date: s.date as string, kind: s.kind as string })).reverse(),
     // taken is stored as 0/1; the client wants a boolean.
     doses: (doses as any[]).map((d) => ({ date: d.date as string, taken: !!d.taken })),
     sex: (sex as any[]).map((s) => ({ date: s.date as string, protected: !!s.protected })),

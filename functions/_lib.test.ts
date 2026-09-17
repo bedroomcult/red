@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import { hashPw, verifyPw, constantTimeEqual, getCookie, sessCookie, rateLimited } from './_lib';
 import { clientDate } from './_today';
+import { makeDb } from '../test/d1-shim';
 
 // Reproduce the pre-065fee3 hash (bare base64, 50k iterations) to prove existing
 // users can still log in after the format change.
@@ -116,15 +117,38 @@ describe('sessCookie', () => {
 });
 
 describe('rateLimited', () => {
-  it('allows 10 attempts then blocks the 11th for the same ip', () => {
+  it('allows 10 attempts then blocks the 11th for the same ip', async () => {
+    const db = makeDb();
+    const env = { DB: db };
     const ip = 'fixed-test-ip';
-    for (let i = 0; i < 10; i++) expect(rateLimited(ip)).toBe(false);
-    expect(rateLimited(ip)).toBe(true);
+    for (let i = 0; i < 10; i++) expect(await rateLimited(env, ip)).toBe(false);
+    expect(await rateLimited(env, ip)).toBe(true);
   });
 
-  it('tracks each ip independently', () => {
-    expect(rateLimited('other-test-ip-a')).toBe(false);
-    expect(rateLimited('other-test-ip-b')).toBe(false);
+  it('tracks each ip independently', async () => {
+    const db = makeDb();
+    const env = { DB: db };
+    expect(await rateLimited(env, 'other-test-ip-a')).toBe(false);
+    expect(await rateLimited(env, 'other-test-ip-b')).toBe(false);
+  });
+
+  it('counts across instances sharing one database', async () => {
+    // The old in-memory Map was per-isolate, so a second worker started with a
+    // fresh counter. Two env objects over one D1 is that scenario.
+    const db = makeDb();
+    for (let i = 0; i < 10; i++) await rateLimited({ DB: db }, 'shared-ip');
+    expect(await rateLimited({ DB: db }, 'shared-ip')).toBe(true);
+  });
+
+  it('forgets attempts older than the window', async () => {
+    const db = makeDb();
+    const env = { DB: db };
+    const ip = 'stale-ip';
+    for (let i = 0; i < 10; i++) await rateLimited(env, ip);
+    expect(await rateLimited(env, ip)).toBe(true);
+    // Age every row past the 10 minute window.
+    for (const r of db.authAttempts) r.at = Date.now() - 11 * 60 * 1000;
+    expect(await rateLimited(env, ip)).toBe(false);
   });
 });
 
@@ -147,7 +171,6 @@ describe('clientDate', () => {
 // buildState is the single read path for Home, Calendar, Wawasan and Settings.
 // The EC decay rule lives here, so it is tested here rather than through a UI.
 import { buildState } from './_lib';
-import { makeDb } from '../test/d1-shim';
 
 const USER = 'user-1';
 const agoIso = (d: number) => new Date(Date.now() - d * 864e5).toISOString();

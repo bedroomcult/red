@@ -106,3 +106,108 @@ export function predict(starts: string[], opts: {ecType?: string|null, bcMode?: 
   if (opts.ecType) flags.push('ec-disrupted');
   return { next, lo, hi, ov, confidence, flags };
 }
+
+// Why a specific date carries the prediction it does.
+//
+// The calendar paints a ring and the day sheet used to state the conclusion
+// ("this day falls in the predicted window") without the reasoning. The user
+// cannot tell a 2-day window from six logged cycles apart from a 10-day window
+// from two, and those deserve different trust.
+//
+// Returns structured facts, not prose. The UI renders them through i18n, so a
+// null field means "that reason does not apply" rather than an empty string.
+export type PredictionReason = {
+  kind: 'bc' | 'no-data' | 'in-window' | 'fertile' | 'ovulation' | 'outside';
+  // Where the date sits relative to the predicted period.
+  daysFromNext: number | null;
+  // The window bounds, so the UI can state them rather than a vague "range".
+  windowLo: string | null;
+  windowHi: string | null;
+  windowDays: number | null;
+  // How many observed cycles fed the average, and what that average was.
+  observedCycles: number;
+  avgCycle: number | null;
+  // True when the average is the configured fallback, not measured data.
+  estimated: boolean;
+  // Observed cycle spread, in days. Wider spread means less certain.
+  spread: number | null;
+  irregular: boolean;
+  ecType: string | null;
+  // The ovulation date and whether this date is in the fertile window.
+  ov: string | null;
+  inFertile: boolean;
+};
+
+const DAY_MS = 864e5;
+
+export function explainPrediction(
+  date: string,
+  starts: string[],
+  pred: { next: string | null; lo: string | null; hi: string | null; ov: string | null; confidence: string; flags: string[] },
+  opts: { ecType?: string | null; bcMode?: boolean; fallbackCycle?: number; periodLen?: number } = {},
+  statsIn?: ReturnType<typeof cycleStats>
+): PredictionReason {
+  const stats = statsIn ?? cycleStats(starts, opts.fallbackCycle ?? 28);
+  const dateMs = Date.parse(date + 'T00:00:00Z');
+  const base = {
+    daysFromNext: null as number | null,
+    windowLo: pred.lo,
+    windowHi: pred.hi,
+    windowDays: pred.lo && pred.hi
+      ? Math.round((Date.parse(pred.hi + 'T00:00:00Z') - Date.parse(pred.lo + 'T00:00:00Z')) / DAY_MS) + 1
+      : null,
+    observedCycles: stats.estimated ? 0 : stats.cycles.length,
+    avgCycle: stats.estimated ? null : Math.round(stats.avg),
+    estimated: stats.estimated,
+    spread: stats.estimated ? null : stats.range,
+    irregular: pred.flags.includes('irregular'),
+    ecType: opts.ecType ?? null,
+    ov: pred.ov,
+    inFertile: false,
+  };
+
+  if (opts.bcMode) {
+    // Cycle stats describe a natural cycle. While contraception suppresses the
+    // prediction the average is not what is driving anything, so reporting it
+    // would suggest a forecast that is not being made.
+    return { ...base, kind: 'bc', inFertile: false, observedCycles: 0, avgCycle: null, spread: null, estimated: true };
+  }
+  if (!pred.next || !stats.last) return { ...base, kind: 'no-data' };
+
+  const nextMs = Date.parse(pred.next + 'T00:00:00Z');
+
+  // The predicted window is checked before the fertile window, matching the
+  // calendar's own precedence: a date in both reads as the predicted period.
+  if (pred.lo && pred.hi && date >= pred.lo && date <= pred.hi) {
+    return { ...base, kind: 'in-window', daysFromNext: Math.round((dateMs - nextMs) / DAY_MS) };
+  }
+
+  if (pred.ov) {
+    const o = Date.parse(pred.ov + 'T00:00:00Z');
+    // Same window the calendar paints: ovulation -5d .. +1d.
+    if (dateMs >= o - 5 * DAY_MS && dateMs <= o + DAY_MS) {
+      return { ...base, kind: date === pred.ov ? 'ovulation' : 'fertile', inFertile: true };
+    }
+  }
+
+  return { ...base, kind: 'outside', daysFromNext: Math.round((dateMs - nextMs) / DAY_MS) };
+}
+
+// ponytail: assert self-check, run with `node --experimental-strip-types lib/predict.ts`.
+if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('predict.ts')) {
+  const starts = ['2026-08-09', '2026-09-06'];
+  const p = predict(starts, { fallbackCycle: 28 });
+  const inWin = explainPrediction(p.lo!, starts, p);
+  console.assert(inWin.kind === 'in-window', 'window kind ' + inWin.kind);
+  console.assert(inWin.observedCycles === 1, 'observed ' + inWin.observedCycles);
+  const ovDay = explainPrediction(p.ov!, starts, p);
+  console.assert(ovDay.kind === 'ovulation', 'ovulation kind ' + ovDay.kind);
+  console.assert(ovDay.inFertile === true, 'ovulation fertile');
+  const outside = explainPrediction('2026-09-01', starts, p);
+  console.assert(outside.kind === 'outside', 'outside kind ' + outside.kind);
+  const bc = explainPrediction('2026-09-01', starts, { next: null, lo: null, hi: null, ov: null, confidence: 'suppressed', flags: [] }, { bcMode: true });
+  console.assert(bc.kind === 'bc', 'bc kind ' + bc.kind);
+  const none = explainPrediction('2026-09-01', [], { next: null, lo: null, hi: null, ov: null, confidence: 'low', flags: [] });
+  console.assert(none.kind === 'no-data', 'no-data kind ' + none.kind);
+  console.log('predict.ts self-check passed');
+}

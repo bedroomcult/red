@@ -18,7 +18,7 @@ import { periodForDate } from '../lib/cycle';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
 
-type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { id: string; ec_type: string; intake_at: string; upsi_at: string | null }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; doses?: Dose[]; sex?: SexLog[]; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
+type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { id: string; ec_type: string; intake_at: string; upsi_at: string | null }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; doses?: Dose[]; sex?: SexLog[]; symptomLog?: { date: string; kind: string }[]; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
 
 const today = () => localDate();
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -222,7 +222,13 @@ export default function App() {
       )}
 
       {me && tab === 'insights' && (
-        <InsightsScreen ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, estimated: true, next3: [] }} />
+        <InsightsScreen
+          ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, estimated: true, next3: [] }}
+          periods={me.periods}
+          prediction={me.prediction}
+          bcMode={bcMode}
+          symptomLog={me.symptomLog ?? []}
+        />
       )}
 
       {me && tab === 'settings' && (
@@ -238,6 +244,7 @@ export default function App() {
           bcMode={bcMode}
           dose={me?.doses?.find((d) => d.date === sel)}
           sexLog={me?.sex?.find((s) => s.date === sel)}
+          symptomLog={me?.symptomLog ?? []}
           onDoseSaved={setMe}
           onLog={(d) => setLogDate(d)}
           onClose={() => setSel(null)}

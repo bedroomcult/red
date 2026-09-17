@@ -1,5 +1,8 @@
 import { useEffect, useState } from 'react';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
+import { explainPrediction } from '../lib/predict';
+import { symptomHistory } from '../lib/symptom-history';
+import PredictionDetail from './PredictionDetail';
 import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
@@ -33,13 +36,14 @@ const fmtLong = (d: string) =>
 // Read-only view of one day. Tapping a calendar cell lands here; editing a period
 // is an explicit second step via onLog. Showing the form first made every tap a
 // commitment to logging, and buried the symptoms/note already stored for the day.
-export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose }: {
+export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, symptomLog = [], onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
   bcMode: boolean;
   dose: Dose | undefined;
   sexLog: SexLog | undefined;
+  symptomLog?: { date: string; kind: string }[];
   onDoseSaved: (state: any) => void;
   onLog: (date: string) => void;
   onClose: () => void;
@@ -117,11 +121,25 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
 
   const startLog = periods.find((p) => p.start_date === date);
   const inRange = periodForDate(periods, date);
-  const inPredWindow = !!(prediction?.lo && prediction?.hi && date >= prediction.lo && date <= prediction.hi);
   const ov = prediction?.ov ? Date.parse(prediction.ov + 'T00:00:00Z') : null;
   const d = Date.parse(date + 'T00:00:00Z');
   // Fertile window = ovulation -5d .. +1d, matching lib/cycle.ts.
   const inFertile = ov !== null && d >= ov - 5 * 864e5 && d <= ov + 864e5;
+
+  // Why this date reads the way it does. Rendered for every date, not only
+  // predicted ones, so tapping an ordinary Tuesday still explains itself.
+  const reason = prediction
+    ? explainPrediction(
+        date,
+        periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date),
+        prediction,
+        { bcMode }
+      )
+    : null;
+
+  // Recurrence counts for the symptoms logged on this day, so a single entry is
+  // shown against the user's own history rather than in isolation.
+  const hist = symptomLog.length ? symptomHistory(symptomLog, periods, prediction, bcMode) : null;
 
   return (
     <>
@@ -157,19 +175,10 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
           </div>
         ) : null}
 
-        {!startLog && !inRange && inPredWindow && (
-          <div className="day-info">
-            <div className="day-info-label">{t.dayPredicted}</div>
-            <div className="day-info-value">{t.dayPredictedValue}</div>
-          </div>
-        )}
-
-        {!startLog && !inRange && !inPredWindow && inFertile && (
-          <div className="day-info">
-            <div className="day-info-label">{t.dayFertile}</div>
-            <div className="day-info-value">{date === prediction!.ov ? t.dayOvulationValue : t.dayFertileValue}</div>
-          </div>
-        )}
+        {/* A logged day already explained itself above. Every other date gets the
+            reasoning: what the estimate is, how wide it is, and what it was
+            computed from. */}
+        {!startLog && !inRange && reason && <PredictionDetail date={date} reason={reason} />}
 
         <div className="day-group">
           <div className="day-info">
@@ -179,6 +188,23 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                 : syms.length === 0 ? <span className="muted">{t.dayNoSymptoms}</span>
                 : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
             </div>
+            {/* How often this day's symptoms recur, so one bad day reads against
+                the user's own history rather than in isolation. Only shown when
+                there is enough history to say something. */}
+            {syms && syms.length > 0 && hist && (
+              <div className="muted" style={{ marginTop: 6 }}>
+                {syms.map((k) => {
+                  const s = hist.stats.find((x) => x.kind === k);
+                  if (!s || s.count < 2) return null;
+                  return (
+                    <div key={k}>
+                      {SYM_LABEL[k] ?? k}: {s.count}×
+                      {s.topPhase && <> · {t.symHistoryTopPhase.replace('{phase}', PHASE_LABEL[s.topPhase] ?? s.topPhase)}</>}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </div>
 
           <div className="day-info">
