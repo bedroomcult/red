@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useEscape } from './useEscape';
 import type { Period } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
@@ -7,6 +8,7 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
   date: string; existing: Period | undefined; active: Period | undefined;
   onClose: () => void; onSaved: (state: any) => void;
 }) {
+  useEscape(true, onClose);
   const [err, setErr] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
   const [flow, setFlow] = useState(existing?.flow ?? 'medium');

@@ -68,3 +68,27 @@ describe('calendar multi-cycle projection', () => {
     expect(app).toMatch(/futureStarts=\{me\.insights\?\.next6/);
   });
 });
+
+// A predicted period is a range, not a day. Marking only the projected start left
+// cycles 2-6 as a single highlighted cell, so a month looked like a one-day period.
+describe('predicted period paints the whole period', () => {
+  it('expands each projected start by periodLen', () => {
+    expect(CAL).toMatch(/periodLen - 1\) \* 864e5/);
+  });
+
+  it('applies the expansion to every projected cycle, not just the first', () => {
+    // The loop must be over `future`, with no `.slice(1)` shortcut that would
+    // leave the later cycles as single days.
+    expect(CAL).toMatch(/for \(const start of future\)/);
+    expect(CAL).not.toMatch(/future\.slice\(1\)/);
+  });
+
+  it('takes periodLen from the caller', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toMatch(/periodLen=\{me\.profile\?\.period_len/);
+  });
+
+  it('defaults to 5 days when no period length is set', () => {
+    expect(CAL).toMatch(/periodLen = 5/);
+  });
+});

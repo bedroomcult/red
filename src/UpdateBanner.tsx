@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { t } from './i18n';
 import { checkForUpdate, RELEASES_PAGE, type UpdateInfo } from './update';
 import { isNative } from './native';
+import { useEscape } from './useEscape';
 
 // Update notice as a modal rather than a banner. A banner sat inside the
 // scrolling content and was easy to scroll past; a modal is unmissable, and the
@@ -18,12 +19,7 @@ export default function UpdateBanner() {
   }, [current]);
 
   // Escape closes it, matching every other sheet in the app.
-  useEffect(() => {
-    if (!info || dismissed) return;
-    const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') setDismissed(true); };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [info, dismissed]);
+  useEscape(!!info && !dismissed, () => setDismissed(true));
 
   if (!info || dismissed) return null;
 

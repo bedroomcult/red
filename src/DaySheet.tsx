@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useEscape } from './useEscape';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
 import { explainPrediction } from '../lib/predict';
 import { symptomHistory } from '../lib/symptom-history';
@@ -48,6 +49,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   onLog: (date: string) => void;
   onClose: () => void;
 }) {
+  useEscape(true, onClose);
   const [syms, setSyms] = useState<string[] | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [doseBusy, setDoseBusy] = useState(false);

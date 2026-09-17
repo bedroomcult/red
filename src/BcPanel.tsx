@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEscape } from './useEscape';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
@@ -9,6 +10,7 @@ export default function BcPanel({ current, onClose, onSaved }: {
   current: { pill_type: string; regimen: string } | null;
   onClose: () => void; onSaved: (state: any) => void;
 }) {
+  useEscape(true, onClose);
   const [pillType, setPillType] = useState(current?.pill_type ?? 'combined');
   const [regimen, setRegimen] = useState(current?.regimen ?? '21/7');
   const [taken, setTaken] = useState(true);

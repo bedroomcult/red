@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { useEscape } from './useEscape';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
@@ -21,6 +22,7 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
   onClose: () => void;
   onSaved: (state: any) => void;
 }) {
+  useEscape(true, onClose);
   // The row selected for editing. Starts at the event the parent opened with.
   const [editing, setEditing] = useState<EcEvent | null>(current);
   const [ecType, setEcType] = useState(current?.ec_type ?? 'LNG');

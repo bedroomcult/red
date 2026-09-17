@@ -17,16 +17,28 @@ const symLabel: Record<string, string> = {
 
 const fmtShort = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
-// Gradient background per phase.
-const GRAD: Record<Phase, string> = {
-  period: 'radial-gradient(120% 100% at 50% 0%, #ff8a8f 0%, #e5484d 55%, #b3262b 100%)',
-  fertile: 'radial-gradient(120% 100% at 50% 0%, #7fe0ad 0%, #30a46c 60%, #1d6b46 100%)',
-  ovulation: 'radial-gradient(120% 100% at 50% 0%, #5fd39a 0%, #1d9e63 60%, #0f5c39 100%)',
-  pms: 'radial-gradient(120% 100% at 50% 0%, #ffc6a3 0%, #e5784d 60%, #a84b26 100%)',
-  neutral: 'radial-gradient(120% 100% at 50% 0%, #f2f2f5 0%, #d8d8de 55%, #b9b9c2 100%)',
-  bc: 'radial-gradient(120% 100% at 50% 0%, #e6e6ea 0%, #c9c9d1 60%, #a8a8b3 100%)',
+// Phase wash. A low-saturation atmospheric layer behind the text block, per
+// DESIGN.md section 4, rather than a saturated field the text sits on. The old
+// radial gradients put white text over stops as light as 1.45:1; a wash at this
+// opacity keeps the text at full contrast while still signalling the phase.
+const WASH: Record<Phase, string> = {
+  period: 'linear-gradient(160deg, rgba(192,57,47,.18) 0%, rgba(192,57,47,.06) 100%)',
+  fertile: 'linear-gradient(160deg, rgba(47,125,82,.18) 0%, rgba(47,125,82,.06) 100%)',
+  ovulation: 'linear-gradient(160deg, rgba(31,107,69,.20) 0%, rgba(31,107,69,.07) 100%)',
+  pms: 'linear-gradient(160deg, rgba(168,86,42,.18) 0%, rgba(168,86,42,.06) 100%)',
+  neutral: 'linear-gradient(160deg, rgba(28,28,28,.06) 0%, rgba(28,28,28,.02) 100%)',
+  bc: 'linear-gradient(160deg, rgba(28,28,28,.06) 0%, rgba(28,28,28,.02) 100%)',
 };
-const LIGHT: Record<Phase, boolean> = { period: true, fertile: true, ovulation: true, pms: true, neutral: false, bc: false };
+
+// The accent bar under the title: one deliberate accent, carrying the phase.
+const ACCENT: Record<Phase, string> = {
+  period: 'var(--period)',
+  fertile: 'var(--fertile)',
+  ovulation: 'var(--ovulation)',
+  pms: 'var(--pms)',
+  neutral: 'var(--muted)',
+  bc: 'var(--muted)',
+};
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
   me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null } | null };
@@ -54,10 +66,6 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
       setSyms(j.symptoms.map((s: any) => s.kind));
     } catch { setSyms(syms); }
   }
-
-  const light = LIGHT[st.phase];
-  const fg = light ? '#fff' : '#1c1c1e';
-  const sub = light ? 'rgba(255,255,255,.9)' : '#4a4a52';
 
   let title: ReactNode;
   let subtitle = '';
@@ -94,15 +102,16 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   return (
     <div className="home-hero-wrap">
-      <div className="hero" style={{ background: GRAD[st.phase], color: fg }}>
+      <div className="hero" style={{ background: WASH[st.phase] }}>
         {/* Full-bleed: the .app wrapper's 16px side padding is cancelled so the
             gradient reaches both edges. The app name and logout live in the
             shared header above, so the hero carries only phase status. */}
         <div className="hero-body">
           <div className="hero-title">{title}</div>
-          {subtitle && <div className="hero-sub" style={{ color: sub }}>{subtitle}</div>}
+          <div className="hero-accent" style={{ background: ACCENT[st.phase] }} />
+          {subtitle && <div className="hero-sub">{subtitle}</div>}
           {st.cycleDay !== null && st.phase !== 'period' && (
-            <div className="hero-meta" style={{ color: sub }}>
+            <div className="hero-meta">
               {t.homeCycleDay} {st.cycleDay}
             </div>
           )}

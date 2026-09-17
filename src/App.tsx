@@ -161,7 +161,7 @@ export default function App() {
               <strong>{label}</strong>
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
             </div>
-            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} />
+            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} periodLen={me.profile?.period_len ?? 5} />
             <div className="legend">
               <div className="legend-group">
                 <span><i className="chip logged" />{t.legendPeriod}</span>

@@ -38,12 +38,14 @@ import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 import { localDate } from '../lib/today';
 import { t } from './i18n';
 
-export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [], futureStarts = [] }: {
+export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [], futureStarts = [], periodLen = 5 }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
   selected: string | null; onPick: (d: string) => void; doses?: Dose[]; sex?: SexLog[];
   // Projected starts for the following cycles. Without these the calendar only
   // ever marks the single next window, so browsing a later month showed nothing.
   futureStarts?: string[];
+  // How many days each projected period should paint.
+  periodLen?: number;
 }) {
   const logged = new Map(periods.map((p) => [p.start_date, p]));
   const doseByDate = new Map(doses.map((d) => [d.date, d]));
@@ -67,17 +69,20 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const todayIso = localDate();
 
   // Dates to mark as predicted periods. Prefer the multi-cycle projection: it
-  // covers later months, which the single next window cannot. The window around
-  // the first projection is kept so the uncertainty is still visible.
+  // covers later months, which the single next window cannot.
+  //
+  // A predicted period is a RANGE, not a day. Marking only the start date left
+  // cycles 2-6 as a single highlighted cell, so a month view looked like the
+  // period was one day long. Every projected start now expands to periodLen
+  // days, matching how a logged period paints.
   const future = (futureStarts ?? []).filter((d) => d >= todayIso);
   const predDays = new Set<string>();
   if (future.length) {
-    // The first entry is the same cycle the window describes, so only add its
-    // spread; later cycles get a single marked day each.
-    for (let t = parse(predLo ?? future[0]); t <= parse(predHi ?? future[0]); t += 864e5) {
-      predDays.add(new Date(t).toISOString().slice(0, 10));
+    for (const start of future) {
+      for (let t = parse(start); t <= parse(start) + (periodLen - 1) * 864e5; t += 864e5) {
+        predDays.add(new Date(t).toISOString().slice(0, 10));
+      }
     }
-    for (const d of future.slice(1)) predDays.add(d);
   }
   return (
     <div>
