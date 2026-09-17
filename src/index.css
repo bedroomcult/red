@@ -449,6 +449,9 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .chance-fill.risk-medium { background: var(--amber-line); }
 .chance-fill.risk-low { background: var(--green); }
 .chance-note { font-size: 11px; line-height: 1.5; margin-top: 8px; }
+/* projection list: later cycles are marked as approximate */
+.ins-approx { color: var(--muted); font-style: italic; }
+.ins-note { font-size: 11px; line-height: 1.5; margin-top: 10px; }
 
 /* spinner */
 .spinner {

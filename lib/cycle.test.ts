@@ -65,8 +65,8 @@ describe('insights', () => {
   });
   it('projects next 3', () => {
     const r = insights(p);
-    expect(r.next3).toHaveLength(3);
-    expect(r.next3[0]).toBe('2026-03-26');
+    expect(r.next6).toHaveLength(6);
+    expect(r.next6[0]).toBe('2026-03-26');
   });
   it('empty -> nulls', () => {
     expect(insights([]).avgCycle).toBeNull();

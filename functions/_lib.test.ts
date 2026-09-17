@@ -254,8 +254,8 @@ describe('buildState', () => {
     );
     const s = await buildState({ DB }, USER);
     expect(s.insights.avgCycle).toBe(28);
-    expect(s.insights.next3[0]).toBe(s.prediction.next);
-    expect(s.insights.next3[0]).toBe('2026-03-26');
+    expect(s.insights.next6[0]).toBe(s.prediction.next);
+    expect(s.insights.next6[0]).toBe('2026-03-26');
   });
 
   it('uses the client date header for today and today symptoms', async () => {

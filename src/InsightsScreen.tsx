@@ -59,17 +59,23 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
         )}
       </div>
 
-      {ins.next3.length > 0 && (
+      {ins.next6.length > 0 && (
         <div className="card">
-          <h2>{t.insNext3}</h2>
+          <h2>{t.insNext6}</h2>
           <ul className="list">
-            {ins.next3.map((d, i) => (
+            {ins.next6.map((d, i) => (
               <li key={d}>
                 <span className="date">{fmt(d)}</span>
-                <span className="meta" style={{ marginLeft: 'auto' }}>#{i + 1}</span>
+                {/* Confidence falls with distance: the projection compounds the
+                    average cycle length, so cycle 1 is a date and cycle 6 is a
+                    rough one. Saying which is which is the point. */}
+                <span className={`meta ${i >= 3 ? 'ins-approx' : ''}`} style={{ marginLeft: 'auto' }}>
+                  {i < 3 ? `#${i + 1}` : `#${i + 1} · ${t.insApprox}`}
+                </span>
               </li>
             ))}
           </ul>
+          <div className="muted ins-note">{t.insNext6Note}</div>
         </div>
       )}
 

@@ -12,7 +12,11 @@ export type Insights = {
   shortest: number | null;
   longest: number | null;
   estimated: boolean; // true when the average is the fallback, not observed data
-  next3: string[];
+  // Projected next period starts. Six, not more: the projection compounds the
+  // average cycle length, so the error grows linearly with the cycle index. By
+  // cycle 7 the window is wider than a whole cycle and the date stops meaning
+  // anything, so the list stops at 6.
+  next6: string[];
 };
 
 const DAY = 864e5;
@@ -46,10 +50,10 @@ export function insights(
 
   const eff = avgCycle ?? stats.fb;
   // Fall back to the configured length for the projection when there is not
-  // enough data — the same thing predict() does, so next3[0] === prediction.next.
+  // enough data — the same thing predict() does, so next6[0] === prediction.next.
   const last = stats.last;
-  const next3: string[] = [];
-  if (last !== null) for (let i = 1; i <= 3; i++) next3.push(iso(last + eff * i * DAY));
+  const next6: string[] = [];
+  if (last !== null) for (let i = 1; i <= 6; i++) next6.push(iso(last + eff * i * DAY));
 
   return {
     avgCycle,
@@ -59,7 +63,7 @@ export function insights(
     shortest: lens.length ? Math.min(...lens) : null,
     longest: lens.length ? Math.max(...lens) : null,
     estimated: stats.estimated,
-    next3,
+    next6,
   };
 }
 
@@ -74,7 +78,7 @@ if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('insights.ts')
   console.assert(r.avgCycle === 28, 'avgCycle ' + r.avgCycle);
   console.assert(r.avgPeriod === 5, 'avgPeriod ' + r.avgPeriod);
   console.assert(r.count === 2, 'count');
-  console.assert(r.next3.length === 3 && r.next3[0] === '2026-03-26', 'next3 ' + r.next3[0]);
+  console.assert(r.next6.length === 6 && r.next6[0] === '2026-03-26', 'next6 ' + r.next6[0]);
   console.assert(insights([]).avgCycle === null, 'empty');
   console.log('insights.ts self-check passed');
 }
