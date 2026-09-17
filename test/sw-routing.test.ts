@@ -31,7 +31,7 @@ function loadWorker() {
           cachedUrls.push(typeof r === 'string' ? r : r.url);
         },
       }),
-      keys: async () => ['pt-v1', 'pt-v2', 'pt-v3'],
+      keys: async () => ['pt-v1', 'pt-v2', 'pt-v3', 'pt-v4'],
       delete: async () => true,
     },
     fetch: async () => new Response('ok', { status: 200 }),

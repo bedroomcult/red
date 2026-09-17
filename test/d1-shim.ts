@@ -15,6 +15,13 @@
 //   SELECT id,pill_type,regimen,pack_start_date FROM pill_regimens WHERE user_id=? ORDER BY pack_start_date DESC LIMIT 1
 //   SELECT id,ec_type,intake_at,upsi_at FROM ec_events WHERE user_id=? AND intake_at>? ORDER BY intake_at DESC
 //   SELECT date,taken FROM dose_logs WHERE user_id=? AND date>=? ORDER BY date
+//   SELECT date,protected FROM sex_events WHERE user_id=? AND date>=? ORDER BY date
+//   DELETE FROM sex_events WHERE user_id=? AND date=?
+//   INSERT INTO sex_events (id,user_id,date,protected,note,created_at) VALUES (?,?,?,?,?,?)
+//   INSERT INTO ec_events (id,user_id,ec_type,intake_at,upsi_at) VALUES (?,?,?,?,?)
+//   SELECT id FROM ec_events WHERE id=? AND user_id=?
+//   UPDATE ec_events SET ec_type=?, intake_at=?, upsi_at=? WHERE id=? AND user_id=?
+//   DELETE FROM ec_events WHERE id=? AND user_id=?
 //   SELECT user_id, expires_at FROM sessions WHERE token=?
 //   SELECT id, email FROM users WHERE id=?
 
@@ -32,6 +39,7 @@ export function makeDb() {
   const ec: Row[] = [];
   const symptoms: Row[] = [];
   const doses: Row[] = [];
+  const sex: Row[] = [];
 
   function run(sql: string, args: any[]) {
     const s = norm(sql);
@@ -81,6 +89,44 @@ export function makeDb() {
       return { meta: { changes: 1 } };
     }
 
+    if (s.startsWith('DELETE FROM SEX_EVENTS')) {
+      const [user_id, date] = args;
+      const before = sex.length;
+      for (let i = sex.length - 1; i >= 0; i--) {
+        if (sex[i].user_id === user_id && sex[i].date === date) sex.splice(i, 1);
+      }
+      return { meta: { changes: before - sex.length } };
+    }
+
+    if (s.startsWith('INSERT INTO EC_EVENTS')) {
+      const [id, user_id, ec_type, intake_at, upsi_at] = args;
+      ec.push({ id, user_id, ec_type, intake_at, upsi_at });
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('UPDATE EC_EVENTS')) {
+      const [ec_type, intake_at, upsi_at, id, user_id] = args;
+      const row = ec.find((x) => x.id === id && x.user_id === user_id);
+      if (!row) return { meta: { changes: 0 } };
+      Object.assign(row, { ec_type, intake_at, upsi_at });
+      return { meta: { changes: 1 } };
+    }
+
+    if (s.startsWith('DELETE FROM EC_EVENTS')) {
+      const [id, user_id] = args;
+      const before = ec.length;
+      for (let i = ec.length - 1; i >= 0; i--) {
+        if (ec[i].id === id && ec[i].user_id === user_id) ec.splice(i, 1);
+      }
+      return { meta: { changes: before - ec.length } };
+    }
+
+    if (s.startsWith('INSERT INTO SEX_EVENTS')) {
+      const [id, user_id, date, protectedFlag, note, created_at] = args;
+      sex.push({ id, user_id, date, protected: protectedFlag, note, created_at });
+      return { meta: { changes: 1 } };
+    }
+
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
 
@@ -98,6 +144,11 @@ export function makeDb() {
       const [token] = args;
       const row = sessions.find((x) => x.token === token);
       return row ? { user_id: row.user_id, expires_at: row.expires_at } : null;
+    }
+    if (s.startsWith('SELECT ID FROM EC_EVENTS WHERE ID=? AND USER_ID=?')) {
+      const [id, user_id] = args;
+      const row = ec.find((x) => x.id === id && x.user_id === user_id);
+      return row ? { id: row.id } : null;
     }
     if (s.startsWith('SELECT ID, EMAIL FROM USERS WHERE ID=?')) {
       const [id] = args;
@@ -152,6 +203,15 @@ export function makeDb() {
           .map((d) => ({ date: d.date, taken: d.taken })),
       };
     }
+    if (s.startsWith('SELECT DATE,PROTECTED FROM SEX_EVENTS')) {
+      const [user_id, from] = args;
+      return {
+        results: sex
+          .filter((x) => x.user_id === user_id && String(x.date) >= String(from))
+          .sort((a, b) => String(a.date).localeCompare(String(b.date)))
+          .map((x) => ({ date: x.date, protected: x.protected })),
+      };
+    }
     throw new Error('d1-shim: unsupported SQL: ' + sql);
   }
 
@@ -169,5 +229,5 @@ export function makeDb() {
     };
   }
 
-  return { prepare, users, sessions, periods, regimens, ec, symptoms, doses };
+  return { prepare, users, sessions, periods, regimens, ec, symptoms, doses, sex };
 }

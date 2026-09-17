@@ -168,6 +168,10 @@ export async function buildState(env: any, userId: string, request?: Request) {
   const { results: doses } = await env.DB.prepare(
     'SELECT date,taken FROM dose_logs WHERE user_id=? AND date>=? ORDER BY date'
   ).bind(userId, doseCutoff).all();
+  // Same 90-day window as doses: the client has no month boundary to query on.
+  const { results: sex } = await env.DB.prepare(
+    'SELECT date,protected FROM sex_events WHERE user_id=? AND date>=? ORDER BY date'
+  ).bind(userId, doseCutoff).all();
   const ins = insights(periods as any[], fallbackCycle, profile?.period_len ?? 5, stats);
   return {
     periods, bc: bc ?? null, ec, prediction,
@@ -175,6 +179,7 @@ export async function buildState(env: any, userId: string, request?: Request) {
     today: todayIso,
     // taken is stored as 0/1; the client wants a boolean.
     doses: (doses as any[]).map((d) => ({ date: d.date as string, taken: !!d.taken })),
+    sex: (sex as any[]).map((s) => ({ date: s.date as string, protected: !!s.protected })),
     profile: profile ?? null,
     insights: ins,
   };

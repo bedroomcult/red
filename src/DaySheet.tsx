@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
-import type { Dose, Period, Prediction } from './Calendar';
+import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
 
@@ -24,12 +24,13 @@ const fmtLong = (d: string) =>
 // Read-only view of one day. Tapping a calendar cell lands here; editing a period
 // is an explicit second step via onLog. Showing the form first made every tap a
 // commitment to logging, and buried the symptoms/note already stored for the day.
-export default function DaySheet({ date, periods, prediction, bcMode, dose, onDoseSaved, onLog, onClose }: {
+export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
   bcMode: boolean;
   dose: Dose | undefined;
+  sexLog: SexLog | undefined;
   onDoseSaved: (state: any) => void;
   onLog: (date: string) => void;
   onClose: () => void;
@@ -40,8 +41,13 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, onDo
   const [doseErr, setDoseErr] = useState<string | null>(null);
   // Local echo of the parent's dose, so the buttons update before the refetch.
   const [doseLocal, setDoseLocal] = useState<boolean | null>(dose ? dose.taken : null);
+  // Sex log: undefined = not logged, otherwise whether it was protected.
+  const [sexLocal, setSexLocal] = useState<{ protected: boolean } | null>(sexLog ?? null);
+  const [sexBusy, setSexBusy] = useState(false);
+  const [sexErr, setSexErr] = useState<string | null>(null);
 
   useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
+  useEffect(() => { setSexLocal(sexLog ?? null); }, [date, sexLog]);
 
   useEffect(() => {
     let on = true;
@@ -77,6 +83,26 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, onDo
       setDoseErr(e.message);
     } finally {
       setDoseBusy(false);
+    }
+  }
+
+  // One log per day, so this either creates or replaces. Passing null clears it.
+  async function saveSex(next: { protected: boolean } | null) {
+    setSexBusy(true);
+    setSexErr(null);
+    const prev = sexLocal;
+    setSexLocal(next);
+    try {
+      const r = next
+        ? await apiFetch('/api/sex', { method: 'POST', body: JSON.stringify({ date, protected: next.protected }) })
+        : await apiFetch('/api/sex?date=' + date, { method: 'DELETE' });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onDoseSaved(await readJson(r));
+    } catch (e: any) {
+      setSexLocal(prev);
+      setSexErr(e.message);
+    } finally {
+      setSexBusy(false);
     }
   }
 
@@ -167,6 +193,25 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, onDo
             )}
           </div>
           {doseErr && <div className="err">{doseErr}</div>}
+        </div>
+
+        <div className="day-info">
+          <div className="day-info-label">{t.daySex}</div>
+          <div className="day-info-value">
+            {sexLocal === null ? <span className="muted">{t.sexNone}</span>
+              : sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel}
+            {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
+          </div>
+          <div className="row tight">
+            <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+              aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })}>{t.sexProtected}</button>
+            <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+              aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })}>{t.sexUnprotected}</button>
+            {sexLocal !== null && (
+              <button className="btn ghost" disabled={sexBusy} onClick={() => saveSex(null)}>{t.doseClear}</button>
+            )}
+          </div>
+          {sexErr && <div className="err">{sexErr}</div>}
         </div>
 
         </div>

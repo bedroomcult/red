@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import Calendar, { type Dose, type Period, type Prediction } from './Calendar';
+import Calendar, { type Dose, type Period, type Prediction, type SexLog } from './Calendar';
 import DaySheet from './DaySheet';
 import LogSheet from './LogSheet';
 import BcPanel from './BcPanel';
@@ -17,7 +17,7 @@ import { periodForDate } from '../lib/cycle';
 import { localDate } from '../lib/today';
 import { apiFetch, readJson } from './api';
 
-type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { ec_type: string; intake_at: string }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; doses?: Dose[]; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
+type Me = { periods: Period[]; bc: { pill_type: string; regimen: string } | null; ec: { id: string; ec_type: string; intake_at: string; upsi_at: string | null }[]; prediction: Prediction; todaySymptoms?: string[]; today?: string; doses?: Dose[]; sex?: SexLog[]; profile?: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null; insights?: Insights };
 
 const today = () => localDate();
 const fmt = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
@@ -30,6 +30,9 @@ export default function App() {
   const [logDate, setLogDate] = useState<string | null>(null);
   const [bcOpen, setBcOpen] = useState(false);
   const [ecOpen, setEcOpen] = useState(false);
+  // The EC event being edited; undefined = a new one. `ecOpen` alone would lose
+  // which row the user tapped.
+  const [ecEditId, setEcEditId] = useState<string | null>(null);
   const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
   const [needLogin, setNeedLogin] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
@@ -106,6 +109,9 @@ export default function App() {
   const flags = me?.prediction.flags ?? [];
   const bcMode = me?.prediction.confidence === 'suppressed' || flags.includes('bc-suppressed');
   const ecHit = flags.includes('ec-disrupted');
+  // Most recent EC event within the query window, shown as a status line so an
+  // active dose is visible without opening the panel.
+  const latestEc = me?.ec?.length ? me.ec[0] : null;
   const history = me ? [...me.periods].sort((a, b) => b.start_date.localeCompare(a.start_date)) : [];
   const conf = (me?.prediction.confidence ?? 'low') as keyof typeof t.confidence;
 
@@ -121,7 +127,18 @@ export default function App() {
       <UpdateBanner />
 
       {bcMode && <div className="banner warn">{t.bcSuppressed} — {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
-      {ecHit && <div className="banner warn">{t.ecDisrupted}</div>}
+      {ecHit && (
+        <div className="banner warn ec-banner">
+          <div>
+            <strong>{t.ecActive}</strong>
+            {latestEc && <span className="ec-when"> · {latestEc.intake_at.slice(0, 10)}</span>}
+            <div className="ec-hint">{t.ecActiveHint}</div>
+          </div>
+          <div className="row tight">
+            <button className="btn" onClick={() => { setEcEditId(latestEc?.id ?? null); setEcOpen(true); }}>{t.ecEdit}</button>
+          </div>
+        </div>
+      )}
 
       {!me && !err && <div className="spinner" role="status" aria-label={t.loading} />}
 
@@ -141,7 +158,7 @@ export default function App() {
               <strong>{label}</strong>
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
             </div>
-            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} />
+            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} />
             <div className="legend">
               <span><i className="chip period" />{t.legendPeriod}</span>
               <span><i className="chip fertile" />{t.legendFertile}</span>
@@ -149,6 +166,7 @@ export default function App() {
               <span><i className="chip spot" />{t.legendSpotting}</span>
               <span><i className="chip dose-taken" />{t.legendDoseTaken}</span>
               <span><i className="chip dose-missed" />{t.legendDoseMissed}</span>
+              <span><i className="chip sex" />{t.legendSex}</span>
             </div>
           </div>
 
@@ -170,7 +188,7 @@ export default function App() {
             <div className="row">
               <button className="btn primary" onClick={jumpToday}>{t.today}</button>
               <button className="btn" onClick={() => setBcOpen(true)}>{t.bc}</button>
-              <button className="btn" onClick={() => setEcOpen(true)}>{t.ecLog}</button>
+              <button className="btn" onClick={() => { setEcEditId(null); setEcOpen(true); }}>{t.ecLog}</button>
             </div>
           </div>
         </>
@@ -211,6 +229,7 @@ export default function App() {
           prediction={me?.prediction ?? null}
           bcMode={bcMode}
           dose={me?.doses?.find((d) => d.date === sel)}
+          sexLog={me?.sex?.find((s) => s.date === sel)}
           onDoseSaved={setMe}
           onLog={(d) => setLogDate(d)}
           onClose={() => setSel(null)}
@@ -218,7 +237,14 @@ export default function App() {
       )}
       {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} onClose={() => setLogDate(null)} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); }} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
-      {ecOpen && <EcPanel onClose={() => setEcOpen(false)} onSaved={setMe} />}
+      {ecOpen && (
+        <EcPanel
+          events={(me?.ec ?? []) as any}
+          current={ecEditId ? (me?.ec ?? []).find((e) => e.id === ecEditId) ?? null : null}
+          onClose={() => { setEcOpen(false); setEcEditId(null); }}
+          onSaved={setMe}
+        />
+      )}
 
       <footer className="disclaimer">{t.disclaimer}</footer>
 

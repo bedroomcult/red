@@ -34,6 +34,7 @@ export const t = {
   legendSpotting: 'Flek',
   legendDoseTaken: 'Minum pil',
   legendDoseMissed: 'Pil terlewat',
+  legendSex: 'Berhubungan',
   // prediction line
   nextPeriod: 'Haid berikutnya',
   notEnough: 'Data kurang — catat 2+ haid',
@@ -76,6 +77,11 @@ export const t = {
   ecSave: 'Catat',
   ecClose: 'Tutup',
   ecDisrupted: 'Pil darurat tercatat — prediksi tidak akurat. Tes kehamilan 21 hari setelah hubungan tanpa proteksi atau jika haid telat 7+ hari.',
+  ecActive: 'Pil darurat aktif',
+  ecActiveHint: 'Prediksi haid diperlebar dan ovulasi disembunyikan sampai siklus kembali normal.',
+  ecEdit: 'Ubah catatan pil darurat',
+  ecHistory: 'Riwayat pil darurat',
+  ecNoHistory: 'belum ada catatan',
   // history
   history: 'Riwayat',
   nothing: 'belum ada catatan',
@@ -187,6 +193,14 @@ export const t = {
   doseTakenLabel: 'tercatat sudah minum',
   doseMissedLabel: 'tercatat terlewat',
   doseSaved: 'Catatan pil tersimpan',
+  // sex log: one entry per day, editable
+  daySex: 'Hubungan seks',
+  sexNone: 'belum ada catatan',
+  sexProtected: 'Pakai kontrasepsi',
+  sexUnprotected: 'Tanpa kontrasepsi',
+  sexProtectedLabel: 'tercatat dengan kontrasepsi',
+  sexUnprotectedLabel: 'tercatat tanpa kontrasepsi',
+  sexFertileWarn: 'masa subur',
   // reminders
   setReminders: 'Pengingat',
   remPill: 'Pengingat pil KB harian',

@@ -4,6 +4,8 @@ export type Period = { id: string; start_date: string; end_date: string | null; 
 
 export type Dose = { date: string; taken: boolean };
 
+export type SexLog = { date: string; protected: boolean };
+
 // ponytail: string compare works, dates are YYYY-MM-DD UTC.
 const inRange = (d: string, lo: string | null, hi: string | null) =>
   !!lo && !!hi && d >= lo && d <= hi;
@@ -28,13 +30,15 @@ function ovSet(ov: string | null): Set<string> {
 
 import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 import { localDate } from '../lib/today';
+import { t } from './i18n';
 
-export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [] }: {
+export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [] }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
-  selected: string | null; onPick: (d: string) => void; doses?: Dose[];
+  selected: string | null; onPick: (d: string) => void; doses?: Dose[]; sex?: SexLog[];
 }) {
   const logged = new Map(periods.map((p) => [p.start_date, p]));
   const doseByDate = new Map(doses.map((d) => [d.date, d]));
+  const sexByDate = new Map(sex.map((s) => [s.date, s]));
   // Expand each period start into its full range (end_date, or start+4 default) so
   // in-progress periods paint every day, not just day 1.
   const inPeriod = new Set<string>();
@@ -59,17 +63,29 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
             {d && (() => {
               const p = logged.get(d);
               const dose = doseByDate.get(d);
+              const sexLog = sexByDate.get(d);
               const cls = inPeriod.has(d) ? 'logged'
                 : p ? '' // spotting: plain + dot below
                 : inRange(d, predLo, predHi) ? 'pred-period'
                 : ovs.has(d) ? 'pred-fertile' : '';
+              // The heart turns green when the date falls in the fertile window,
+              // matching the green used for the ovulation circle. That is the
+              // signal that this day carried pregnancy risk.
+              const heartClass = sexLog ? (ovs.has(d) ? 'sex fertile' : 'sex') : '';
               return (
                 <button
-                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''}`}
+                  className={`dnum ${cls} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''} ${heartClass}`}
                   onClick={() => onPick(d)}
-                  aria-label={new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}
+                  aria-label={`${new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}${sexLog ? `, ${t.legendSex}${sexLog.protected ? ` (${t.sexProtected})` : ''}` : ''}`}
                   aria-current={d === todayIso ? 'date' : undefined}
-                >{inPeriod.has(d) ? '✓' : Number(d.slice(8))}</button>
+                >
+                  {sexLog && (
+                    <svg className="heart" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    </svg>
+                  )}
+                  <span className="dnum-num">{inPeriod.has(d) ? '✓' : Number(d.slice(8))}</span>
+                </button>
               );
             })()}
             {d && logged.get(d)?.type === 'spotting' && <span className="dot" />}
