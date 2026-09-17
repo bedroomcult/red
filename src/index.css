@@ -106,7 +106,7 @@ body {
   color: var(--ink);
   padding-bottom: env(safe-area-inset-bottom);
 }
-.app { max-width: 480px; margin: 0 auto; padding: 16px 16px 88px; }
+.app { max-width: 480px; margin: 0 auto; padding: 16px 16px 104px; }
 .hidden { display: none !important; }
 .muted { color: var(--muted); font-size: 13px; }
 .err { color: var(--rose); font-size: 13px; margin: 8px 0; }
@@ -252,6 +252,7 @@ body {
 .update-text { display: flex; flex-direction: column; gap: 2px; margin-bottom: 4px; }
 .update-sub { color: var(--muted); font-size: 12px; }
 /* update notice modal */
+.confirm-sheet .sheet-body { padding-bottom: 8px; }
 .update-sheet .update-mark {
   width: 56px; height: 56px; margin: 4px auto 12px; border-radius: var(--r-lg);
   display: grid; place-items: center; color: var(--green); background: var(--green-soft);
@@ -467,6 +468,23 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 
 .day-info-label { font-size: 12px; font-weight: 600; color: var(--muted); margin-bottom: 4px; }
 .day-info-sub { font-size: 11px; margin-top: 6px; }
+
+/* Definition list for prediction detail: label left, value right, one row each,
+   so the reasoning scans as data instead of reading as prose. */
+.facts { margin: 4px 0 0; display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; }
+.facts dt { font-size: 12px; color: var(--muted); }
+.facts dd { margin: 0; font-size: 13px; text-align: right; }
+.facts-sub { display: block; font-size: 11px; color: var(--muted); }
+.more { margin-top: 10px; }
+.more summary {
+  font-size: 12px; font-weight: 600; color: var(--muted); cursor: pointer;
+  list-style: none; padding: 4px 0;
+}
+.more summary::-webkit-details-marker { display: none; }
+.more summary::after { content: ' \25BE'; font-size: 10px; }
+.more[open] summary::after { content: ' \25B4'; }
+.more summary:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: var(--r-sm); }
+.more p { margin: 6px 0 0; font-size: 11px; line-height: 1.5; }
 .day-status { font-size: 13px; font-weight: 600; color: var(--ink-2); }
 /* A long note is the one place wrapping is expected, so it gets its own measure
    and line height rather than inheriting the row default. */
@@ -480,16 +498,24 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .sheet .row { margin-top: 16px; }
 
 /* bottom nav */
+/* Floating pill nav. A detached capsule rather than a full-width bar, so the
+   content behind it stays visible and the nav reads as an overlay rather than as
+   part of the page chrome. */
 .tabbar {
-  position: fixed; inset: auto 0 0 0; background: rgba(255,255,255,.92);
-  backdrop-filter: blur(12px); border-top: 1px solid var(--line); z-index: 5;
-  display: flex; max-width: 480px; margin: 0 auto;
-  padding-bottom: env(safe-area-inset-bottom);
-  transition: background .25s ease;
+  position: fixed; left: 0; right: 0; z-index: 5;
+  display: flex; gap: 2px;
+  max-width: 420px; margin: 0 auto;
+  padding: 5px;
+  border-radius: var(--r-full);
+  background: var(--card);
+  border: 1px solid var(--line);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .1);
+  /* Floats above the home indicator, so the inset is part of the offset. */
+  bottom: calc(10px + env(safe-area-inset-bottom));
 }
-[data-theme="dark"] .tabbar { background: rgba(28,28,32,.92); }
+[data-theme="dark"] .tabbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
 @media (prefers-color-scheme: dark) {
-  html[data-theme="system"] .tabbar { background: rgba(28,28,32,.92); }
+  html[data-theme="system"] .tabbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
 }
 
 /* phase hero. Full-bleed: the .app wrapper's 16px side padding is cancelled so
@@ -595,16 +621,17 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .pop { animation: pop .35s cubic-bezier(.34,1.56,.64,1) both; }
 @keyframes pop { 0% { transform: scale(.8); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
 .tab {
-  flex: 1; border: none; background: none; padding: 10px 0 12px; cursor: pointer;
-  font-size: 11px; color: var(--muted); display: flex; flex-direction: column;
+  flex: 1; border: none; background: none; cursor: pointer;
+  padding: 9px 0 8px; border-radius: var(--r-full);
+  font-size: 10px; color: var(--muted); display: flex; flex-direction: column;
   align-items: center; gap: 3px; font-family: inherit; font-weight: 500;
-  transition: color .18s ease, transform .12s ease;
+  transition: color .18s ease, background .18s ease, transform .12s ease;
 }
-.tab:active { transform: scale(.92); }
+.tab:active { transform: scale(.94); }
 /* The icon is an inline SVG using currentColor, so the active tab colours it via
    .tab.active { color }. Emoji could not be recoloured reliably across OEMs. */
 .tab svg { transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
-.tab.active svg { transform: translateY(-1px) scale(1.12); }
-.tab.active { color: var(--rose); }
+.tab.active svg { transform: translateY(-1px) scale(1.1); }
+.tab.active { color: var(--rose); background: var(--rose-soft); }
 
 footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.5; }

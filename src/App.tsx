@@ -12,6 +12,7 @@ import LoginScreen from './LoginScreen';
 import Icon from './Icon';
 import UpdateBanner from './UpdateBanner';
 import Loading from './Loading';
+import ExitConfirm from './ExitConfirm';
 import { applyTheme, loadTheme } from './theme';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
@@ -284,6 +285,22 @@ export default function App() {
       )}
 
       <footer className="disclaimer">{t.disclaimer}</footer>
+
+      <ExitConfirm
+        onRequestClose={() => {
+          // Any open sheet eats the back press first, matching Android.
+          if (sel || logDate || bcOpen || ecOpen) {
+            if (logDate) setLogDate(null);
+            else if (sel) setSel(null);
+            else if (bcOpen) setBcOpen(false);
+            else if (ecOpen) { setEcOpen(false); setEcEditId(null); }
+            return true;
+          }
+          return false;
+        }}
+        canGoHome={tab !== 'home'}
+        onGoHome={() => setTab('home')}
+      />
 
       <nav className="tabbar">
         <button className={`tab ${tab === 'home' ? 'active' : ''}`} aria-current={tab === 'home' ? 'page' : undefined} onClick={() => setTab('home')}>

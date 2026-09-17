@@ -8,9 +8,9 @@ import type { PredictionReason } from '../lib/predict';
 // user could not tell a 2-day window built from six logged cycles apart from a
 // 10-day window built from one, and those deserve different trust.
 //
-// Every branch states the basis, not just the result. Where the data cannot
-// support a statement (an estimated average, a spread tie) the copy says so
-// rather than presenting a guess as a measurement.
+// Rendered as one verdict line plus a definition list, with the long caveats
+// folded into a disclosure. The previous version stacked five label/value blocks
+// of prose, which read as a wall even though every sentence was short.
 
 const fmtShort = (d: string) =>
   new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
@@ -26,111 +26,93 @@ function offsetText(days: number | null): string | null {
 export default function PredictionDetail({ date, reason }: { date: string; reason: PredictionReason }) {
   const { kind } = reason;
 
-  // A cycle paused by contraception, or no data at all: explain the absence
-  // rather than showing empty rows.
-  if (kind === 'bc') {
+  // A paused cycle or no data: explain the absence rather than showing empty rows.
+  if (kind === 'bc' || kind === 'no-data') {
     return (
-      <div className="day-info">
-        <div className="day-info-label">{t.predWhy}</div>
-        <div className="day-info-value">{t.predBcPaused}</div>
-      </div>
-    );
-  }
-  if (kind === 'no-data') {
-    return (
-      <div className="day-info">
-        <div className="day-info-label">{t.predWhy}</div>
-        <div className="day-info-value">
-          {t.predNoData}
-          <div className="muted" style={{ marginTop: 4 }}>{t.predNeedTwo}</div>
+      <div className="day-group">
+        <div className="day-info">
+          <div className="day-info-label">{t.predWhy}</div>
+          <div className="day-info-value">
+            {kind === 'bc' ? t.predBcPaused : t.predNoData}
+            {kind === 'no-data' && <div className="day-info-sub">{t.predNeedTwo}</div>}
+          </div>
         </div>
       </div>
     );
   }
 
   const offset = offsetText(reason.daysFromNext);
-
-  // What the average was built from. An estimated average is named as the
-  // configured fallback, never presented as an observation.
   const basis = reason.estimated
     ? t.predBasisEstimated.replace('{avg}', String(reason.avgCycle ?? 28))
     : t.predBasisObserved.replace('{n}', String(reason.observedCycles)).replace('{avg}', String(reason.avgCycle ?? ''));
 
+  const verdict =
+    kind === 'in-window' ? t.dayPredictedValue
+      : kind === 'ovulation' ? t.dayOvulationValue
+      : kind === 'fertile' ? t.dayFertileValue
+      : null;
+
   return (
-    <>
-      {/* The result: which window this date lands in. */}
+    <div className="day-group">
       <div className="day-info">
         <div className="day-info-label">{t.predWhy}</div>
         <div className="day-info-value">
-          {kind === 'in-window' && <strong>{t.dayPredictedValue}</strong>}
-          {kind === 'ovulation' && <strong>{t.dayOvulationValue}</strong>}
-          {kind === 'fertile' && <strong>{t.dayFertileValue}</strong>}
-          {kind === 'outside' && (
-            <span className="muted">
-              {t.predOutside}
-              {reason.daysFromNext !== null && (
-                <>
-                  {' · '}
-                  {t.predOutsideNext.replace('{d}', fmtShort(
-                    new Date(Date.parse(date + 'T00:00:00Z') - reason.daysFromNext * 864e5).toISOString().slice(0, 10)
-                  ))}
-                </>
+          {verdict ? <strong>{verdict}</strong> : <span className="muted">{t.predOutside}</span>}
+        </div>
+      </div>
+
+      {/* Supporting detail as label/value pairs, so it scans as data rather than
+          as prose. */}
+      <dl className="facts">
+        {offset && (<><dt>{t.predOffsetLabel}</dt><dd>{offset}</dd></>)}
+        {reason.windowLo && reason.windowHi && (
+          <>
+            <dt>{t.predWindowTitle}</dt>
+            <dd>
+              {t.predWindowRange.replace('{a}', fmtShort(reason.windowLo)).replace('{b}', fmtShort(reason.windowHi))}
+              {reason.windowDays !== null && (
+                <span className="facts-sub">{t.predWindowWidth.replace('{n}', String(reason.windowDays))}</span>
               )}
-            </span>
-          )}
-          {offset && <div className="muted" style={{ marginTop: 4 }}>{offset}</div>}
-        </div>
-      </div>
+            </dd>
+          </>
+        )}
+        {kind === 'outside' && reason.daysFromNext !== null && (
+          <>
+            <dt>{t.predOutsideLabel}</dt>
+            <dd>
+              {fmtShort(new Date(Date.parse(date + 'T00:00:00Z') - reason.daysFromNext * 864e5).toISOString().slice(0, 10))}
+            </dd>
+          </>
+        )}
+        <dt>{t.predBasis}</dt>
+        <dd>{basis}</dd>
+        {reason.spread !== null && (
+          <>
+            <dt>{t.predSpreadLabel}</dt>
+            <dd>
+              {reason.spread === 0
+                ? t.predSpreadStable
+                : (
+                  <>
+                    {t.predSpread.replace('{n}', String(reason.spread))}
+                    {reason.irregular && <span className="facts-sub">{t.predSpreadIrregular}</span>}
+                  </>
+                )}
+            </dd>
+          </>
+        )}
+        {reason.ov && kind !== 'outside' && (
+          <><dt>{t.dayFertile}</dt><dd>{t.predFertileReason.replace('{ov}', fmtShort(reason.ov))}</dd></>
+        )}
+      </dl>
 
-      {/* The window itself, stated with its width so the reader can judge it. */}
-      {reason.windowLo && reason.windowHi && (
-        <div className="day-info">
-          <div className="day-info-label">{t.predWindowTitle}</div>
-          <div className="day-info-value">
-            {t.predWindowRange.replace('{a}', fmtShort(reason.windowLo)).replace('{b}', fmtShort(reason.windowHi))}
-            {reason.windowDays !== null && (
-              <span className="muted"> · {t.predWindowWidth.replace('{n}', String(reason.windowDays))}</span>
-            )}
-          </div>
-        </div>
-      )}
-
-      {/* The basis: how many cycles, what average, how wide a spread. */}
-      <div className="day-info">
-        <div className="day-info-label">{t.predBasis}</div>
-        <div className="day-info-value">
-          {basis}
-          {reason.spread !== null && reason.spread > 0 && (
-            <div className="muted" style={{ marginTop: 4 }}>
-              {t.predSpread.replace('{n}', String(reason.spread))}
-              {reason.irregular && <> · {t.predSpreadIrregular}</>}
-            </div>
-          )}
-          {reason.spread === 0 && (
-            <div className="muted" style={{ marginTop: 4 }}>{t.predSpreadStable}</div>
-          )}
-        </div>
-      </div>
-
-      {/* The fertile window has its own basis, so state it separately. */}
-      {reason.ov && reason.kind !== 'outside' && (
-        <div className="day-info">
-          <div className="day-info-label">{t.dayFertile}</div>
-          <div className="day-info-value">
-            {t.predFertileReason.replace('{ov}', fmtShort(reason.ov))}
-          </div>
-        </div>
-      )}
-
-      {reason.ecType && (
-        <div className="day-info">
-          <div className="day-info-value muted">{t.ecActiveHint}</div>
-        </div>
-      )}
-
-      <div className="day-info">
-        <div className="day-info-value muted">{t.predConfidenceNote}</div>
-      </div>
-    </>
+      {/* The long caveats. Folded away by default: they matter when a reader goes
+          looking, and pushed everything else off screen when always visible. */}
+      <details className="more">
+        <summary>{t.predMore}</summary>
+        {reason.ecType && <p className="muted">{t.ecActiveHint}</p>}
+        <p className="muted">{t.predConfidenceNote}</p>
+      </details>
+    </div>
   );
 }

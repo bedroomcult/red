@@ -133,3 +133,48 @@ describe('calendar and projection display fixes', () => {
     expect(day).toMatch(/symHistoryRecur/);
   });
 });
+
+// Reported: the day-detail sheet was still a wall of text, the nav was a full-width
+// bar, and the Android back button did nothing.
+describe('day sheet, nav and back button', () => {
+  it('renders prediction detail as a definition list, not stacked prose', () => {
+    const detail = readFileSync(ROOT + 'src/PredictionDetail.tsx', 'utf8');
+    expect(detail).toMatch(/<dl className="facts">/);
+    expect(detail).toMatch(/<details className="more">/);
+  });
+
+  it('has the new i18n keys the detail list needs', () => {
+    const i18n = readFileSync(ROOT + 'src/i18n.ts', 'utf8');
+    for (const k of ['predOffsetLabel', 'predOutsideLabel', 'predSpreadLabel', 'predMore']) {
+      expect(i18n, k).toContain(k);
+    }
+  });
+
+  it('the nav is a floating pill, not a flush bar', () => {
+    const css = readFileSync(ROOT + 'src/index.css', 'utf8');
+    const rule = /\.tabbar\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(rule).toMatch(/border-radius: var\(--r-full\)/);
+    expect(rule).not.toMatch(/border-top:/);
+  });
+
+  it('content clears the floating pill', () => {
+    const css = readFileSync(ROOT + 'src/index.css', 'utf8');
+    const app = /\.app\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    expect(app).toMatch(/padding: 16px 16px 104px/);
+  });
+
+  it('registers an Android back handler', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toContain('ExitConfirm');
+    const exit = readFileSync(ROOT + 'src/ExitConfirm.tsx', 'utf8');
+    expect(exit).toMatch(/addListener\('backButton'/);
+    expect(exit).toMatch(/exitApp\(\)/);
+  });
+
+  it('the back handler closes a sheet before offering to exit', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    const handler = app.slice(app.indexOf('onRequestClose={()'), app.indexOf('canGoHome='));
+    expect(handler).toMatch(/if \(logDate\) setLogDate\(null\)/);
+    expect(handler).toMatch(/return true/);
+  });
+});
