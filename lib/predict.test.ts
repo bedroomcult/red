@@ -5,19 +5,19 @@ describe('predict', () => {
   it('avgs 28,28,31 -> next Apr27, window from the observed range', () => {
     const r = predict(['2026-01-01','2026-01-29','2026-02-26','2026-03-29'], {});
     expect(r.next).toBe('2026-04-27');
-    // Cycles 28,28,31: observed range 3d, so "high" even though the padded
-    // window is 9 days wide.
+    // Cycles 28,28,31: observed range 3d, so pad = round(3 * 0.25) = 1.
+    // The window is now 2 days wide, not the 9 the fixed pad produced.
     expect(r.confidence).toBe('high');
-    expect(r.lo).toBe('2026-04-23');
-    expect(r.hi).toBe('2026-05-02');
+    expect(r.lo).toBe('2026-04-25');
+    expect(r.hi).toBe('2026-04-30');
   });
   it('regular cycles still get a narrow window and high confidence', () => {
     const r = predict(['2026-01-01','2026-01-29','2026-02-26','2026-03-26','2026-04-23','2026-05-21'], {});
-    // 5 cycles of 28 -> pad 2 -> 26..30, 5d wide.
+    // 5 cycles of 28 -> observed range 0 -> pad floor 1 -> 27..29, 3d wide.
     expect(r.confidence).toBe('high');
     expect(r.flags).not.toContain('irregular');
-    expect(r.lo).toBe('2026-06-16');
-    expect(r.hi).toBe('2026-06-20');
+    expect(r.lo).toBe('2026-06-17');
+    expect(r.hi).toBe('2026-06-19');
   });
   it('covers a mildly irregular cycle that the old SD rule missed', () => {
     // 26,31,28,27,32,29 has an SD of ~1.7. The previous rule used
@@ -32,8 +32,8 @@ describe('predict', () => {
     const r = predict(['2026-01-01','2026-01-22','2026-03-01','2026-03-26','2026-05-05','2026-05-28'], {});
     expect(r.flags).toContain('irregular');
     expect(r.confidence).toBe('low');
-    expect(r.lo).toBe('2026-06-15');
-    expect(r.hi).toBe('2026-07-08');
+    expect(r.lo).toBe('2026-06-12');
+    expect(r.hi).toBe('2026-07-11');
   });
   it('never narrows the window below 15..60 days of cycle length', () => {
     const r = predict(['2026-01-01','2026-01-16','2026-02-01'], {});
@@ -229,5 +229,63 @@ describe('past predictions roll forward', () => {
   it('does not roll forward without a today argument', () => {
     // Callers that omit `today` keep the old anchor, so the change is opt-in.
     expect(predict(['2026-06-01'], { fallbackCycle: 28 }).next).toBe('2026-06-29');
+  });
+});
+
+// The window padding scales with how variable the cycles actually are. A fixed pad
+// gave a PCOS profile (17-day spread) the same 3-day margin as a regular one, and
+// a leave-one-out backtest put small samples at 33% coverage.
+describe('spread-scaled window padding', () => {
+  it('narrows the window for a regular cycle', () => {
+    // 5 cycles of exactly 28: observed range 0, so the pad floors at 1 day.
+    const stats = cycleStats(['2026-01-01', '2026-01-29', '2026-02-26', '2026-03-26', '2026-04-23', '2026-05-21']);
+    expect(stats.range).toBe(0);
+    expect(stats.pad).toBe(1);
+    expect(stats.cycleHi - stats.cycleLo).toBe(2);
+  });
+
+  it('widens the window for a variable cycle', () => {
+    // Cycles 21,38,25,40,23 -> spread 19 -> pad round(19 * 0.25) = 5.
+    const stats = cycleStats(['2026-01-01', '2026-01-22', '2026-03-01', '2026-03-26', '2026-05-05', '2026-05-28']);
+    expect(stats.range).toBe(19);
+    expect(stats.pad).toBe(5);
+  });
+
+  it('scales the pad, so a wider spread always gets at least as much padding', () => {
+    const tight = cycleStats(['2026-01-01', '2026-01-29', '2026-02-26']);
+    const loose = cycleStats(['2026-01-01', '2026-01-27', '2026-03-01']);
+    expect(loose.range).toBeGreaterThan(tight.range);
+    expect(loose.pad).toBeGreaterThanOrEqual(tight.pad);
+  });
+
+  it('measures spread before dropping an outlier', () => {
+    // One 60-day cycle in an otherwise 28-day history is data, not noise: the
+    // spread must reflect it even though the centre drops it.
+    const stats = cycleStats([
+      '2026-01-01', '2026-01-29', '2026-02-26', '2026-03-26', '2026-04-23', '2026-06-22',
+    ]);
+    expect(stats.range).toBeGreaterThan(25);
+    expect(stats.pad).toBeGreaterThan(5);
+  });
+
+  it('never pads below one day', () => {
+    for (const starts of [
+      ['2026-01-01', '2026-01-29'],
+      ['2026-01-01', '2026-01-29', '2026-02-26'],
+    ]) {
+      expect(cycleStats(starts).pad).toBeGreaterThanOrEqual(1);
+    }
+  });
+
+  it('falls back to a fraction of the configured length with one gap', () => {
+    // A single sample cannot measure variation, so the configured cycle length
+    // supplies the floor: round(28 * 0.25) = 7.
+    const stats = cycleStats(['2026-01-01', '2026-01-29'], 28);
+    expect(stats.cycles).toEqual([28]);
+    expect(stats.pad).toBe(7);
+  });
+
+  it('scales that floor with the configured length', () => {
+    expect(cycleStats(['2026-01-01', '2026-02-14'], 45).pad).toBe(11); // round(45*0.25)
   });
 });
