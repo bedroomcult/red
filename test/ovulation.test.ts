@@ -126,11 +126,31 @@ describe('calendar and projection display fixes', () => {
     expect(screen).toMatch(/next6\.filter\(\(d\) => d >= today\)/);
   });
 
-  it('keeps the sheet scannable: no per-symptom history rows', () => {
+  it('keeps the sheet scannable: no symptom-recurrence analysis in it', () => {
     const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
-    // The old version rendered a block per symptom kind.
+    // The sheet shows what happened that day. Recurrence is analysis and lives
+    // on the Wawasan tab, so neither the per-kind rows nor the summary belong.
     expect(day).not.toMatch(/s\.count\}×/);
-    expect(day).toMatch(/symHistoryRecur/);
+    expect(day).not.toMatch(/symHistoryRecur/);
+    const ins = readFileSync(ROOT + 'src/InsightsScreen.tsx', 'utf8');
+    expect(ins).toMatch(/symHistoryTitle/);
+  });
+
+  it('folds prediction detail behind a disclosure', () => {
+    const detail = readFileSync(ROOT + 'src/PredictionDetail.tsx', 'utf8');
+    // Verdict outside, facts inside <details>, so the default render is short.
+    const before = detail.slice(0, detail.indexOf('<details'));
+    expect(before).toContain('predWhy');
+    expect(before).not.toContain('<dl className="facts">');
+    expect(detail).toMatch(/<details className="more">[\s\S]*<dl className="facts">/);
+  });
+
+  it('uses one icon row per tracked item, not labelled button rows', () => {
+    const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
+    expect(day.match(/className="seg-row"/g)?.length).toBe(2);
+    // Two "Hapus" labels in different rows was the ambiguity being removed.
+    expect(day).not.toMatch(/className="btn ghost"[^>]*\{t\.(doseClear|sexClear)\}/);
+    for (const n of ['check', 'cross', 'dash']) expect(day).toContain(`name="${n}"`);
   });
 });
 

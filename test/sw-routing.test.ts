@@ -31,7 +31,7 @@ function loadWorker() {
           cachedUrls.push(typeof r === 'string' ? r : r.url);
         },
       }),
-      keys: async () => ['pt-v1', 'pt-v2', 'pt-v3', 'pt-v4', 'pt-v5', 'pt-v6', 'pt-v7', 'pt-v8', 'pt-v9', 'pt-v10', 'pt-v11', 'pt-v12', 'pt-v13', 'pt-v14'],
+      keys: async () => ['pt-v1', 'pt-v2', 'pt-v3', 'pt-v4', 'pt-v5', 'pt-v6', 'pt-v7', 'pt-v8', 'pt-v9', 'pt-v10', 'pt-v11', 'pt-v12', 'pt-v13', 'pt-v14', 'pt-v15'],
       delete: async () => true,
     },
     fetch: async () => new Response('ok', { status: 200 }),

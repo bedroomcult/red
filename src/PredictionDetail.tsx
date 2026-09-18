@@ -54,6 +54,9 @@ export default function PredictionDetail({ date, reason }: { date: string; reaso
 
   return (
     <div className="day-group">
+      {/* Verdict first, and only the verdict. Everything else is supporting
+          detail, folded away: the sheet previously opened with 14 text nodes
+          for one conclusion, four of them labels repeating their own value. */}
       <div className="day-info">
         <div className="day-info-label">{t.predWhy}</div>
         <div className="day-info-value">
@@ -61,55 +64,50 @@ export default function PredictionDetail({ date, reason }: { date: string; reaso
         </div>
       </div>
 
-      {/* Supporting detail as label/value pairs, so it scans as data rather than
-          as prose. */}
-      <dl className="facts">
-        {offset && (<><dt>{t.predOffsetLabel}</dt><dd>{offset}</dd></>)}
-        {reason.windowLo && reason.windowHi && (
-          <>
-            <dt>{t.predWindowTitle}</dt>
-            <dd>
-              {t.predWindowRange.replace('{a}', fmtShort(reason.windowLo)).replace('{b}', fmtShort(reason.windowHi))}
-              {reason.windowDays !== null && (
-                <span className="facts-sub">{t.predWindowWidth.replace('{n}', String(reason.windowDays))}</span>
-              )}
-            </dd>
-          </>
-        )}
-        {kind === 'outside' && reason.daysFromNext !== null && (
-          <>
-            <dt>{t.predOutsideLabel}</dt>
-            <dd>
-              {fmtShort(new Date(Date.parse(date + 'T00:00:00Z') - reason.daysFromNext * 864e5).toISOString().slice(0, 10))}
-            </dd>
-          </>
-        )}
-        <dt>{t.predBasis}</dt>
-        <dd>{basis}</dd>
-        {reason.spread !== null && (
-          <>
-            <dt>{t.predSpreadLabel}</dt>
-            <dd>
-              {reason.spread === 0
-                ? t.predSpreadStable
-                : (
-                  <>
-                    {t.predSpread.replace('{n}', String(reason.spread))}
-                    {reason.irregular && <span className="facts-sub">{t.predSpreadIrregular}</span>}
-                  </>
-                )}
-            </dd>
-          </>
-        )}
-        {reason.ov && kind !== 'outside' && (
-          <><dt>{t.dayFertile}</dt><dd>{t.predFertileReason.replace('{ov}', fmtShort(reason.ov))}</dd></>
-        )}
-      </dl>
-
-      {/* The long caveats. Folded away by default: they matter when a reader goes
-          looking, and pushed everything else off screen when always visible. */}
       <details className="more">
         <summary>{t.predMore}</summary>
+        <dl className="facts">
+          {offset && (<><dt>{t.predOffsetLabel}</dt><dd>{offset}</dd></>)}
+          {reason.windowLo && reason.windowHi && (
+            <>
+              <dt>{t.predWindowTitle}</dt>
+              <dd>
+                {t.predWindowRange.replace('{a}', fmtShort(reason.windowLo)).replace('{b}', fmtShort(reason.windowHi))}
+                {reason.windowDays !== null && (
+                  <span className="facts-sub">{t.predWindowWidth.replace('{n}', String(reason.windowDays))}</span>
+                )}
+              </dd>
+            </>
+          )}
+          {kind === 'outside' && reason.daysFromNext !== null && (
+            <>
+              <dt>{t.predOutsideLabel}</dt>
+              <dd>
+                {fmtShort(new Date(Date.parse(date + 'T00:00:00Z') - reason.daysFromNext * 864e5).toISOString().slice(0, 10))}
+              </dd>
+            </>
+          )}
+          <dt>{t.predBasis}</dt>
+          <dd>{basis}</dd>
+          {reason.spread !== null && (
+            <>
+              <dt>{t.predSpreadLabel}</dt>
+              <dd>
+                {reason.spread === 0
+                  ? t.predSpreadStable
+                  : (
+                    <>
+                      {t.predSpread.replace('{n}', String(reason.spread))}
+                      {reason.irregular && <span className="facts-sub">{t.predSpreadIrregular}</span>}
+                    </>
+                  )}
+              </dd>
+            </>
+          )}
+          {reason.ov && kind !== 'outside' && (
+            <><dt>{t.dayFertile}</dt><dd>{t.predFertileReason.replace('{ov}', fmtShort(reason.ov))}</dd></>
+          )}
+        </dl>
         {reason.ecType && <p className="muted">{t.ecActiveHint}</p>}
         <p className="muted">{t.predConfidenceNote}</p>
       </details>

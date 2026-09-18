@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useEscape } from './useEscape';
+import Icon from './Icon';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
 import { explainPrediction } from '../lib/predict';
 import { symptomHistory } from '../lib/symptom-history';
@@ -200,23 +201,6 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                 : syms.length === 0 ? <span className="muted">{t.dayNoSymptoms}</span>
                 : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
             </div>
-            {/* How often this day's symptoms recur, so one bad day reads against
-                the user's own history. One compact line rather than a row per
-                symptom: the sheet had grown into a wall of text. */}
-            {syms && syms.length > 0 && hist && (() => {
-              const known = syms
-                .map((k) => ({ k, s: hist.stats.find((x) => x.kind === k) }))
-                .filter((x) => x.s && x.s.count >= 2);
-              if (!known.length) return null;
-              return (
-                <div className="muted day-info-sub">
-                  {t.symHistoryRecur.replace('{n}', String(known.length))}
-                  {known[0].s?.topPhase && (
-                    <> · {t.symHistoryTopPhase.replace('{phase}', PHASE_LABEL[known[0].s.topPhase] ?? known[0].s.topPhase)}</>
-                  )}
-                </div>
-              );
-            })()}
           </div>
 
           <div className="day-info">
@@ -236,14 +220,19 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
               {doseLocal === null ? <span className="muted">{t.doseNone}</span>
                 : <span className="day-status">{doseLocal ? t.doseTaken : t.doseMissed}</span>}
             </div>
-            <div className="row tight">
-              <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === true} onClick={() => setDose(true)}>{t.doseTaken}</button>
-              <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === false} onClick={() => setDose(false)}>{t.doseMissed}</button>
-              {doseLocal !== null && (
-                <button className="btn ghost" disabled={doseBusy} onClick={() => setDose(null)}>{t.doseClear}</button>
-              )}
+            <div className="seg-row" role="group" aria-label={t.dayDose}>
+              <button className={`seg ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === true} onClick={() => setDose(true)} title={t.doseTaken}>
+                <Icon name="check" size={16} /><span className="sr-only">{t.doseTaken}</span>
+              </button>
+              <button className={`seg ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === false} onClick={() => setDose(false)} title={t.doseMissed}>
+                <Icon name="cross" size={16} /><span className="sr-only">{t.doseMissed}</span>
+              </button>
+              <button className="seg" disabled={doseBusy || doseLocal === null}
+                onClick={() => setDose(null)} title={t.doseClear}>
+                <Icon name="dash" size={16} /><span className="sr-only">{t.doseClear}</span>
+              </button>
             </div>
             {doseErr && <div className="err">{doseErr}</div>}
           </div>
@@ -255,14 +244,19 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                 : <span className="day-status">{sexLocal.protected ? t.sexProtected : t.sexUnprotected}</span>}
               {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
             </div>
-            <div className="row tight">
-              <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })}>{t.sexProtected}</button>
-              <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })}>{t.sexUnprotected}</button>
-              {sexLocal !== null && (
-                <button className="btn ghost" disabled={sexBusy} onClick={() => saveSex(null)}>{t.sexClear}</button>
-              )}
+            <div className="seg-row" role="group" aria-label={t.daySex}>
+              <button className={`seg ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })} title={t.sexProtected}>
+                <Icon name="check" size={16} /><span className="sr-only">{t.sexProtected}</span>
+              </button>
+              <button className={`seg ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })} title={t.sexUnprotected}>
+                <Icon name="cross" size={16} /><span className="sr-only">{t.sexUnprotected}</span>
+              </button>
+              <button className="seg" disabled={sexBusy || sexLocal === null}
+                onClick={() => saveSex(null)} title={t.sexClear}>
+                <Icon name="dash" size={16} /><span className="sr-only">{t.sexClear}</span>
+              </button>
             </div>
             {sexErr && <div className="err">{sexErr}</div>}
           </div>

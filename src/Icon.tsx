@@ -4,7 +4,7 @@
 // 24x24 grid, 1.8 stroke, currentColor so the active tab picks up the accent.
 import type { ReactNode } from 'react';
 
-export type IconName = 'home' | 'calendar' | 'insights' | 'history' | 'settings';
+export type IconName = 'home' | 'calendar' | 'insights' | 'history' | 'settings' | 'check' | 'cross' | 'dash';
 
 const PATHS: Record<IconName, ReactNode> = {
   // Heart, matching the sex-log marker.
@@ -27,6 +27,11 @@ const PATHS: Record<IconName, ReactNode> = {
       <path d="M12 7.5V12l3 2" />
     </>
   ),
+  // Segmented-control marks: taken, missed, clear. Simple strokes so they read
+  // at 16px inside a small button.
+  check: <path d="M4 12.5l5 5L20 6.5" />,
+  cross: <path d="M6 6l12 12M18 6L6 18" />,
+  dash: <path d="M5 12h14" />,
   // Gear.
   settings: (
     <>
