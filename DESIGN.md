@@ -1,232 +1,193 @@
 # Red — Design Direction
 
-Adapted from the Lovable design system for a **mobile period tracker**, not a
-landing page. The warmth and restraint carry over. The page-scale spacing, the
-font, and the dark mode do not, and are replaced with values this product needs.
+**Material 3**, the platform design system for the Android app this ships as.
 
-Source of truth for direction. `antislop.md` is the filter applied on top.
+Replaces the earlier Lovable-derived direction, which was a landing-page system
+(spacing 80–208px, editorial display type) applied to a phone app. Wrong tool.
 
-**Dial: ENERGY 2 / RHYTHM 2 / MOTION 2**
+Source of truth for direction. `antislop.md` is the filter on top.
 
-- ENERGY 2 (Balanced): warm and approachable, not shouty. A health tool should
-  feel calm, not like a product launch.
-- RHYTHM 2 (Consistent with a few breaks): cards share a structure; the home
-  hero varies by cycle phase, which is the one deliberate break.
-- MOTION 2 (Transitions and a few reveals): state changes are animated so the
-  UI feels responsive. No parallax, no choreography.
+**Dial: ENERGY 2 / RHYTHM 2 / MOTION 2 / DENSITY 5**
 
-## 1. What carries over from Lovable
+- ENERGY 2 (Calm): a health tool. It should feel quiet and dependable, not
+  energetic. No celebration animations on a cycle tracker.
+- RHYTHM 2 (Consistent, a few breaks): cards share one structure. The home hero
+  varies by cycle phase, which is the one deliberate break.
+- MOTION 2 (Transitions and a few reveals): M3 motion easing, state changes
+  animated so the UI feels responsive. No parallax, no choreography.
+- DENSITY 5 (Daily app): standard app spacing. Not a marketing page, not a
+  cockpit.
 
-- **Warm cream foundation** (`#f7f4ed`) instead of clinical white.
-- **Opacity-driven neutrals**: grays derived from `#1c1c1c` at varying alpha, so
-  every shade shares one hue.
-- **Borders do the containment, not shadows.** `#eceae4` for passive divisions,
-  `rgba(28,28,28,0.4)` for interactive boundaries.
-- **Narrow weight range.** 400 for body and UI, 600 for headings. No 700+.
-- **Editorial tracking at display sizes.** Negative letter-spacing that scales
-  with size; normal tracking for body.
-- **Radius scale**, not a long tail of one-off values.
-- **Inset shadow on dark buttons** as the tactile signature.
+## 1. Why Material 3 and not a web system
 
-## 2. What is adapted, and why
+The APK is the primary surface. Material 3 is what Android users already know:
+the touch feedback, the bottom sheet, the nav bar, the tonal surfaces. Using a
+web aesthetic on Android makes the app feel foreign on its own platform.
 
-### 2.1 Font: system stack, not Camera Plain
+This also means **Material 3 components, not hand-rolled lookalikes**, wherever
+one exists. A bottom sheet is a bottom sheet.
 
-Camera Plain Variable is not licensed or bundled here. Using it would mean
-shipping a font file I cannot obtain.
+## 2. Colour
 
-**Decision:** keep the *principles*, not the face. A system stack renders
-instantly, costs no download, and matches the platform's own text rendering,
-which matters more on a phone than brand personality does.
+Derived from a single seed (`#c0392f`, the period colour) using the M3 tonal
+palette method: six palettes, tones on the CIE L* scale, roles assigned by tone.
 
-```
-font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-```
+The generator is `scripts/m3-palette.mjs` and it **prints a contrast report**. A
+palette change that breaks AA fails visibly rather than shipping.
 
-The principles that survive: narrow weight range (400 / 600), tight negative
-tracking at display sizes, generous line-height for body copy.
+### Roles
 
-If you license a display face later, add it here and keep everything else.
-
-### 2.2 Spacing: mobile scale
-
-Lovable's 80px to 208px section rhythm is editorial whitespace for a scrolling
-landing page. A 480px-wide phone app has no room for it and does not need it.
-
-**Decision:** 8px base unit, and this scale only.
-
-```
-4, 8, 12, 16, 20, 24, 32
-```
-
-Section gaps are 16 to 24px, not 80+. Rhythm comes from the card border and the
-hero, not from vast empty space.
-
-### 2.3 Phase colours: kept, because they are data
-
-Lovable says "don't introduce saturated accent colours". The six phase colours
-(period rose, fertile green, ovulation green, pms amber, neutral grey, bc grey)
-are **not decoration**. They encode which phase of the cycle the user is in, and
-the same colours repeat on the calendar, the day sheet, and the phase badge. The
-palette is doing a labelling job.
-
-**Decision:** keep the phase colours. Their problem was never saturation, it was
-**contrast**: white text over the lightest stop of the radial gave 1.45:1.
-
-Fix, per section 4 below: the gradient becomes a **low-saturation atmospheric
-wash** behind a solid text block, rather than a saturated field the text sits on.
-That satisfies Lovable's "soft gradient wash, atmospheric, barely visible" note
-and fixes the contrast failure at the same time.
-
-### 2.4 Dark mode: derived, because DESIGN.md is silent
-
-Lovable's direction is a single warm light theme. Red ships a theme toggle, and
-R-34 requires both modes to work.
-
-**Decision:** derive dark tokens from the same opacity model, inverted. Charcoal
-`#1c1c1c` becomes the surface, cream becomes the text. Warmth is preserved by
-keeping a warm-tinted dark (`#1a1917`) rather than a neutral black.
-
-Dark mode is a first-class mode, not an afterthought: every token below has both
-values and both are checked.
-
-### 2.5 Focus: a visible ring, not a soft shadow
-
-Lovable uses `rgba(0,0,0,0.1) 0px 4px 12px` as the focus indicator. A soft
-shadow is not a reliable keyboard focus indicator, and R-32 requires a clearly
-visible one.
-
-**Decision:** keep the visible outline ring for keyboard focus, plus the soft
-shadow as an additional active-state cue. Accessibility outranks the visual
-preference here.
-
-### 2.6 Radius: adopted, with the pill rule enforced
-
-Lovable's scale is 4 / 6 / 8 / 12 / 16 / 9999. The app currently uses 14 distinct
-values including `8px`, `9px`, `10px`, and `12px` doing the same job.
-
-**Decision:** adopt the scale. `9999px` only for action pills, chips, and icon
-buttons, never for rectangular buttons.
-
-## 3. Colour Tokens
-
-### Light
-
-| Token | Value | Role |
-|---|---|---|
-| `--bg` | `#f7f4ed` | Page background |
-| `--card` | `#f7f4ed` | Card surface (same as page; borders separate) |
-| `--ink` | `#1c1c1c` | Primary text, headings |
-| `--ink-2` | `#3f3f3d` | Secondary text (charcoal 83%) |
-| `--muted` | `#5f5f5d` | Captions, metadata. 5.83:1 on cream, passes AA at any size |
-| `--line` | `#eceae4` | Passive borders, dividers |
-| `--line-strong` | `rgba(28,28,28,0.4)` | Interactive borders |
-| `--tint` | `rgba(28,28,28,0.04)` | Hover surfaces, micro-tints |
-
-### Dark (derived)
-
-| Token | Value | Role |
-|---|---|---|
-| `--bg` | `#1a1917` | Warm-tinted dark, not neutral black |
-| `--card` | `#232220` | Card surface, one step up from page |
-| `--ink` | `#f7f4ed` | Primary text (cream on dark) |
-| `--ink-2` | `#d6d2c8` | Secondary text |
-| `--muted` | `#a5a099` | Captions |
-| `--line` | `#33312d` | Passive borders |
-| `--line-strong` | `rgba(247,244,237,0.35)` | Interactive borders |
-| `--tint` | `rgba(247,244,237,0.05)` | Hover surfaces |
-
-### Phase colours (data, not palette)
-
-Each has a light and dark value and must clear AA against its own surface.
-
-| Phase | Light | Dark | Meaning |
+| Role | Light | Dark | Used for |
 |---|---|---|---|
-| period | `#c0392f` | `#e8615a` | Bleeding |
-| fertile | `#2f7d52` | `#4fbe86` | Fertile window |
-| ovulation | `#1f6b45` | `#3fae76` | Peak fertility |
-| pms | `#a8562a` | `#e08b5c` | Premenstrual |
-| neutral | `#5f5f5d` | `#a5a099` | No signal |
-| bc | `#5f5f5d` | `#a5a099` | Suppressed by birth control |
+| `primary` | `#a44e44` | (tone 80) | Primary action, selected state |
+| `on-primary` | `#fff6f0` | | Text on primary |
+| `primary-container` | `#ffc7b9` | | Selected chip, filled button hover |
+| `on-primary-container` | `#3b0000` | | Text on container |
+| `secondary` | `#82635f` | | Less prominent actions |
+| `tertiary` | `#7e6935` | | Contrasting accent |
+| `error` | (tone 40) | | Destructive, missed dose |
+| `surface` | (neutral 98) | (neutral 6) | Page background |
+| `surface-container` | (neutral 94) | (neutral 12) | Cards |
+| `on-surface` | (neutral 10) | (neutral 90) | Body text |
+| `on-surface-variant` | (neutralVariant 30) | (neutralVariant 80) | Captions, labels |
+| `outline` | (neutralVariant 50) | (neutralVariant 60) | Borders |
+| `outline-variant` | (neutralVariant 80) | (neutralVariant 30) | Dividers |
 
-Darker than the current values, because the current ones fail AA as text
-(see `anti-slop/audit-002-2026-09-17.md`, F-02 and F-06).
+### Verified
 
-## 4. The Hero
+30 of 30 specified text-on-surface pairs pass WCAG AA in both modes. The report
+is printed by the generator, not asserted by hand.
 
-The one place the design raises its voice.
+### Phase colours stay, as data
 
-**Structure:** the phase gradient is a soft wash in the **background layer**. The
-text sits in a solid block over it, and the wash is tuned so the block clears AA
-against the darkest area behind it. No white text on a light stop.
+The six cycle phases keep their own hues. They are not part of the M3 palette
+because they are **data**, not chrome: the same colour marks the same phase on
+the calendar, the day sheet, and the badge. They are re-toned to sit on M3
+surfaces and each is contrast-checked against `surface-container`.
 
-- Wash: two-stop linear gradient at low saturation, 10 to 18% of the phase hue
-  over `--bg`. Atmospheric, not a saturated field.
-- Title: 26px, weight 600, tracking `-0.02em`, `--ink`.
-- Subtitle: 14px, weight 400, `--muted`.
-- Cycle day: 12px, weight 600, uppercase, tracking `.04em`.
+## 3. Typography
 
-## 5. Typography Scale
+Material 3 type scale, system font. `ui-sans-serif, system-ui, Roboto` on
+Android, which is what the platform renders natively.
 
-| Role | Size | Weight | Tracking | Line height |
+| Role | Size | Weight | Line height | Tracking |
 |---|---|---|---|---|
-| Hero title | 26px | 600 | -0.02em | 1.25 |
-| Section heading | 17px | 600 | -0.01em | 1.3 |
-| Statistic | 44px | 600 | -0.03em | 1.0 |
-| Card title | 15px | 600 | normal | 1.3 |
-| Body | 14px | 400 | normal | 1.5 |
-| Caption | 12px | 400 | normal | 1.45 |
-| Label | 12px | 600 | normal | 1.3 |
-| Button | 15px | 600 | normal | 1.0 |
+| Headline (hero) | 26px | 600 | 1.25 | -0.02em |
+| Title large | 20px | 600 | 1.3 | normal |
+| Title medium | 16px | 600 | 1.4 | normal |
+| Body large | 16px | 400 | 1.5 | normal |
+| Body medium | 14px | 400 | 1.5 | normal |
+| Label large | 14px | 600 | 1.4 | 0.01em |
+| Label medium | 12px | 600 | 1.4 | 0.02em |
+| Display stat | 44px | 600 | 1.0 | -0.03em |
 
-No weight above 600. Hierarchy comes from size and colour, not weight.
+Two weights only: 400 and 600. Hierarchy comes from size and colour.
 
-## 6. Depth
+## 4. Shape
+
+M3 shape scale. One system, applied by role, not by feel.
+
+| Token | Value | Role |
+|---|---|---|
+| `--md-shape-xs` | 4px | Chips, small badges |
+| `--md-shape-sm` | 8px | Inputs, small buttons |
+| `--md-shape-md` | 12px | Buttons, list items |
+| `--md-shape-lg` | 16px | Cards |
+| `--md-shape-xl` | 28px | Bottom sheets |
+| `--md-shape-full` | 9999px | FAB, nav pill, icon buttons |
+
+## 5. Elevation
+
+M3 uses **surface tint and level**, not drop shadows. A raised surface is a
+lighter tone of `surface-container`, not a shadow.
 
 | Level | Treatment | Use |
 |---|---|---|
-| Flat | none | Page, cards (borders separate) |
-| Inset | `rgba(255,255,255,0.2) 0 0.5px 0 inset, rgba(0,0,0,0.2) 0 0 0 0.5px inset` | Dark buttons only |
-| Sheet | `0 -8px 30px rgba(0,0,0,.15)` | Bottom sheets only |
-| Focus | `0 0 0 2px` ring | Keyboard focus |
+| 0 | `surface` | Page |
+| 1 | `surface-container-low` | Cards at rest |
+| 2 | `surface-container` | Cards, menus |
+| 3 | `surface-container-high` | Bottom sheet, nav bar |
+| 4 | `surface-container-highest` | Dialogs |
 
-Cards get **no shadow**. One border. This replaces the current
-`0 1px 3px rgba(0,0,0,.05)` on every card.
+Shadow appears only on the bottom sheet and the nav bar, where the element
+genuinely floats above scrolling content.
 
-## 7. Rules
+## 6. Components
+
+### Navigation
+
+**Restructured.** A 5-tab bottom bar is the Android default and it was hiding the
+app's real structure: Riwayat is a view of the same data as Wawasan, and
+Pengaturan is not a peer of Beranda.
+
+| Before | After |
+|---|---|
+| Beranda, Kalender, Wawasan, Riwayat, Pengaturan | **Beranda, Kalender, Wawasan** + top-bar avatar for account |
+
+- **Bottom nav: 3 destinations.** M3 supports 3–5; 3 is the honest count.
+- **Riwayat moves into Wawasan** as a second section. Same data, one place.
+- **Pengaturan moves behind the top-bar avatar**, where account actions belong.
+  This is where Android users look for settings.
+
+### Buttons
+
+M3 variants, used by hierarchy:
+
+- **Filled** (`primary`) — one per screen, the primary action.
+- **Tonal** (`secondary-container`) — secondary actions.
+- **Outlined** (`outline` border) — tertiary.
+- **Text** (`primary` text) — inline, lowest emphasis.
+
+All 40px minimum height, `full` radius only for icon buttons and chips.
+
+### Sheets
+
+Bottom sheets use `shape-xl` top corners, `surface-container-high`, and a
+visible drag handle. This is the M3 modal bottom sheet, not a custom panel.
+
+### State layers
+
+M3 state layers: hover 8%, focus 12%, pressed 12% of `on-surface`. Replaces
+opacity changes, so the feedback is consistent across every control.
+
+## 7. Motion
+
+M3 motion tokens:
+
+| Token | Duration | Easing | Use |
+|---|---|---|---|
+| Short | 150ms | emphasized-decelerate | State change |
+| Medium | 250ms | emphasized-decelerate | Enter |
+| Long | 400ms | emphasized | Sheet, nav |
+
+Every animation must have a stated purpose (feedback, state transition,
+hierarchy). `prefers-reduced-motion` collapses all of them.
+
+## 8. Rules
 
 **Do**
-- Cream `#f7f4ed` as the foundation, in both modes via the token.
-- Derive grays from one hue at varying alpha.
-- `#eceae4` borders for containment; no card shadows.
-- Inset shadow on dark buttons.
-- Radius from the scale only.
-- Phase colours for phase meaning, and nowhere else.
+- Use M3 roles by name, never raw hex in a component.
+- Use tone-based surfaces for elevation, not shadows.
+- Use one filled button per screen.
+- Keep the 3-tab nav; account lives in the top bar.
+- Use M3 state layers for interaction feedback.
 
 **Don't**
-- Pure white page background.
-- Weight 700 or 800.
-- Card shadows.
-- `9999px` on rectangular buttons.
-- Letter-spacing above normal on headings.
-- Saturated colour as decoration.
-- A colour that fails AA against the surface it sits on.
-
-## 8. Responsive
-
-Single column, max width 480px, centred. This is a phone app.
-
-| Width | Change |
-|---|---|
-| <360px | Tighten page padding to 12px; calendar cells fluid |
-| 360-480px | Standard |
-| >480px | Centred column, no reflow |
-
-Tap targets: minimum 44px. The calendar cell is the tightest case and is
-currently 38px, which fails; it becomes fluid with a 44px cap.
+- Hand-roll a component Material 3 already defines.
+- Add a fourth bottom-nav tab.
+- Use a drop shadow for a card.
+- Mix this with the old Lovable tokens. It replaces them.
+- Put raw hex in a component. If a colour is missing from the token set, add the
+  token, not the hex.
 
 ## 9. Verification
 
-Every colour pair in this file was computed, not estimated. The method and the
-results are in `anti-slop/audit-002-2026-09-17.md`. A token is added here only
-after its contrast is checked in both modes.
+- The palette generator prints a contrast report; 0 failures required.
+- `test/design-tokens.test.ts` computes contrast from the real token values.
+- Both themes are checked. Shipping one broken mode is a defect.
+
+## 10. Migration note
+
+The old tokens (`--bg`, `--ink`, `--muted`, `--rose`, `--green`, `--radius`) are
+**removed**, not aliased. Keeping both would leave two systems in the tree and
+the next change would pick whichever it found first.
