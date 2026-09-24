@@ -246,4 +246,10 @@ describe('day sheet, nav and back button', () => {
     expect(home).toContain('homeSymptomsToday');
     expect(home).not.toMatch(/st\.phase === 'period' \|\| st\.phase === 'pms'/);
   });
+
+  it('traps Tab focus inside the card modal', () => {
+    const modal = readFileSync(ROOT + 'src/DayModal.tsx', 'utf8');
+    expect(modal).toMatch(/e\.key !== 'Tab'/);
+    expect(modal).toMatch(/querySelectorAll/);
+  });
 });
