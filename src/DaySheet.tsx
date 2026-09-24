@@ -42,7 +42,7 @@ const fmtLong = (d: string) =>
 // quick-log lives in its modal: one tap records, tapping again cancels.
 // Full period detail (flow/end/spotting) stays in LogSheet via onLog, so a tap
 // here is never an accidental commitment.
-export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose, onModalOpenChange, logOpen = false }: {
+export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose, onModalOpenChange, closeSignal, logOpen = false }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
