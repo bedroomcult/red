@@ -5,6 +5,7 @@ import { explainPrediction } from '../lib/predict';
 import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
+import Icon from './Icon';
 
 const PHASE_LABEL: Record<Phase, string> = {
   period: t.phasePeriod,
@@ -34,10 +35,11 @@ const SYM_LABEL: Record<string, string> = {
 const fmtLong = (d: string) =>
   new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-// Day view: summary first, editors behind Catat. Tapping a calendar cell lands
-// here; symptoms, note, pill and sex log save in place once expanded. Only
-// period logging stays a second step via onLog, so a tap is never an
-// accidental period commitment.
+// Day view: a 2-column grid of icon cards. Tapping a card opens its editor in
+// place; tapping again closes it. Only one card is open at a time. Period
+// quick-log lives in the sixth card: one tap records, tapping again cancels.
+// Full period detail (flow/end/spotting) stays in LogSheet via onLog, so a tap
+// here is never an accidental commitment.
 export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
@@ -64,11 +66,14 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   const [sexLocal, setSexLocal] = useState<{ protected: boolean } | null>(sexLog ?? null);
   const [sexBusy, setSexBusy] = useState(false);
   const [sexErr, setSexErr] = useState<string | null>(null);
-  const [expanded, setExpanded] = useState(false);
+  // The one open card, if any. Reset per date so a new day starts collapsed.
+  const [activeCard, setActiveCard] = useState<string | null>(null);
+  const [periodBusy, setPeriodBusy] = useState(false);
+  const [periodErr, setPeriodErr] = useState<string | null>(null);
 
   useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
   useEffect(() => { setSexLocal(sexLog ?? null); }, [date, sexLog]);
-  useEffect(() => { setExpanded(false); }, [date]);
+  useEffect(() => { setActiveCard(null); setPeriodErr(null); }, [date]);
 
   useEffect(() => {
     let on = true;
@@ -184,7 +189,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )
     : null;
 
-  // One-line verdict for the summary. The full reasoning lives in
+  // One-line verdict for the Kenapa card. The full reasoning lives in
   // PredictionDetail, which DaySheet no longer renders.
   const verdict = !reason ? null
     : reason.kind === 'in-window' ? t.dayPredictedValue
@@ -193,6 +198,46 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
     : reason.kind === 'bc' ? t.predBcPaused
     : reason.kind === 'no-data' ? t.predNoData
     : t.predOutside;
+
+  const toggle = (k: string) => setActiveCard((a) => (a === k ? null : k));
+
+  // Quick-log inherits the last used flow so one tap records a sensible
+  // default; changing flow, marking the end, or spotting stays in LogSheet.
+  const lastFlow = [...periods].reverse().find((p) => p.type === 'menstruation' && p.flow)?.flow ?? 'medium';
+
+  // Record (POST) or cancel (DELETE) this day's period. A mid-range date has
+  // no new row to add, so it opens LogSheet to mark the end instead.
+  async function quickPeriod() {
+    if (startLog?.type === 'menstruation') {
+      setPeriodBusy(true);
+      setPeriodErr(null);
+      try {
+        const r = await apiFetch('/api/periods?id=' + startLog.id, { method: 'DELETE' });
+        if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+        onDoseSaved(await readJson(r));
+      } catch (e: any) {
+        setPeriodErr(e.message);
+      } finally {
+        setPeriodBusy(false);
+      }
+      return;
+    }
+    if (inRange) { onLog(date); return; }
+    setPeriodBusy(true);
+    setPeriodErr(null);
+    try {
+      const r = await apiFetch('/api/periods', { method: 'POST', body: JSON.stringify({ start_date: date, type: 'menstruation', flow: lastFlow }) });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      onDoseSaved(await readJson(r));
+    } catch (e: any) {
+      setPeriodErr(e.message);
+    } finally {
+      setPeriodBusy(false);
+    }
+  }
+
+  const flowLabel = (f: string | null) =>
+    f === 'light' ? t.flowLight : f === 'heavy' ? t.flowHeavy : t.flowMedium;
 
   return (
     <>
@@ -222,112 +267,63 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
           </div>
         </div>
 
-        {startLog ? (
-          <div className="day-info">
-            <div className="day-info-label">{t.dayPeriodLogged}</div>
-            <div className="day-info-value">
-              {startLog.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}
-              {startLog.flow ? ` · ${startLog.flow === 'light' ? t.flowLight : startLog.flow === 'heavy' ? t.flowHeavy : t.flowMedium}` : ''}
-              {startLog.end_date ? ` · ${t.dayUntil} ${fmtLong(startLog.end_date).replace(/^[^,]+,\s*/, '')}` : ` · ${t.dayOngoing}`}
+        <div className="day-grid">
+          {/* Verdict card: static, not expandable. */}
+          <div className="day-card">
+            <div className="day-card-top"><Icon name="info" size={16} /><span>{t.predWhy}</span></div>
+            <div className="day-card-value"><strong>{verdict ?? t.predNoData}</strong></div>
+          </div>
+
+          <div className={`day-card ${activeCard === 'sym' ? 'active' : ''}`}>
+            <button type="button" className="day-card-top" aria-expanded={activeCard === 'sym'} onClick={() => toggle('sym')}>
+              <Icon name="pulse" size={16} /><span>{t.daySymptoms}</span>
+            </button>
+            <div className="day-card-value">
+              {syms === null ? (
+                <span className="muted">{t.loading}</span>
+              ) : syms.length ? (
+                <div className="chips">
+                  {syms.map((k) => (
+                    <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>
+                  ))}
+                </div>
+              ) : (
+                <span className="muted">{t.dayNoSymptoms}</span>
+              )}
             </div>
-          </div>
-        ) : inRange ? (
-          <div className="day-info">
-            <div className="day-info-label">{t.dayPeriodLogged}</div>
-            <div className="day-info-value">{t.dayInPeriodRange}</div>
-          </div>
-        ) : null}
-
-        {/* A logged day already explained itself above. Every other date gets
-            the one-line verdict, not the full disclosure. */}
-        {!startLog && !inRange && verdict && (
-          <div className="day-info">
-            <div className="day-info-label">{t.predWhy}</div>
-            <div className="day-info-value"><strong>{verdict}</strong></div>
-          </div>
-        )}
-
-        {!expanded && (
-        <div className="day-group">
-          <div className="day-info">
-            <div className="day-info-label">{t.daySymptoms}</div>
-            {syms === null ? (
-              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
-            ) : syms.length ? (
-              <div className="chips">
-                {syms.map((k) => (
-                  <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>
-                ))}
-              </div>
-            ) : (
-              <div className="day-info-value"><span className="muted">{t.dayNoSymptoms}</span></div>
-            )}
-          </div>
-
-          <div className="day-info">
-            <div className="day-info-label">{t.note}</div>
-            {note === null ? (
-              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
-            ) : note ? (
-              <div className="day-info-value"><span className="day-note-text">{note}</span></div>
-            ) : (
-              <div className="day-info-value"><span className="muted">{t.dayNoNote}</span></div>
-            )}
-          </div>
-
-          <div className="day-info">
-            <div className="day-info-label">{t.dayDose}</div>
-            <div className="day-info-value">
-              {doseLocal === true ? t.doseTakenLabel
-                : doseLocal === false ? t.doseMissedLabel
-                : <span className="muted">{t.doseNone}</span>}
-            </div>
-          </div>
-
-          <div className="day-info">
-            <div className="day-info-label">{t.daySex}</div>
-            <div className="day-info-value">
-              {sexLocal
-                ? (sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel)
-                : <span className="muted">{t.sexNone}</span>}
-            </div>
-            {sexLocal && inFertile && (
-              <div className="day-info-sub"><span className="badge">{t.sexFertileWarn}</span></div>
-            )}
-          </div>
-        </div>
-        )}
-
-        {expanded && (
-        <>
-
-        <div className="day-group">
-          <div className="day-info">
-            <div className="day-info-label">{t.daySymptoms}</div>
-            {syms === null ? (
-              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
-            ) : (
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-                {SYMPTOMS.map((k) => {
-                  const on = syms.includes(k);
-                  return (
-                    <button key={k} className={`btn ${on ? 'on' : ''}`}
-                      aria-pressed={on} onClick={() => toggleSym(k)}>
-                      {SYM_LABEL[k]}
-                    </button>
-                  );
-                })}
+            {activeCard === 'sym' && syms !== null && (
+              <div className="day-card-editor">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                  {SYMPTOMS.map((k) => {
+                    const on = syms.includes(k);
+                    return (
+                      <button key={k} className={`btn ${on ? 'on' : ''}`}
+                        aria-pressed={on} onClick={() => toggleSym(k)}>
+                        {SYM_LABEL[k]}
+                      </button>
+                    );
+                  })}
+                </div>
+                {symErr && <div className="err">{symErr}</div>}
               </div>
             )}
-            {symErr && <div className="err">{symErr}</div>}
           </div>
 
-          <div className="day-info">
-            <div className="day-info-label">{t.note}</div>
-            {note === null ? (
-              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
-            ) : (
-              <>
+          <div className={`day-card ${activeCard === 'note' ? 'active' : ''}`}>
+            <button type="button" className="day-card-top" aria-expanded={activeCard === 'note'} onClick={() => toggle('note')}>
+              <Icon name="pencil" size={16} /><span>{t.note}</span>
+            </button>
+            <div className="day-card-value">
+              {note === null ? (
+                <span className="muted">{t.loading}</span>
+              ) : note ? (
+                <span className="day-note-text">{note}</span>
+              ) : (
+                <span className="muted">{t.dayNoNote}</span>
+              )}
+            </div>
+            {activeCard === 'note' && note !== null && (
+              <div className="day-card-editor">
                 <textarea className="textarea" rows={2} value={noteDraft}
                   placeholder={t.notePlaceholder}
                   onChange={(e) => setNoteDraft(e.target.value)} />
@@ -336,64 +332,123 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                     {t.setSave}
                   </button>
                 </div>
-              </>
+                {noteErr && <div className="err">{noteErr}</div>}
+              </div>
             )}
-            {noteErr && <div className="err">{noteErr}</div>}
-          </div>
-        </div>
-
-        <div className="day-group">
-          <div className="day-info">
-            <div className="day-info-label">{t.dayDose}</div>
-            {/* Text chips, not icon buttons: check/cross/dash read as
-                right/wrong/clear rather than taken/missed/delete. Tapping the
-                active chip clears, so no third button is needed. */}
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.dayDose}>
-              <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === true}
-                onClick={() => setDose(doseLocal === true ? null : true)}>
-                {t.doseTaken}
-              </button>
-              <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === false}
-                onClick={() => setDose(doseLocal === false ? null : false)}>
-                {t.doseMissed}
-              </button>
-            </div>
-            {doseErr && <div className="err">{doseErr}</div>}
           </div>
 
-          <div className="day-info">
-            <div className="day-info-label">{t.daySex}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.daySex}>
-              <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={sexLocal?.protected === true}
-                onClick={() => saveSex(sexLocal?.protected === true ? null : { protected: true })}>
-                {t.sexProtected}
-              </button>
-              <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={!!sexLocal && !sexLocal.protected}
-                onClick={() => saveSex(sexLocal && !sexLocal.protected ? null : { protected: false })}>
-                {t.sexUnprotected}
-              </button>
+          <div className={`day-card ${activeCard === 'dose' ? 'active' : ''}`}>
+            <button type="button" className="day-card-top" aria-expanded={activeCard === 'dose'} onClick={() => toggle('dose')}>
+              <Icon name="pill" size={16} /><span>{t.dayDose}</span>
+            </button>
+            <div className="day-card-value">
+              {doseLocal === true ? t.doseTakenLabel
+                : doseLocal === false ? t.doseMissedLabel
+                : <span className="muted">{t.doseNone}</span>}
             </div>
-            {sexLocal && inFertile && (
-              <div className="day-info-sub"><span className="badge">{t.sexFertileWarn}</span></div>
+            {activeCard === 'dose' && (
+              <div className="day-card-editor">
+                {/* Text chips, not icon buttons: check/cross/dash read as
+                    right/wrong/clear rather than taken/missed/delete. Tapping the
+                    active chip clears, so no third button is needed. */}
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.dayDose}>
+                  <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+                    aria-pressed={doseLocal === true}
+                    onClick={() => setDose(doseLocal === true ? null : true)}>
+                    {t.doseTaken}
+                  </button>
+                  <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+                    aria-pressed={doseLocal === false}
+                    onClick={() => setDose(doseLocal === false ? null : false)}>
+                    {t.doseMissed}
+                  </button>
+                </div>
+                {doseErr && <div className="err">{doseErr}</div>}
+              </div>
             )}
-            {sexErr && <div className="err">{sexErr}</div>}
+          </div>
+
+          <div className={`day-card ${activeCard === 'sex' ? 'active' : ''}`}>
+            <button type="button" className="day-card-top" aria-expanded={activeCard === 'sex'} onClick={() => toggle('sex')}>
+              <Icon name="heart" size={16} /><span>{t.daySex}</span>
+            </button>
+            <div className="day-card-value">
+              {sexLocal
+                ? (sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel)
+                : <span className="muted">{t.sexNone}</span>}
+              {sexLocal && inFertile && (
+                <div className="day-info-sub"><span className="badge">{t.sexFertileWarn}</span></div>
+              )}
+            </div>
+            {activeCard === 'sex' && (
+              <div className="day-card-editor">
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.daySex}>
+                  <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+                    aria-pressed={sexLocal?.protected === true}
+                    onClick={() => saveSex(sexLocal?.protected === true ? null : { protected: true })}>
+                    {t.sexProtected}
+                  </button>
+                  <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+                    aria-pressed={!!sexLocal && !sexLocal.protected}
+                    onClick={() => saveSex(sexLocal && !sexLocal.protected ? null : { protected: false })}>
+                    {t.sexUnprotected}
+                  </button>
+                </div>
+                {sexErr && <div className="err">{sexErr}</div>}
+              </div>
+            )}
+          </div>
+
+          <div className={`day-card ${activeCard === 'period' ? 'active' : ''}`}>
+            <button type="button" className="day-card-top" aria-expanded={activeCard === 'period'} onClick={() => toggle('period')}>
+              <Icon name="droplet" size={16} /><span>{t.dayPeriodLogged}</span>
+            </button>
+            <div className="day-card-value">
+              {startLog ? (
+                <>
+                  {startLog.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}
+                  {startLog.flow ? ` · ${flowLabel(startLog.flow)}` : ''}
+                  {startLog.end_date ? ` · ${t.dayUntil} ${fmtLong(startLog.end_date).replace(/^[^,]+,\s*/, '')}` : ` · ${t.dayOngoing}`}
+                </>
+              ) : inRange ? (
+                t.dayInPeriodRange
+              ) : (
+                <span className="muted">{t.doseNone}</span>
+              )}
+            </div>
+            {activeCard === 'period' && (
+              <div className="day-card-editor">
+                {periodErr && <div className="err">{periodErr}</div>}
+                {!startLog && !inRange && (
+                  <button className="btn primary" disabled={periodBusy} onClick={quickPeriod}>
+                    {t.logPeriod}
+                  </button>
+                )}
+                {startLog?.type === 'menstruation' && (
+                  <button className="btn" disabled={periodBusy} onClick={quickPeriod}>
+                    {t.exitNo}
+                  </button>
+                )}
+                {inRange && !startLog && (
+                  <button className="btn" onClick={() => onLog(date)}>
+                    {t.ongoingEnded}
+                  </button>
+                )}
+                {(startLog || inRange) && (
+                  <div>
+                    <button type="button" className="day-card-link" onClick={() => onLog(date)}>
+                      {t.predMore}
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
           </div>
         </div>
-        </>
-        )}
 
         </div>
 
         <div className="sheet-actions">
-          {!expanded ? (
-            <button className="btn primary" onClick={() => setExpanded(true)}>{t.dayLogHere}</button>
-          ) : (
-            <button className="btn primary" onClick={() => onLog(date)}>{t.logPeriod}</button>
-          )}
           <button className="btn ghost" onClick={onClose}>{t.bcClose}</button>
         </div>
       </div>

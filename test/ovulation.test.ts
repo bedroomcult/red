@@ -148,8 +148,9 @@ describe('calendar and projection display fixes', () => {
   it('uses labelled text chips per tracked item, not icon-only rows', () => {
     const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
     // Icon-only check/cross/dash read as right/wrong/clear, not taken/missed.
+    // Card headers may use decorative icons alongside text labels.
     expect(day).not.toMatch(/className="seg-row"/);
-    expect(day).not.toMatch(/from '.\/Icon'/);
+    expect(day).toMatch(/from '.\/Icon'/);
     for (const k of ['doseTaken', 'doseMissed', 'sexProtected', 'sexUnprotected']) {
       expect(day).toContain(`{t.${k}}`);
     }
@@ -158,6 +159,27 @@ describe('calendar and projection display fixes', () => {
     // Symptoms and note edit in place instead of rendering read-only.
     expect(day).toMatch(/toggleSym/);
     expect(day).toMatch(/<textarea/);
+  });
+
+  it('renders the day as an icon card grid with period quick-log', () => {
+    const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
+    // Six cards: verdict, symptoms, note, pill, sex, period.
+    for (const icon of ['info', 'pulse', 'pencil', 'pill', 'heart', 'droplet']) {
+      expect(day, icon).toContain(`name="${icon}"`);
+    }
+    // One open card at a time, reset when the date changes.
+    expect(day).toMatch(/activeCard/);
+    expect(day).toMatch(/setActiveCard\(null\)/);
+    // Quick-log posts with the last used flow; cancelling deletes the row.
+    expect(day).toMatch(/\/api\/periods', \{ method: 'POST'/);
+    expect(day).toMatch(/\/api\/periods\?id=' \+ startLog\.id/);
+    // Mid-range dates open LogSheet instead of posting a duplicate row.
+    expect(day).toMatch(/if \(inRange\) \{ onLog\(date\); return; \}/);
+    // New classes must exist in the stylesheet (class-coverage holds this).
+    const css = readFileSync(ROOT + 'src/index.css', 'utf8');
+    for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-editor', 'day-card-link']) {
+      expect(css, c).toContain(`.${c}`);
+    }
   });
 });
 

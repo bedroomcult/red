@@ -516,6 +516,26 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   font-size: 12px; padding: 4px 10px; border-radius: var(--r-full);
   background: var(--rose-soft); color: var(--rose); font-weight: 600;
 }
+/* Day card grid: 2 columns of icon cards replacing the summary rows. One card
+   open at a time; the open card stays in place so the grid does not reflow. */
+.day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
+.day-card {
+  border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card);
+  padding: 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+}
+.day-card.active { border-color: var(--rose); background: var(--rose-soft); }
+.day-card-top {
+  display: flex; align-items: center; gap: 6px; font: inherit;
+  font-size: 12px; font-weight: 600; color: var(--muted);
+  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
+}
+button.day-card-top:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: var(--r-sm); }
+.day-card-value { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
+.day-card-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+.day-card-link {
+  background: none; border: 0; padding: 0; cursor: pointer;
+  color: var(--rose); font-size: 12px; font-weight: 600;
+}
 .sheet .row { margin-top: 16px; }
 
 /* bottom nav */
