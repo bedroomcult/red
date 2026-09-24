@@ -28,7 +28,7 @@ export default function DayModal({ title, icon, onClose, escapeActive = true, ch
       if (e.key !== 'Tab') return;
       const items = [...el.querySelectorAll<HTMLElement>(
         'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      )].filter((n) => !n.disabled && n.offsetParent !== null);
+      )].filter((n) => !(n as HTMLButtonElement).disabled && n.offsetParent !== null);
       if (!items.length) { e.preventDefault(); el.focus(); return; }
       const first = items[0];
       const last = items[items.length - 1];
