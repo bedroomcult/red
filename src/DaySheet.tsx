@@ -458,7 +458,7 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )}
       {activeModal === 'sex' && (
         <DayModal title={t.daySex} icon="heart" onClose={close} escapeActive={!logOpen}>
-          {sexLocal && inFertile && (
+          {inFertile && (
             <div className="day-info-sub" style={{ marginTop: 0, marginBottom: 8 }}><span className="badge">{t.sexFertileWarn}</span></div>
           )}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.daySex}>

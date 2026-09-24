@@ -121,23 +121,23 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
       <div className="home-lower">
         {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} />}
         <ChanceCard date={today} prediction={me.prediction} bcMode={bcMode} />
-        {(st.phase === 'period' || st.phase === 'pms' || st.phase === 'neutral') && (
-          <div className="card">
-            <h2>{t.homeSymptomsToday}</h2>
-            <div className="muted" style={{ marginTop: -6, marginBottom: 10 }}>{t.homeSymptomHint}</div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {SYMPTOMS.map((k) => {
-                const on = syms.includes(k);
-                return (
-                  <button key={k} className={`btn ${on ? 'on' : ''}`} onClick={() => toggle(k)}
-                    aria-pressed={on}>
-                    {symLabel[k]}
-                  </button>
-                );
-              })}
-            </div>
+        {/* Symptoms log in every phase: fertile-window symptoms are data,
+            not noise, and hiding the chips loses exactly those days. */}
+        <div className="card">
+          <h2>{t.homeSymptomsToday}</h2>
+          <div className="muted" style={{ marginTop: -6, marginBottom: 10 }}>{t.homeSymptomHint}</div>
+          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+            {SYMPTOMS.map((k) => {
+              const on = syms.includes(k);
+              return (
+                <button key={k} className={`btn ${on ? 'on' : ''}`} onClick={() => toggle(k)}
+                  aria-pressed={on}>
+                  {symLabel[k]}
+                </button>
+              );
+            })}
           </div>
-        )}
+        </div>
 
         <div className="row" style={{ marginTop: 0 }}>
           <button className="btn primary" onClick={() => onLogToday(today)}>{t.homeLogToday}</button>
