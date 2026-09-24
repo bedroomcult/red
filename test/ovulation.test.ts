@@ -184,6 +184,11 @@ describe('calendar and projection display fixes', () => {
     // The destructive action never uses the dismiss word.
     expect(day).toMatch(/confirmCancel/);
     expect(day).toMatch(/dayPeriodCancelYes/);
+    // Sex modal warns on fertile dates with or without a log; the grid
+    // preview still requires one.
+    const modal = day.slice(day.indexOf("activeModal === 'sex'"));
+    expect(modal).toMatch(/\{inFertile && \(/);
+    expect(modal).not.toMatch(/\{sexLocal && inFertile && \(/);
     // New classes must exist in the stylesheet (class-coverage holds this).
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-link', 'modal', 'modal-overlay', 'modal-head', 'modal-body']) {
@@ -234,5 +239,11 @@ describe('day sheet, nav and back button', () => {
     const handler = app.slice(app.indexOf('onRequestClose={()'), app.indexOf('canGoHome='));
     expect(handler).toMatch(/if \(logDate\) setLogDate\(null\)/);
     expect(handler).toMatch(/return true/);
+  });
+
+  it('shows home symptoms in every phase, not just three', () => {
+    const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
+    expect(home).toContain('homeSymptomsToday');
+    expect(home).not.toMatch(/st\.phase === 'period' \|\| st\.phase === 'pms'/);
   });
 });
