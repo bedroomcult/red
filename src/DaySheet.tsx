@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useEscape } from './useEscape';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
-import { explainPrediction } from '../lib/predict';
+import { explainPrediction, type PredictionReason } from '../lib/predict';
 import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
@@ -208,6 +208,24 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )
     : null;
 
+  // Fallback when there is no prediction at all: PredictionDetail renders
+  // its no-data branch off `kind` alone, so the rest stays null.
+  const NO_DATA_REASON: PredictionReason = {
+    kind: 'no-data',
+    daysFromNext: null,
+    windowLo: null,
+    windowHi: null,
+    windowDays: null,
+    observedCycles: 0,
+    avgCycle: null,
+    estimated: true,
+    spread: null,
+    irregular: false,
+    ecType: null,
+    ov: null,
+    inFertile: false,
+  };
+
   // One-line verdict for the Kenapa card. The full reasoning lives in
   // PredictionDetail, rendered inside the explanation modal.
   const verdict = !reason ? null
@@ -371,9 +389,9 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
           <button className="btn ghost" onClick={onClose}>{t.bcClose}</button>
         </div>
       </div>
-      {activeModal === 'why' && reason && (
+      {activeModal === 'why' && (
         <DayModal title={t.predWhy} icon="info" onClose={close} escapeActive={!logOpen}>
-          <PredictionDetail date={date} reason={reason} />
+          <PredictionDetail date={date} reason={reason ?? NO_DATA_REASON} />
         </DayModal>
       )}
       {activeModal === 'sym' && (
