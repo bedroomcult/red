@@ -4,9 +4,11 @@ import type { Period } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
 
-export default function LogSheet({ date, existing, active, onClose, onSaved }: {
+export default function LogSheet({ date, existing, active, onClose, onSaved, raised = false }: {
   date: string; existing: Period | undefined; active: Period | undefined;
   onClose: () => void; onSaved: (state: any) => void;
+  // True when opened from inside a card modal: render above the modal.
+  raised?: boolean;
 }) {
   useEscape(true, onClose);
   const [err, setErr] = useState<string | null>(null);
@@ -82,8 +84,8 @@ export default function LogSheet({ date, existing, active, onClose, onSaved }: {
 
   return (
     <>
-      <div className="overlay" onClick={onClose} />
-      <div className="sheet" role="dialog" aria-modal="true" aria-label={new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}>
+      <div className={`overlay${raised ? ' sheet-overlay-raised' : ''}`} onClick={onClose} />
+      <div className={`sheet${raised ? ' sheet-raised' : ''}`} role="dialog" aria-modal="true" aria-label={new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}>
         <div className="sheet-body">
           <div className="grabber" />
           <h3>{date}</h3>

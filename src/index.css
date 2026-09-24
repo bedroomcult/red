@@ -516,27 +516,59 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   font-size: 12px; padding: 4px 10px; border-radius: var(--r-full);
   background: var(--rose-soft); color: var(--rose); font-weight: 600;
 }
-/* Day card grid: 2 columns of icon cards replacing the summary rows. One card
-   open at a time; the open card stays in place so the grid does not reflow. */
+/* Day card grid: 2 columns of tappable cards. Tapping a card opens a modal;
+   the grid itself never expands. */
 .day-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 12px; }
-.day-card {
+button.day-card {
   border: 1px solid var(--line); border-radius: var(--r-md); background: var(--card);
   padding: 12px; display: flex; flex-direction: column; gap: 6px; min-width: 0;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
 }
-.day-card.active { border-color: var(--rose); background: var(--rose-soft); }
+button.day-card:active { border-color: var(--rose); background: var(--rose-soft); }
+button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
 .day-card-top {
-  display: flex; align-items: center; gap: 6px; font: inherit;
+  display: flex; align-items: center; gap: 6px;
   font-size: 12px; font-weight: 600; color: var(--muted);
-  background: none; border: 0; padding: 0; cursor: pointer; text-align: left;
 }
-button.day-card-top:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: var(--r-sm); }
 .day-card-value { font-size: 13px; line-height: 1.5; overflow-wrap: anywhere; }
-.day-card-editor { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 .day-card-link {
   background: none; border: 0; padding: 0; cursor: pointer;
   color: var(--rose); font-size: 12px; font-weight: 600;
 }
 .sheet .row { margin-top: 16px; }
+
+/* Centered popup stacked over an open sheet. Sits above .sheet (z 11);
+   nested sheets (LogSheet detail) sit above the modal (see .sheet-raised). */
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.45); z-index: 20; animation: fade .18s ease both; }
+.modal {
+  position: fixed; z-index: 21; left: 16px; right: 16px; top: 50%; transform: translateY(-50%);
+  max-width: 420px; margin: 0 auto; max-height: 85dvh;
+  display: flex; flex-direction: column;
+  background: var(--card); border-radius: var(--r-lg); box-shadow: var(--shadow-sheet);
+  animation: pop .18s ease-out;
+}
+@keyframes pop { from { opacity: 0; transform: translateY(-50%) scale(.97); } to { opacity: 1; transform: translateY(-50%) scale(1); } }
+@supports not (height: 100dvh) {
+  .modal { max-height: 85vh; }
+}
+.modal-head {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  padding: 16px 16px 0;
+}
+.modal-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.modal-x {
+  font: inherit; font-size: 22px; line-height: 1; color: var(--muted);
+  background: none; border: 0; padding: 4px 8px; cursor: pointer; border-radius: var(--r-sm);
+}
+.modal-x:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
+.modal-body {
+  overflow-y: auto; -webkit-overflow-scrolling: touch;
+  padding: 12px 16px calc(16px + env(safe-area-inset-bottom));
+  display: flex; flex-direction: column; gap: 10px;
+}
+/* A sheet opened from inside a modal (period detail) renders above it. */
+.sheet-raised { z-index: 30; }
+.sheet-overlay-raised { z-index: 29; }
 
 /* bottom nav */
 /* Floating pill nav. A detached capsule rather than a full-width bar, so the

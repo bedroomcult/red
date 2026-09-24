@@ -32,6 +32,10 @@ export default function App() {
   const [ym, setYm] = useState(() => { const d = new Date(); return { y: d.getFullYear(), m: d.getMonth() }; });
   const [sel, setSel] = useState<string | null>(null);
   const [logDate, setLogDate] = useState<string | null>(null);
+  // Card modal inside DaySheet: tracked so hardware back closes the topmost
+  // layer first, and so LogSheet renders above the modal when nested.
+  const [dayModalOpen, setDayModalOpen] = useState(false);
+  const [closeDayModal, setCloseDayModal] = useState(0);
   const [bcOpen, setBcOpen] = useState(false);
   const [ecOpen, setEcOpen] = useState(false);
   // The EC event being edited; undefined = a new one. `ecOpen` alone would lose
@@ -259,7 +263,7 @@ export default function App() {
           onSaved={setMe} onLogout={doLogout} />
       )}
 
-      {sel && !logDate && (
+      {sel && (
         <DaySheet
           date={sel}
           periods={me?.periods ?? []}
@@ -269,10 +273,13 @@ export default function App() {
           sexLog={me?.sex?.find((s) => s.date === sel)}
           onDoseSaved={setMe}
           onLog={(d) => setLogDate(d)}
-          onClose={() => setSel(null)}
+          onClose={() => { setSel(null); setDayModalOpen(false); }}
+          onModalOpenChange={setDayModalOpen}
+          closeSignal={closeDayModal}
+          logOpen={logDate !== null}
         />
       )}
-      {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} onClose={() => setLogDate(null)} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); }} />}
+      {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} raised={dayModalOpen} onClose={() => setLogDate(null)} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); setDayModalOpen(false); }} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
       {ecOpen && (
         <EcPanel
@@ -288,8 +295,10 @@ export default function App() {
       <ExitConfirm
         onRequestClose={() => {
           // Any open sheet eats the back press first, matching Android.
+          // Topmost layer wins: nested LogSheet > card modal > DaySheet.
           if (sel || logDate || bcOpen || ecOpen) {
             if (logDate) setLogDate(null);
+            else if (dayModalOpen) { setCloseDayModal((c) => c + 1); setDayModalOpen(false); }
             else if (sel) setSel(null);
             else if (bcOpen) setBcOpen(false);
             else if (ecOpen) { setEcOpen(false); setEcEditId(null); }
