@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useEscape } from './useEscape';
-import Icon from './Icon';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
 import { explainPrediction } from '../lib/predict';
-import { symptomHistory } from '../lib/symptom-history';
 import PredictionDetail from './PredictionDetail';
 import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
@@ -27,6 +25,8 @@ const PHASE_BADGE: Record<Phase, string> = {
   bc: 'grey',
 };
 
+const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
+
 const SYM_LABEL: Record<string, string> = {
   cramps: t.symCramps, bloating: t.symBloating, headache: t.symHeadache, mood: t.symMood,
   tired: t.symTired, breast: t.symBreast, acne: t.symAcne, craving: t.symCraving,
@@ -35,24 +35,27 @@ const SYM_LABEL: Record<string, string> = {
 const fmtLong = (d: string) =>
   new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-// Read-only view of one day. Tapping a calendar cell lands here; editing a period
-// is an explicit second step via onLog. Showing the form first made every tap a
-// commitment to logging, and buried the symptoms/note already stored for the day.
-export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, symptomLog = [], onDoseSaved, onLog, onClose }: {
+// Day view with inline editing. Tapping a calendar cell lands here; symptoms,
+// note, pill and sex log save in place. Only period logging stays a second
+// step via onLog, so a tap is never an accidental period commitment.
+export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
   bcMode: boolean;
   dose: Dose | undefined;
   sexLog: SexLog | undefined;
-  symptomLog?: { date: string; kind: string }[];
   onDoseSaved: (state: any) => void;
   onLog: (date: string) => void;
   onClose: () => void;
 }) {
   useEscape(true, onClose);
   const [syms, setSyms] = useState<string[] | null>(null);
+  const [symErr, setSymErr] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
+  const [noteDraft, setNoteDraft] = useState('');
+  const [noteBusy, setNoteBusy] = useState(false);
+  const [noteErr, setNoteErr] = useState<string | null>(null);
   const [doseBusy, setDoseBusy] = useState(false);
   const [doseErr, setDoseErr] = useState<string | null>(null);
   // Local echo of the parent's dose, so the buttons update before the refetch.
@@ -69,20 +72,59 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
     let on = true;
     setSyms(null);
     setNote(null);
+    setNoteDraft('');
+    setSymErr(null);
+    setNoteErr(null);
     apiFetch('/api/symptoms?date=' + date)
       .then((r) => (r.ok ? readJson(r) : { symptoms: [] }))
       .then((j) => { if (on) setSyms((j.symptoms ?? []).map((s: any) => s.kind)); })
       .catch(() => { if (on) setSyms([]); });
     apiFetch('/api/notes?date=' + date)
       .then((r) => (r.ok ? readJson(r) : { note: '' }))
-      .then((j) => { if (on) setNote(j.note ?? ''); })
-      .catch(() => { if (on) setNote(''); });
+      .then((j) => { if (on) { setNote(j.note ?? ''); setNoteDraft(j.note ?? ''); } })
+      .catch(() => { if (on) { setNote(''); setNoteDraft(''); } });
     return () => { on = false; };
   }, [date]);
 
   const starts = periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
   const ranges = periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
   const st = cycleStatus(date, starts, ranges, prediction, bcMode);
+
+  // Symptom toggle, optimistic like Home.tsx. Same POST toggles server-side.
+  async function toggleSym(kind: string) {
+    if (syms === null) return;
+    const prev = syms;
+    const next = prev.includes(kind) ? prev.filter((s) => s !== kind) : [...prev, kind];
+    setSyms(next);
+    setSymErr(null);
+    try {
+      const r = await apiFetch('/api/symptoms', { method: 'POST', body: JSON.stringify({ date, kind }) });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      const j = await readJson(r);
+      setSyms((j.symptoms ?? []).map((s: any) => s.kind));
+    } catch (e: any) {
+      setSyms(prev);
+      setSymErr(e.message);
+    }
+  }
+
+  // Explicit save, not autosave: one request per tap instead of per keystroke.
+  // Empty + save deletes the note, matching POST /api/notes.
+  async function saveNote() {
+    setNoteBusy(true);
+    setNoteErr(null);
+    try {
+      const r = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note: noteDraft }) });
+      if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
+      const j = await readJson(r);
+      setNote(j.note ?? '');
+    } catch (e: any) {
+      setNoteErr(e.message);
+    } finally {
+      setNoteBusy(false);
+    }
+  }
+  const noteDirty = note !== null && noteDraft !== note;
 
   // taken: true | false | null (null clears). Any date, past or future.
   async function setDose(taken: boolean | null) {
@@ -140,10 +182,6 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )
     : null;
 
-  // Recurrence counts for the symptoms logged on this day, so a single entry is
-  // shown against the user's own history rather than in isolation.
-  const hist = symptomLog.length ? symptomHistory(symptomLog, periods, prediction, bcMode) : null;
-
   return (
     <>
       <div className="overlay" onClick={onClose} />
@@ -196,42 +234,60 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
         <div className="day-group">
           <div className="day-info">
             <div className="day-info-label">{t.daySymptoms}</div>
-            <div className="day-info-value">
-              {syms === null ? t.loading
-                : syms.length === 0 ? <span className="muted">{t.dayNoSymptoms}</span>
-                : <span className="chips">{syms.map((k) => <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>)}</span>}
-            </div>
+            {syms === null ? (
+              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
+            ) : (
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+                {SYMPTOMS.map((k) => {
+                  const on = syms.includes(k);
+                  return (
+                    <button key={k} className={`btn ${on ? 'on' : ''}`}
+                      aria-pressed={on} onClick={() => toggleSym(k)}>
+                      {SYM_LABEL[k]}
+                    </button>
+                  );
+                })}
+              </div>
+            )}
+            {symErr && <div className="err">{symErr}</div>}
           </div>
 
           <div className="day-info">
             <div className="day-info-label">{t.note}</div>
-            <div className="day-info-value">
-              {note === null ? <span className="muted">{t.loading}</span>
-                : note ? <span className="day-note-text">{note}</span>
-                : <span className="muted">{t.dayNoNote}</span>}
-            </div>
+            {note === null ? (
+              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
+            ) : (
+              <>
+                <textarea className="textarea" rows={2} value={noteDraft}
+                  placeholder={t.notePlaceholder}
+                  onChange={(e) => setNoteDraft(e.target.value)} />
+                <div className="row tight">
+                  <button className="btn" disabled={!noteDirty || noteBusy} onClick={saveNote}>
+                    {t.setSave}
+                  </button>
+                </div>
+              </>
+            )}
+            {noteErr && <div className="err">{noteErr}</div>}
           </div>
         </div>
 
         <div className="day-group">
           <div className="day-info">
             <div className="day-info-label">{t.dayDose}</div>
-            <div className="day-info-value">
-              {doseLocal === null ? <span className="muted">{t.doseNone}</span>
-                : <span className="day-status">{doseLocal ? t.doseTaken : t.doseMissed}</span>}
-            </div>
-            <div className="seg-row" role="group" aria-label={t.dayDose}>
-              <button className={`seg ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === true} onClick={() => setDose(true)} title={t.doseTaken}>
-                <Icon name="check" size={16} /><span className="sr-only">{t.doseTaken}</span>
+            {/* Text chips, not icon buttons: check/cross/dash read as
+                right/wrong/clear rather than taken/missed/delete. Tapping the
+                active chip clears, so no third button is needed. */}
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.dayDose}>
+              <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === true}
+                onClick={() => setDose(doseLocal === true ? null : true)}>
+                {t.doseTaken}
               </button>
-              <button className={`seg ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
-                aria-pressed={doseLocal === false} onClick={() => setDose(false)} title={t.doseMissed}>
-                <Icon name="cross" size={16} /><span className="sr-only">{t.doseMissed}</span>
-              </button>
-              <button className="seg" disabled={doseBusy || doseLocal === null}
-                onClick={() => setDose(null)} title={t.doseClear}>
-                <Icon name="dash" size={16} /><span className="sr-only">{t.doseClear}</span>
+              <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+                aria-pressed={doseLocal === false}
+                onClick={() => setDose(doseLocal === false ? null : false)}>
+                {t.doseMissed}
               </button>
             </div>
             {doseErr && <div className="err">{doseErr}</div>}
@@ -239,25 +295,21 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
 
           <div className="day-info">
             <div className="day-info-label">{t.daySex}</div>
-            <div className="day-info-value">
-              {sexLocal === null ? <span className="muted">{t.sexNone}</span>
-                : <span className="day-status">{sexLocal.protected ? t.sexProtected : t.sexUnprotected}</span>}
-              {sexLocal && inFertile && <span className="badge" style={{ marginLeft: 8 }}>{t.sexFertileWarn}</span>}
-            </div>
-            <div className="seg-row" role="group" aria-label={t.daySex}>
-              <button className={`seg ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={sexLocal?.protected === true} onClick={() => saveSex({ protected: true })} title={t.sexProtected}>
-                <Icon name="check" size={16} /><span className="sr-only">{t.sexProtected}</span>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.daySex}>
+              <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={sexLocal?.protected === true}
+                onClick={() => saveSex(sexLocal?.protected === true ? null : { protected: true })}>
+                {t.sexProtected}
               </button>
-              <button className={`seg ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
-                aria-pressed={!!sexLocal && !sexLocal.protected} onClick={() => saveSex({ protected: false })} title={t.sexUnprotected}>
-                <Icon name="cross" size={16} /><span className="sr-only">{t.sexUnprotected}</span>
-              </button>
-              <button className="seg" disabled={sexBusy || sexLocal === null}
-                onClick={() => saveSex(null)} title={t.sexClear}>
-                <Icon name="dash" size={16} /><span className="sr-only">{t.sexClear}</span>
+              <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+                aria-pressed={!!sexLocal && !sexLocal.protected}
+                onClick={() => saveSex(sexLocal && !sexLocal.protected ? null : { protected: false })}>
+                {t.sexUnprotected}
               </button>
             </div>
+            {sexLocal && inFertile && (
+              <div className="day-info-sub"><span className="badge">{t.sexFertileWarn}</span></div>
+            )}
             {sexErr && <div className="err">{sexErr}</div>}
           </div>
         </div>

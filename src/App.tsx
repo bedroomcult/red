@@ -267,7 +267,6 @@ export default function App() {
           bcMode={bcMode}
           dose={me?.doses?.find((d) => d.date === sel)}
           sexLog={me?.sex?.find((s) => s.date === sel)}
-          symptomLog={me?.symptomLog ?? []}
           onDoseSaved={setMe}
           onLog={(d) => setLogDate(d)}
           onClose={() => setSel(null)}

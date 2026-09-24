@@ -145,12 +145,19 @@ describe('calendar and projection display fixes', () => {
     expect(detail).toMatch(/<details className="more">[\s\S]*<dl className="facts">/);
   });
 
-  it('uses one icon row per tracked item, not labelled button rows', () => {
+  it('uses labelled text chips per tracked item, not icon-only rows', () => {
     const day = readFileSync(ROOT + 'src/DaySheet.tsx', 'utf8');
-    expect(day.match(/className="seg-row"/g)?.length).toBe(2);
-    // Two "Hapus" labels in different rows was the ambiguity being removed.
-    expect(day).not.toMatch(/className="btn ghost"[^>]*\{t\.(doseClear|sexClear)\}/);
-    for (const n of ['check', 'cross', 'dash']) expect(day).toContain(`name="${n}"`);
+    // Icon-only check/cross/dash read as right/wrong/clear, not taken/missed.
+    expect(day).not.toMatch(/className="seg-row"/);
+    expect(day).not.toMatch(/from '.\/Icon'/);
+    for (const k of ['doseTaken', 'doseMissed', 'sexProtected', 'sexUnprotected']) {
+      expect(day).toContain(`{t.${k}}`);
+    }
+    // Tapping the active chip clears, so there is no third clear button.
+    expect(day).not.toMatch(/\{t\.(doseClear|sexClear)\}/);
+    // Symptoms and note edit in place instead of rendering read-only.
+    expect(day).toMatch(/toggleSym/);
+    expect(day).toMatch(/<textarea/);
   });
 });
 
