@@ -17,6 +17,28 @@ export default function DayModal({ title, icon, onClose, escapeActive = true, ch
   useEscape(escapeActive, onClose);
   const ref = useRef<HTMLDivElement>(null);
   useEffect(() => { ref.current?.focus(); }, []);
+  // Tab trap: the dialog claims aria-modal, so keyboard focus must cycle
+  // inside it instead of wandering into the dimmed sheet behind. Escape is
+  // left alone here — useEscape owns it and the nested-sheet layering
+  // depends on that propagation behavior.
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+      const items = [...el.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      )].filter((n) => !(n as HTMLButtonElement).disabled && n.offsetParent !== null);
+      if (!items.length) { e.preventDefault(); el.focus(); return; }
+      const first = items[0];
+      const last = items[items.length - 1];
+      const active = document.activeElement as HTMLElement | null;
+      if (e.shiftKey && (active === first || !el.contains(active))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (active === last || !el.contains(active))) { e.preventDefault(); first.focus(); }
+    };
+    el.addEventListener('keydown', onKey);
+    return () => el.removeEventListener('keydown', onKey);
+  }, []);
   return (
     <>
       <div className="modal-overlay" onClick={onClose} />
