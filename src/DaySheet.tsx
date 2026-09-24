@@ -77,12 +77,15 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   const [sexLocal, setSexLocal] = useState<{ protected: boolean } | null>(sexLog ?? null);
   const [sexBusy, setSexBusy] = useState(false);
   const [sexErr, setSexErr] = useState<string | null>(null);
+  // Two-step period cancel: first tap arms the confirm, second deletes.
+  // A button reading "Batal" must never delete on one tap.
+  const [confirmCancel, setConfirmCancel] = useState(false);
   const [periodBusy, setPeriodBusy] = useState(false);
   const [periodErr, setPeriodErr] = useState<string | null>(null);
 
   useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
   useEffect(() => { setSexLocal(sexLog ?? null); }, [date, sexLog]);
-  useEffect(() => { setActiveModal(null); setPeriodErr(null); }, [date]);
+  useEffect(() => { setActiveModal(null); setPeriodErr(null); setConfirmCancel(false); }, [date]);
   // App-driven close (hardware back): only fires when the signal changes.
   const closeSig = closeSignal ?? 0;
   const firstSig = useRef(true);
@@ -236,8 +239,8 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
     : reason.kind === 'no-data' ? t.predNoData
     : t.predOutside;
 
-  const open = (k: string) => { setActiveModal(k); onModalOpenChange?.(true); };
-  const close = () => { setActiveModal(null); onModalOpenChange?.(false); };
+  const open = (k: string) => { setActiveModal(k); setConfirmCancel(false); onModalOpenChange?.(true); };
+  const close = () => { setActiveModal(null); setConfirmCancel(false); onModalOpenChange?.(false); };
 
   // Quick-log inherits the last used flow so one tap records a sensible
   // default; changing flow, marking the end, or spotting stays in LogSheet.
@@ -481,10 +484,21 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
               {t.logPeriod}
             </button>
           )}
-          {startLog?.type === 'menstruation' && (
-            <button className="btn" disabled={periodBusy} onClick={quickPeriod}>
-              {t.exitNo}
+          {startLog?.type === 'menstruation' && !confirmCancel && (
+            <button className="btn" disabled={periodBusy} onClick={() => setConfirmCancel(true)}>
+              {t.dayPeriodCancel}
             </button>
+          )}
+          {startLog?.type === 'menstruation' && confirmCancel && (
+            <>
+              <div className="day-info-value">{t.dayPeriodCancelAsk}</div>
+              <button className="btn danger" disabled={periodBusy} onClick={quickPeriod}>
+                {t.dayPeriodCancelYes}
+              </button>
+              <button className="btn ghost" disabled={periodBusy} onClick={() => setConfirmCancel(false)}>
+                {t.dayPeriodCancelBack}
+              </button>
+            </>
           )}
           {inRange && !startLog && (
             <button className="btn" onClick={() => onLog(date)}>
