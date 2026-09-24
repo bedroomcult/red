@@ -180,6 +180,10 @@ describe('calendar and projection display fixes', () => {
     expect(day).toMatch(/activeModal === 'why' && \(/);
     expect(day).not.toMatch(/activeModal === 'why' && reason/);
     expect(day).toMatch(/NO_DATA_REASON/);
+    // Period cancel is confirm-gated: first tap arms, second deletes.
+    // The destructive action never uses the dismiss word.
+    expect(day).toMatch(/confirmCancel/);
+    expect(day).toMatch(/dayPeriodCancelYes/);
     // New classes must exist in the stylesheet (class-coverage holds this).
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-link', 'modal', 'modal-overlay', 'modal-head', 'modal-body']) {
