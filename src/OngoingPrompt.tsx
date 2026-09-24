@@ -4,8 +4,8 @@ import { apiFetch, readJson } from './api';
 import type { Period } from './Calendar';
 
 // Shown when an ongoing period (no end_date) has reached the user's expected
-// period length. Rather than guessing, it asks. "Sudah selesai" sets the end
-// date and closes the episode. "Masih haid" leaves it ongoing and hides the
+// period length. Rather than guessing, it asks. "Sudah selesai" closes the
+// episode at yesterday, so today already reads as clean. "Masih haid" leaves it ongoing and hides the
 // prompt for today, so the period keeps painting and the question returns
 // tomorrow if the bleeding has not stopped.
 export default function OngoingPrompt({ period, today, onSaved }: {
@@ -18,6 +18,10 @@ export default function OngoingPrompt({ period, today, onSaved }: {
   const [hidden, setHidden] = useState(false);
 
   const dayCount = Math.round((Date.parse(today + 'T00:00:00Z') - Date.parse(period.start_date + 'T00:00:00Z')) / 864e5) + 1;
+
+  // Last bleeding day is yesterday, clamped to start_date for 1-day edge case.
+  const yesterday = new Date(Date.parse(today + 'T00:00:00Z') - 864e5).toISOString().slice(0, 10);
+  const endDay = yesterday < period.start_date ? period.start_date : yesterday;
 
   async function save(endDate: string) {
     setBusy(true); setErr(null);
@@ -46,7 +50,7 @@ export default function OngoingPrompt({ period, today, onSaved }: {
         {t.ongoingBody.replace('{n}', String(dayCount))}
       </div>
       <div className="row tight">
-        <button className="btn primary" disabled={busy} onClick={() => save(today)}>{t.ongoingEnded}</button>
+        <button className="btn primary" disabled={busy} onClick={() => save(endDay)}>{t.ongoingEnded}</button>
         <button className="btn" disabled={busy} onClick={() => setHidden(true)}>{t.ongoingStill}</button>
       </div>
       {err && <div className="err">{err}</div>}
