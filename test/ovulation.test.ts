@@ -175,6 +175,11 @@ describe('calendar and projection display fixes', () => {
     expect(day).toMatch(/\/api\/periods\?id=' \+ startLog\.id/);
     // Mid-range dates open LogSheet instead of posting a duplicate row.
     expect(day).toMatch(/if \(inRange\) \{ onLog\(date\); return; \}/);
+    // The verdict modal opens with or without a prediction: no `&& reason`
+    // guard on the render path, and the no-data fallback exists.
+    expect(day).toMatch(/activeModal === 'why' && \(/);
+    expect(day).not.toMatch(/activeModal === 'why' && reason/);
+    expect(day).toMatch(/NO_DATA_REASON/);
     // New classes must exist in the stylesheet (class-coverage holds this).
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-link', 'modal', 'modal-overlay', 'modal-head', 'modal-body']) {
