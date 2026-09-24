@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react';
 import { useEscape } from './useEscape';
 import { cycleStatus, periodForDate, type Phase } from '../lib/cycle';
 import { explainPrediction } from '../lib/predict';
-import PredictionDetail from './PredictionDetail';
 import type { Dose, Period, Prediction, SexLog } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
@@ -35,9 +34,10 @@ const SYM_LABEL: Record<string, string> = {
 const fmtLong = (d: string) =>
   new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
 
-// Day view with inline editing. Tapping a calendar cell lands here; symptoms,
-// note, pill and sex log save in place. Only period logging stays a second
-// step via onLog, so a tap is never an accidental period commitment.
+// Day view: summary first, editors behind Catat. Tapping a calendar cell lands
+// here; symptoms, note, pill and sex log save in place once expanded. Only
+// period logging stays a second step via onLog, so a tap is never an
+// accidental period commitment.
 export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose }: {
   date: string;
   periods: Period[];
@@ -64,9 +64,11 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   const [sexLocal, setSexLocal] = useState<{ protected: boolean } | null>(sexLog ?? null);
   const [sexBusy, setSexBusy] = useState(false);
   const [sexErr, setSexErr] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState(false);
 
   useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
   useEffect(() => { setSexLocal(sexLog ?? null); }, [date, sexLog]);
+  useEffect(() => { setExpanded(false); }, [date]);
 
   useEffect(() => {
     let on = true;
@@ -182,6 +184,16 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )
     : null;
 
+  // One-line verdict for the summary. The full reasoning lives in
+  // PredictionDetail, which DaySheet no longer renders.
+  const verdict = !reason ? null
+    : reason.kind === 'in-window' ? t.dayPredictedValue
+    : reason.kind === 'fertile' ? t.dayFertileValue
+    : reason.kind === 'ovulation' ? t.dayOvulationValue
+    : reason.kind === 'bc' ? t.predBcPaused
+    : reason.kind === 'no-data' ? t.predNoData
+    : t.predOutside;
+
   return (
     <>
       <div className="overlay" onClick={onClose} />
@@ -226,10 +238,68 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
           </div>
         ) : null}
 
-        {/* A logged day already explained itself above. Every other date gets the
-            reasoning: what the estimate is, how wide it is, and what it was
-            computed from. */}
-        {!startLog && !inRange && reason && <PredictionDetail date={date} reason={reason} />}
+        {/* A logged day already explained itself above. Every other date gets
+            the one-line verdict, not the full disclosure. */}
+        {!startLog && !inRange && verdict && (
+          <div className="day-info">
+            <div className="day-info-label">{t.predWhy}</div>
+            <div className="day-info-value"><strong>{verdict}</strong></div>
+          </div>
+        )}
+
+        {!expanded && (
+        <div className="day-group">
+          <div className="day-info">
+            <div className="day-info-label">{t.daySymptoms}</div>
+            {syms === null ? (
+              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
+            ) : syms.length ? (
+              <div className="chips">
+                {syms.map((k) => (
+                  <span key={k} className="sym-chip">{SYM_LABEL[k] ?? k}</span>
+                ))}
+              </div>
+            ) : (
+              <div className="day-info-value"><span className="muted">{t.dayNoSymptoms}</span></div>
+            )}
+          </div>
+
+          <div className="day-info">
+            <div className="day-info-label">{t.note}</div>
+            {note === null ? (
+              <div className="day-info-value"><span className="muted">{t.loading}</span></div>
+            ) : note ? (
+              <div className="day-info-value"><span className="day-note-text">{note}</span></div>
+            ) : (
+              <div className="day-info-value"><span className="muted">{t.dayNoNote}</span></div>
+            )}
+          </div>
+
+          <div className="day-info">
+            <div className="day-info-label">{t.dayDose}</div>
+            <div className="day-info-value">
+              {doseLocal === true ? t.doseTakenLabel
+                : doseLocal === false ? t.doseMissedLabel
+                : <span className="muted">{t.doseNone}</span>}
+            </div>
+          </div>
+
+          <div className="day-info">
+            <div className="day-info-label">{t.daySex}</div>
+            <div className="day-info-value">
+              {sexLocal
+                ? (sexLocal.protected ? t.sexProtectedLabel : t.sexUnprotectedLabel)
+                : <span className="muted">{t.sexNone}</span>}
+            </div>
+            {sexLocal && inFertile && (
+              <div className="day-info-sub"><span className="badge">{t.sexFertileWarn}</span></div>
+            )}
+          </div>
+        </div>
+        )}
+
+        {expanded && (
+        <>
 
         <div className="day-group">
           <div className="day-info">
@@ -313,11 +383,17 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
             {sexErr && <div className="err">{sexErr}</div>}
           </div>
         </div>
+        </>
+        )}
 
         </div>
 
         <div className="sheet-actions">
-          <button className="btn primary" onClick={() => onLog(date)}>{t.dayLogHere}</button>
+          {!expanded ? (
+            <button className="btn primary" onClick={() => setExpanded(true)}>{t.dayLogHere}</button>
+          ) : (
+            <button className="btn primary" onClick={() => onLog(date)}>{t.logPeriod}</button>
+          )}
           <button className="btn ghost" onClick={onClose}>{t.bcClose}</button>
         </div>
       </div>
