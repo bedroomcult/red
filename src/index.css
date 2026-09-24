@@ -555,7 +555,7 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   display: flex; align-items: center; justify-content: space-between; gap: 12px;
   padding: 16px 16px 0;
 }
-.modal-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 700; }
+.modal-title { display: flex; align-items: center; gap: 8px; font-size: 15px; font-weight: 600; }
 .modal-x {
   font: inherit; font-size: 22px; line-height: 1; color: var(--muted);
   background: none; border: 0; padding: 4px 8px; cursor: pointer; border-radius: var(--r-sm);

@@ -167,9 +167,9 @@ describe('calendar and projection display fixes', () => {
     for (const icon of ['info', 'pulse', 'pencil', 'pill', 'heart', 'droplet']) {
       expect(day, icon).toContain(`name="${icon}"`);
     }
-    // One open card at a time, reset when the date changes.
-    expect(day).toMatch(/activeCard/);
-    expect(day).toMatch(/setActiveCard\(null\)/);
+    // One open modal at a time, reset when the date changes.
+    expect(day).toMatch(/activeModal/);
+    expect(day).toMatch(/setActiveModal\(null\)/);
     // Quick-log posts with the last used flow; cancelling deletes the row.
     expect(day).toMatch(/\/api\/periods', \{ method: 'POST'/);
     expect(day).toMatch(/\/api\/periods\?id=' \+ startLog\.id/);
@@ -177,7 +177,7 @@ describe('calendar and projection display fixes', () => {
     expect(day).toMatch(/if \(inRange\) \{ onLog\(date\); return; \}/);
     // New classes must exist in the stylesheet (class-coverage holds this).
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
-    for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-editor', 'day-card-link']) {
+    for (const c of ['day-grid', 'day-card', 'day-card-top', 'day-card-value', 'day-card-link', 'modal', 'modal-overlay', 'modal-head', 'modal-body']) {
       expect(css, c).toContain(`.${c}`);
     }
   });
