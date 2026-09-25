@@ -36,6 +36,11 @@ describe('light mode tokens meet WCAG AA', () => {
   const bg = token('bg', lightBlock);
   const card = token('card', lightBlock);
 
+  it('card is a distinct surface from the page background', () => {
+    // Cards blended into the page: --card equalled --bg.
+    expect(card.toLowerCase()).not.toBe(bg.toLowerCase());
+  });
+
   it('ink on bg and card', () => {
     expect(contrast(token('ink', lightBlock), bg)).toBeGreaterThanOrEqual(AA);
     expect(contrast(token('ink', lightBlock), card)).toBeGreaterThanOrEqual(AA);
@@ -133,5 +138,15 @@ describe('every sheet closes on Escape', () => {
       const src = readFileSync(`${ROOT}src/${f}.tsx`, 'utf8');
       expect(src, f).toMatch(/useEscape\(/);
     }
+  });
+});
+
+describe('theme syncs the status bar and browser chrome', () => {
+  it('theme.ts drives the native bar and the theme-color meta', () => {
+    const theme = readFileSync(ROOT + 'src/theme.ts', 'utf8');
+    expect(theme).toMatch(/status-bar/);
+    expect(theme).toMatch(/setBackgroundColor/);
+    expect(theme).toMatch(/setStyle/);
+    expect(theme).toMatch(/theme-color/);
   });
 });
