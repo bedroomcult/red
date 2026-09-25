@@ -3,11 +3,11 @@
      at varying alpha, borders for containment instead of shadows. Every value
      here was contrast-checked in both modes; see anti-slop/audit-002. */
   --bg: #f7f4ed;
-  --card: #f7f4ed;
+  --card: #fffdf8;
   --ink: #1c1c1c;
   --ink-2: #3f3f3d;
   --muted: #5f5f5d;
-  --line: #eceae4;
+  --line: #e0dacd;
   --line-strong: rgba(28, 28, 28, 0.4);
   --tint: rgba(28, 28, 28, 0.04);
 
