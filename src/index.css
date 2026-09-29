@@ -1,80 +1,91 @@
 :root {
-  /* Direction: DESIGN.md. Warm cream foundation, neutrals derived from one hue
-     at varying alpha, borders for containment instead of shadows. Every value
-     here was contrast-checked in both modes; see anti-slop/audit-002. */
-  --bg: #f7f4ed;
-  --card: #fffdf8;
-  --ink: #1c1c1c;
-  --ink-2: #3f3f3d;
-  --muted: #5f5f5d;
-  --line: #e0dacd;
-  --line-strong: rgba(28, 28, 28, 0.4);
-  --tint: rgba(28, 28, 28, 0.04);
+  /* Direction: DESIGN.md. Warm blush ground, rose-led accent, tinted shadows.
+     Every value here was contrast-checked by scripts/palette.mjs and is
+     re-checked by test/design-tokens.test.ts in both themes. */
+  --bg: #fff6f2;
+  --card: #ffffff;
+  --ink: #2a1a2e;
+  --ink-2: #4a3a4e;
+  --muted: #6d5a70;
+  --line: #f0dcd8;
+  --line-strong: rgba(42, 26, 46, 0.35);
+  --tint: rgba(216, 27, 71, 0.06);
 
   /* Phase colours are data, not decoration: they label the cycle phase and
-     repeat on the calendar, the day sheet and the badge. Darkened from the
-     original values so they pass AA as text on cream. */
-  --period: #c0392f;
-  --fertile: #2f7d52;
-  --ovulation: #1f6b45;
-  --pms: #a8562a;
-  --neutral: #5f5f5d;
+     repeat on the calendar, the day sheet and the badge. */
+  --period: #d81b47;
+  --fertile: #12855a;
+  --ovulation: #0d6b47;
+  --pms: #b0461c;
+  --neutral: #6d5a70;
 
-  /* Aliases kept so existing rules keep working while they migrate. */
+  /* Rose text on a soft rose tint needs a darker ink than the fill colour:
+     the tint raises the background luminance, so --period alone drops to
+     4.29:1. --period-ink restores AA at 5.8:1. */
+  --period-ink: #b3133a;
   --rose: var(--period);
-  --rose-soft: rgba(192, 57, 47, 0.1);
+  --rose-soft: #fbe8ed;
   --green: var(--fertile);
-  --green-soft: rgba(47, 125, 82, 0.1);
-  --amber: rgba(168, 86, 42, 0.12);
-  --amber-line: #8a441f;
-  --danger-bg: rgba(192, 57, 47, 0.1);
-  --grey-bg: var(--tint);
+  --green-soft: #e2f4ea;
+  --amber: #fbe8dc;
+  --amber-line: #8a3d12;
+  --danger-bg: #fbe8ed;
+  --grey-bg: #f7f0f2;
   --indigo: #4a4ab8;
-  --indigo-soft: rgba(74, 74, 184, 0.1);
+  --indigo-soft: #e6e6f7;
   --heart: #b02f6f;
 
-  /* Radius scale. DESIGN.md section 6: five steps, no long tail. */
-  --r-sm: 4px;
-  --r: 8px;
-  --r-md: 12px;
-  --r-lg: 16px;
+  /* Radius scale. DESIGN.md section 4: six steps, no long tail. */
+  --r-sm: 6px;
+  --r: 10px;
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
   --r-full: 9999px;
   --radius: var(--r-md);
 
-  --shadow-inset: rgba(255, 255, 255, 0.2) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.2) 0 0 0 0.5px inset;
-  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.15);
+  /* Tinted shadows: the hue matches the rose ground, so a raised surface reads
+     as part of the same world rather than a black cut-out. */
+  --shadow-inset: rgba(255, 255, 255, 0.5) 0 0.5px 0 0 inset, rgba(90, 20, 45, 0.06) 0 0 0 0.5px inset;
+  --shadow-1: 0 1px 2px rgba(90, 20, 45, 0.05);
+  --shadow-2: 0 6px 20px rgba(90, 20, 45, 0.10);
+  --shadow-sheet: 0 -8px 30px rgba(90, 20, 45, 0.18);
   color-scheme: light;
 }
 
-/* Dark mode, derived from the same opacity model inverted. Warm-tinted rather
-   than neutral black, so the cream character survives the flip. */
+/* Dark mode: warm-tinted near-black rather than neutral, so the blush
+   character survives the flip. */
 [data-theme="dark"] {
-  --bg: #1a1917;
-  --card: #232220;
-  --ink: #f7f4ed;
-  --ink-2: #d6d2c8;
-  --muted: #a5a099;
-  --line: #33312d;
-  --line-strong: rgba(247, 244, 237, 0.35);
-  --tint: rgba(247, 244, 237, 0.05);
+  --bg: #1a1119;
+  --card: #261a26;
+  --ink: #fdf2f5;
+  --ink-2: #e2cdd6;
+  --muted: #b09aa8;
+  --line: #3a2a38;
+  --line-strong: rgba(253, 242, 245, 0.35);
+  --tint: rgba(255, 107, 138, 0.08);
 
-  --period: #e8615a;
-  --fertile: #4fbe86;
-  --ovulation: #3fae76;
-  --pms: #e08b5c;
-  --neutral: #a5a099;
+  --period: #ff6b8a;
+  --fertile: #4fd39a;
+  --ovulation: #3ec48c;
+  --pms: #ffa06b;
+  --neutral: #b09aa8;
 
-  --rose-soft: rgba(232, 97, 90, 0.14);
-  --green-soft: rgba(79, 190, 134, 0.14);
-  --amber: rgba(224, 139, 92, 0.14);
+  --period-ink: #ff8ba3;
+  --rose-soft: #3d2432;
+  --green-soft: #1e3a2e;
+  --amber: #3d2a1e;
   --amber-line: #e08b5c;
-  --danger-bg: rgba(232, 97, 90, 0.14);
+  --danger-bg: #3d2432;
+  --grey-bg: #2e2130;
   --indigo: #8f8fe8;
-  --indigo-soft: rgba(143, 143, 232, 0.14);
+  --indigo-soft: #2a2a4a;
   --heart: #e878b0;
 
   --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.5);
+  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
 
@@ -82,14 +93,16 @@
    alias a whole custom-property set. Keep the two in step. */
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
-    --bg: #1a1917; --card: #232220; --ink: #f7f4ed; --ink-2: #d6d2c8; --muted: #a5a099;
-    --line: #33312d; --line-strong: rgba(247, 244, 237, 0.35); --tint: rgba(247, 244, 237, 0.05);
-    --period: #e8615a; --fertile: #4fbe86; --ovulation: #3fae76; --pms: #e08b5c; --neutral: #a5a099;
-    --rose-soft: rgba(232, 97, 90, 0.14); --green-soft: rgba(79, 190, 134, 0.14);
-    --amber: rgba(224, 139, 92, 0.14); --amber-line: #e08b5c; --danger-bg: rgba(232, 97, 90, 0.14);
-    --indigo: #8f8fe8; --indigo-soft: rgba(143, 143, 232, 0.14); --heart: #e878b0;
+    --bg: #1a1119; --card: #261a26; --ink: #fdf2f5; --ink-2: #e2cdd6; --muted: #b09aa8;
+    --line: #3a2a38; --line-strong: rgba(253, 242, 245, 0.35); --tint: rgba(255, 107, 138, 0.08);
+    --period: #ff6b8a; --fertile: #4fd39a; --ovulation: #3ec48c; --pms: #ffa06b; --neutral: #b09aa8;
+    --period-ink: #ff8ba3; --rose-soft: #3d2432; --green-soft: #1e3a2e;
+    --amber: #3d2a1e; --amber-line: #e08b5c; --danger-bg: #3d2432; --grey-bg: #2e2130;
+    --indigo: #8f8fe8; --indigo-soft: #2a2a4a; --heart: #e878b0;
     --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-    --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.5);
+    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
+    --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.55);
     color-scheme: dark;
   }
 }
@@ -117,8 +130,8 @@ body {
 
 /* cards */
 .card {
-  background: var(--card); border-radius: var(--r-md); padding: 16px;
-  border: 1px solid var(--line); margin-bottom: 12px;
+  background: var(--card); border-radius: var(--r-lg); padding: 16px;
+  border: 1px solid var(--line); margin-bottom: 12px; box-shadow: var(--shadow-1);
   animation: rise .28s cubic-bezier(.22,1,.36,1) both;
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -231,7 +244,7 @@ body {
 .pred .big { font-size: 17px; font-weight: 600; }
 .badge {
   font-size: 11px; padding: 3px 8px; border-radius: var(--r-full); background: var(--rose-soft);
-  color: var(--rose); font-weight: 600;
+  color: var(--period-ink); font-weight: 600;
   transition: background .2s ease, color .2s ease;
 }
 .badge.green { background: var(--green-soft); color: var(--green); }
@@ -299,27 +312,19 @@ body {
 /* buttons */
 button { font-family: inherit; }
 .btn {
-  border: none; background: var(--bg); border-radius: var(--r-md); padding: 10px 16px;
-  font-size: 14px; cursor: pointer; color: var(--ink); font-weight: 500;
-  transition: transform .12s ease, background .18s ease, color .18s ease, box-shadow .18s ease;
+  border: none; background: var(--grey-bg); border-radius: var(--r-md); padding: 12px 16px;
+  min-height: 44px; font-size: 14px; cursor: pointer; color: var(--ink); font-weight: 600;
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease, color .18s ease, box-shadow .18s ease;
 }
-.btn:active { transform: scale(.95); }
+.btn:active { transform: scale(.96); }
 .btn:focus-visible, .tab:focus-visible, .nav-btn:focus-visible {
-  outline: 2px solid var(--rose); outline-offset: 2px;
+  outline: 2px solid var(--period); outline-offset: 2px;
 }
-.btn.primary { background: #c9333a; color: #fff; }
-[data-theme="dark"] .btn.primary { background: var(--rose); color: #1c1c1e; }
-@media (prefers-color-scheme: dark) {
-  html[data-theme="system"] .btn.primary { background: var(--rose); color: #1c1c1e; }
-}
-.btn.on { background: #c9333a; color: #fff; }
-[data-theme="dark"] .btn.on { background: var(--rose); color: #1c1c1e; }
-@media (prefers-color-scheme: dark) {
-  html[data-theme="system"] .btn.on { background: var(--rose); color: #1c1c1e; }
-}
-.btn.green { background: var(--green); color: #fff; }
+.btn.primary { background: var(--period); color: #fff; box-shadow: var(--shadow-1); }
+.btn.on { background: var(--period); color: #fff; }
+.btn.green { background: var(--fertile); color: #fff; }
 .btn.ghost { background: transparent; color: var(--muted); }
-.btn.danger { background: var(--danger-bg); color: var(--rose); }
+.btn.danger { background: var(--danger-bg); color: var(--period-ink); }
 .btn:disabled { opacity: .5; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .row.tight { margin-top: 8px; }
@@ -347,16 +352,16 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   background: var(--rose-soft);
 }
 .auth-mark {
-  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r-lg);
+  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r-xl);
   display: grid; place-items: center; color: #fff;
-  background: linear-gradient(150deg, #ff7a80 0%, #e5484d 55%, #b3262b 100%);
-  box-shadow: 0 10px 24px -10px rgba(229,72,77,.7);
+  background: linear-gradient(150deg, #ff7a80 0%, var(--period) 55%, #b3262b 100%);
+  box-shadow: 0 10px 24px -10px rgba(216,27,71,.6);
 }
 .auth h1 { font-size: 27px; margin: 0 0 6px; letter-spacing: -0.03em; }
 .auth .sub { color: var(--muted); margin: 0; font-size: 14px; line-height: 1.45; }
 .auth-card {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
-  padding: 18px 16px; box-shadow: 0 1px 2px rgba(0,0,0,.03);
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-xl);
+  padding: 18px 16px; box-shadow: var(--shadow-1);
   animation: rise .4s .05s ease both;
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -371,7 +376,7 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   font-size: 14px; font-weight: 600; color: var(--muted); cursor: pointer;
   transition: background .18s ease, color .18s ease, box-shadow .18s ease;
 }
-.seg-btn.on { background: var(--card); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
+.seg-btn.on { background: var(--card); color: var(--ink); box-shadow: var(--shadow-1); }
 .seg-btn:focus-visible { outline: 2px solid var(--rose); outline-offset: 1px; }
 
 /* password field with a reveal toggle */
@@ -481,7 +486,7 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   transition: background .15s ease, color .15s ease, border-color .15s ease, transform .1s ease;
 }
 .seg:active { transform: scale(.94); }
-.seg.on { background: var(--rose-soft); color: var(--rose); border-color: var(--rose); }
+.seg.on { background: var(--rose-soft); color: var(--period-ink); border-color: var(--period); }
 .seg:disabled { opacity: .4; cursor: default; }
 .seg:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; }
 /* Screen-reader text for the icon-only buttons; the title attribute carries the
@@ -514,7 +519,7 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .sym-chip {
   font-size: 12px; padding: 4px 10px; border-radius: var(--r-full);
-  background: var(--rose-soft); color: var(--rose); font-weight: 600;
+  background: var(--rose-soft); color: var(--period-ink); font-weight: 600;
 }
 /* Day card grid: 2 columns of tappable cards. Tapping a card opens a modal;
    the grid itself never expands. */
@@ -577,14 +582,14 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   width: 52px; height: 52px; flex: 0 0 auto;
   display: grid; place-items: center;
   border-radius: var(--r-full);
-  background: var(--rose-soft); color: var(--rose);
-  font-size: 22px; font-weight: 600;
+  background: var(--rose-soft); color: var(--period-ink);
+  font-size: 22px; font-weight: 700;
 }
 .prof-id { min-width: 0; }
 .prof-name { font-size: 18px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
 .prof-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
 .prof-stat { display: flex; flex-direction: column; gap: 2px; }
-.prof-num { font-size: 24px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.prof-num { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
 
 /* bottom nav */
 /* Floating pill nav. A detached capsule rather than a full-width bar, so the
@@ -598,13 +603,9 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   border-radius: var(--r-full);
   background: var(--card);
   border: 1px solid var(--line);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, .1);
+  box-shadow: var(--shadow-2);
   /* Floats above the home indicator, so the inset is part of the offset. */
   bottom: calc(10px + env(safe-area-inset-bottom));
-}
-[data-theme="dark"] .tabbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
-@media (prefers-color-scheme: dark) {
-  html[data-theme="system"] .tabbar { box-shadow: 0 6px 20px rgba(0, 0, 0, .5); }
 }
 
 /* phase hero. Full-bleed: the .app wrapper's 16px side padding is cancelled so
@@ -646,7 +647,7 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .chance-badge {
   font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: var(--r-full);
 }
-.chance-badge.risk-high { background: var(--rose-soft); color: var(--rose); }
+.chance-badge.risk-high { background: var(--rose-soft); color: var(--period-ink); }
 .chance-badge.risk-medium { background: var(--amber); color: var(--amber-line); }
 .chance-badge.risk-low { background: var(--green-soft); color: var(--green); }
 .chance-badge.risk-unknown { background: var(--grey-bg); color: var(--muted); }
@@ -721,6 +722,6 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
    .tab.active { color }. Emoji could not be recoloured reliably across OEMs. */
 .tab svg { transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
 .tab.active svg { transform: translateY(-1px) scale(1.1); }
-.tab.active { color: var(--rose); background: var(--rose-soft); }
+.tab.active { color: var(--period-ink); background: var(--rose-soft); }
 
 footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.5; }

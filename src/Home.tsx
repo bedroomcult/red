@@ -88,7 +88,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
     title = <>{t.homeOverdue}</>;
     subtitle = `${Math.abs(st.daysToNext)} ${t.homeDays}`;
   } else if (st.daysToNext !== null) {
-    title = <><span style={{ fontSize: 15, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t.homeNeutral}</span><span style={{ fontSize: 56, fontWeight: 800, lineHeight: 1 }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 8 }}>{t.homeDays}</span></>;
+    title = <><span style={{ fontSize: 15, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t.homeNeutral}</span><span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 8 }}>{t.homeDays}</span></>;
     subtitle = me.prediction.next ? `${fmtShort(me.prediction.next)} · ${fmtShort(me.prediction.lo!)} sampai ${fmtShort(me.prediction.hi!)}` : '';
   } else {
     title = <>{t.homeNoData}</>;

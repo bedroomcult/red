@@ -63,18 +63,11 @@ describe('light mode tokens meet WCAG AA', () => {
     }
   });
 
-  it('amber-line on amber (the F-06 fix)', () => {
-    // Was 1.98:1, carrying the medium-risk badge and the BC/EC warnings. --amber
-    // is a translucent overlay, so it is composited over the card first.
-    const rgba = /rgba\(([\d.]+),\s*([\d.]+),\s*([\d.]+),\s*([\d.]+)\)/.exec(token('amber', lightBlock));
-    expect(rgba).not.toBeNull();
-    const [, r, g, b, a] = rgba!.map(Number);
-    const cb = card.replace('#', '');
-    const comp = '#' + [r, g, b]
-      .map((v, i) => Math.round(v * a + parseInt(cb.slice(i * 2, i * 2 + 2), 16) * (1 - a)))
-      .map((v) => v.toString(16).padStart(2, '0'))
-      .join('');
-    expect(contrast(token('amber-line', lightBlock), comp)).toBeGreaterThanOrEqual(AA);
+  it('amber-line on amber, and period-ink on rose-soft', () => {
+    // Both are the text-on-tint pairs. --amber and --rose-soft are opaque now,
+    // so no compositing step is needed.
+    expect(contrast(token('amber-line', lightBlock), token('amber', lightBlock))).toBeGreaterThanOrEqual(AA);
+    expect(contrast(token('period-ink', lightBlock), token('rose-soft', lightBlock))).toBeGreaterThanOrEqual(AA);
   });
 });
 
@@ -98,16 +91,20 @@ describe('dark mode tokens meet WCAG AA', () => {
 });
 
 describe('DESIGN.md rules are reflected in the stylesheet', () => {
-  it('no card shadow; borders do the containment', () => {
+  it('cards carry a border and a tinted shadow, never a black one', () => {
     const cardRule = /\.card\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
-    expect(cardRule).not.toMatch(/box-shadow/);
     expect(cardRule).toMatch(/border:\s*1px solid var\(--line\)/);
+    expect(cardRule).toMatch(/box-shadow:\s*var\(--shadow-1\)/);
+    // No raw black shadow in the light theme: shadows are tinted to the rose
+    // ground. Dark mode legitimately uses black shadows, so scope to :root.
+    const rootBlock = CSS.slice(CSS.indexOf(':root {'), CSS.indexOf('[data-theme="dark"]'));
+    expect(rootBlock).not.toMatch(/box-shadow:[^;]*rgba\(0,\s*0,\s*0/);
   });
 
-  it('no font weight above 600', () => {
-    // DESIGN.md: 400 for body, 600 for headings, nothing heavier.
+  it('no font weight above 700', () => {
+    // DESIGN.md: 400 body, 500 caption, 600 label, 700 display only.
     const weights = [...CSS.matchAll(/font-weight:\s*(\d{3})/g)].map((m) => Number(m[1]));
-    expect(weights.filter((w) => w > 600)).toEqual([]);
+    expect(weights.filter((w) => w > 700)).toEqual([]);
   });
 
   it('radius comes from the scale, not one-off values', () => {

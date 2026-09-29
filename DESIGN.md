@@ -1,193 +1,209 @@
 # Red — Design Direction
 
-**Material 3**, the platform design system for the Android app this ships as.
+**Expressive, playful, and legible.** A cycle tracker is used daily and often
+while someone feels unwell. The previous direction was Material 3, quiet and
+neutral. This one keeps the clarity but adds warmth, bigger type, real color,
+and motion that responds to the user.
 
-Replaces the earlier Lovable-derived direction, which was a landing-page system
-(spacing 80–208px, editorial display type) applied to a phone app. Wrong tool.
+Replaces the Material 3 direction entirely. `antislop.md` is the filter on top.
 
-Source of truth for direction. `antislop.md` is the filter on top.
+**Dial: ENERGY 7 / RHYTHM 6 / MOTION 7 / DENSITY 4**
 
-**Dial: ENERGY 2 / RHYTHM 2 / MOTION 2 / DENSITY 5**
+- ENERGY 7 (Bright): saturated phase colors used as full fields, not washes.
+  The app should feel alive and personal, not clinical.
+- RHYTHM 6 (Varied): cards share structure, but the hero, the calendar, and the
+  stats each have their own composition. No repeated three-card rows.
+- MOTION 7 (Responsive): spring-based enters, press feedback on every control,
+  animated state changes. No parallax, no scroll hijacking, no celebration
+  confetti on a health log.
+- DENSITY 4 (Daily app): comfortable spacing, 44px targets, room to breathe.
 
-- ENERGY 2 (Calm): a health tool. It should feel quiet and dependable, not
-  energetic. No celebration animations on a cycle tracker.
-- RHYTHM 2 (Consistent, a few breaks): cards share one structure. The home hero
-  varies by cycle phase, which is the one deliberate break.
-- MOTION 2 (Transitions and a few reveals): M3 motion easing, state changes
-  animated so the UI feels responsive. No parallax, no choreography.
-- DENSITY 5 (Daily app): standard app spacing. Not a marketing page, not a
-  cockpit.
+## 1. Why this direction
 
-## 1. Why Material 3 and not a web system
+The APK is the primary surface, but the design is not tied to a platform
+component kit. It is a small, opinionated system built in plain CSS so the
+whole app reads as one product: the calendar, the day sheet, the insights, and
+the profile all speak the same visual language.
 
-The APK is the primary surface. Material 3 is what Android users already know:
-the touch feedback, the bottom sheet, the nav bar, the tonal surfaces. Using a
-web aesthetic on Android makes the app feel foreign on its own platform.
-
-This also means **Material 3 components, not hand-rolled lookalikes**, wherever
-one exists. A bottom sheet is a bottom sheet.
+Hand-rolled is the deliberate choice here. A component kit would have made the
+app look like every other Android app, which is exactly the problem this
+direction fixes.
 
 ## 2. Colour
 
-Derived from a single seed (`#c0392f`, the period colour) using the M3 tonal
-palette method: six palettes, tones on the CIE L* scale, roles assigned by tone.
+Warm rose-led palette on a soft blush ground. One accent family (rose), one
+supporting green (fertile), and a small set of data colors. No blue, no purple.
 
-The generator is `scripts/m3-palette.mjs` and it **prints a contrast report**. A
+The generator is `scripts/palette.mjs` and it **prints a contrast report**. A
 palette change that breaks AA fails visibly rather than shipping.
 
 ### Roles
 
 | Role | Light | Dark | Used for |
 |---|---|---|---|
-| `primary` | `#a44e44` | (tone 80) | Primary action, selected state |
-| `on-primary` | `#fff6f0` | | Text on primary |
-| `primary-container` | `#ffc7b9` | | Selected chip, filled button hover |
-| `on-primary-container` | `#3b0000` | | Text on container |
-| `secondary` | `#82635f` | | Less prominent actions |
-| `tertiary` | `#7e6935` | | Contrasting accent |
-| `error` | (tone 40) | | Destructive, missed dose |
-| `surface` | (neutral 98) | (neutral 6) | Page background |
-| `surface-container` | (neutral 94) | (neutral 12) | Cards |
-| `on-surface` | (neutral 10) | (neutral 90) | Body text |
-| `on-surface-variant` | (neutralVariant 30) | (neutralVariant 80) | Captions, labels |
-| `outline` | (neutralVariant 50) | (neutralVariant 60) | Borders |
-| `outline-variant` | (neutralVariant 80) | (neutralVariant 30) | Dividers |
+| `--bg` | `#fff6f2` | `#1a1119` | Page ground |
+| `--card` | `#ffffff` | `#261a26` | Cards, sheets, modals |
+| `--ink` | `#2a1a2e` | `#fdf2f5` | Body and headings |
+| `--ink-2` | `#4a3a4e` | `#e2cdd6` | Secondary text |
+| `--muted` | `#6d5a70` | `#b09aa8` | Captions, labels |
+| `--line` | `#f0dcd8` | `#3a2a38` | Borders, dividers |
+| `--period` | `#d81b47` | `#ff6b8a` | Bleeding, primary action |
+| `--period-ink` | `#b3133a` | `#ff8ba3` | Rose text on soft tints |
+| `--rose-soft` | `#fbe8ed` | `#3d2432` | Selected chips, tints |
+| `--fertile` | `#12855a` | `#4fd39a` | Fertile window |
+| `--ovulation` | `#0d6b47` | `#3ec48c` | Ovulation peak |
+| `--pms` | `#b0461c` | `#ffa06b` | Premenstrual |
+| `--amber-line` | `#8a3d12` | `#e08b5c` | Warning text |
+| `--indigo` | `#4a4ab8` | `#8f8fe8` | Pill dose marker |
+| `--heart` | `#b02f6f` | `#e878b0` | Sex log marker |
 
 ### Verified
 
-30 of 30 specified text-on-surface pairs pass WCAG AA in both modes. The report
-is printed by the generator, not asserted by hand.
+Every text-on-surface pair below passes WCAG AA. The generator prints the
+report; `test/design-tokens.test.ts` recomputes it from the live values.
 
-### Phase colours stay, as data
+| Pair | Light | Dark |
+|---|---|---|
+| ink on bg | 15.3 | 16.9 |
+| ink on card | 16.3 | 15.3 |
+| muted on bg | 5.9 | 7.1 |
+| muted on card | 6.3 | 6.4 |
+| period on card | 5.0 | 6.1 |
+| fertile on card | 4.6 | 8.8 |
+| amber-line on amber | 6.8 | - |
+| period-ink on rose-soft | 5.8 | 4.6 |
 
-The six cycle phases keep their own hues. They are not part of the M3 palette
-because they are **data**, not chrome: the same colour marks the same phase on
-the calendar, the day sheet, and the badge. They are re-toned to sit on M3
-surfaces and each is contrast-checked against `surface-container`.
+### Phase colours are data
+
+The cycle phases keep distinct hues because the same colour marks the same
+phase on the calendar, the day sheet, and the badge. They are checked as text
+against the card, not the page, because that is where they are used.
 
 ## 3. Typography
 
-Material 3 type scale, system font. `ui-sans-serif, system-ui, Roboto` on
-Android, which is what the platform renders natively.
+One family, system stack, wide weight range. `ui-sans-serif, system-ui,
+Roboto`. On Android that is Roboto, which has a real 500 and 700.
 
 | Role | Size | Weight | Line height | Tracking |
 |---|---|---|---|---|
-| Headline (hero) | 26px | 600 | 1.25 | -0.02em |
-| Title large | 20px | 600 | 1.3 | normal |
-| Title medium | 16px | 600 | 1.4 | normal |
-| Body large | 16px | 400 | 1.5 | normal |
-| Body medium | 14px | 400 | 1.5 | normal |
-| Label large | 14px | 600 | 1.4 | 0.01em |
-| Label medium | 12px | 600 | 1.4 | 0.02em |
-| Display stat | 44px | 600 | 1.0 | -0.03em |
+| Display | 40px | 700 | 1.05 | -0.03em |
+| Headline | 26px | 700 | 1.2 | -0.02em |
+| Title | 18px | 600 | 1.3 | -0.01em |
+| Body | 15px | 400 | 1.55 | normal |
+| Label | 13px | 600 | 1.4 | 0.01em |
+| Caption | 12px | 500 | 1.4 | 0.02em |
 
-Two weights only: 400 and 600. Hierarchy comes from size and colour.
+Three weights: 400, 500, 600, and 700 for display only. Hierarchy comes from
+size, weight, and color together.
+
+**Numbers are tabular.** Every stat, countdown, and calendar day uses
+`font-variant-numeric: tabular-nums`, so values do not jitter when they change.
 
 ## 4. Shape
 
-M3 shape scale. One system, applied by role, not by feel.
+One scale, applied by role. No one-off radii.
 
 | Token | Value | Role |
 |---|---|---|
-| `--md-shape-xs` | 4px | Chips, small badges |
-| `--md-shape-sm` | 8px | Inputs, small buttons |
-| `--md-shape-md` | 12px | Buttons, list items |
-| `--md-shape-lg` | 16px | Cards |
-| `--md-shape-xl` | 28px | Bottom sheets |
-| `--md-shape-full` | 9999px | FAB, nav pill, icon buttons |
+| `--r-sm` | 6px | Chips, small badges |
+| `--r` | 10px | Inputs, small buttons |
+| `--r-md` | 14px | Buttons, list items |
+| `--r-lg` | 20px | Cards |
+| `--r-xl` | 28px | Sheets, modals |
+| `--r-full` | 9999px | Pills, avatars, icon buttons |
 
 ## 5. Elevation
 
-M3 uses **surface tint and level**, not drop shadows. A raised surface is a
-lighter tone of `surface-container`, not a shadow.
+Tinted shadows, not black. The shadow carries the rose hue, so a raised card
+feels part of the same world rather than cut out of it.
 
 | Level | Treatment | Use |
 |---|---|---|
-| 0 | `surface` | Page |
-| 1 | `surface-container-low` | Cards at rest |
-| 2 | `surface-container` | Cards, menus |
-| 3 | `surface-container-high` | Bottom sheet, nav bar |
-| 4 | `surface-container-highest` | Dialogs |
+| 0 | none | Page, inline groups |
+| 1 | `0 1px 2px rgba(90,20,45,.05)` | Cards at rest |
+| 2 | `0 6px 20px rgba(90,20,45,.10)` | Floating nav, popovers |
+| 3 | `0 -8px 30px rgba(90,20,45,.18)` | Bottom sheet, modal |
 
-Shadow appears only on the bottom sheet and the nav bar, where the element
-genuinely floats above scrolling content.
+Cards still use a border as the primary containment. The shadow is a second,
+quieter cue, never the only one.
 
 ## 6. Components
 
 ### Navigation
 
-**Restructured.** A 5-tab bottom bar is the Android default and it was hiding the
-app's real structure: Riwayat is a view of the same data as Wawasan, and
-Pengaturan is not a peer of Beranda.
+**Five tabs: Beranda, Kalender, Wawasan, Riwayat, Profil.** A floating pill,
+detached from the screen edge, so content shows through behind it.
 
-| Before | After |
-|---|---|
-| Beranda, Kalender, Wawasan, Riwayat, Pengaturan | **Beranda, Kalender, Wawasan** + top-bar avatar for account |
-
-- **Bottom nav: 3 destinations.** M3 supports 3–5; 3 is the honest count.
-- **Riwayat moves into Wawasan** as a second section. Same data, one place.
-- **Pengaturan moves behind the top-bar avatar**, where account actions belong.
-  This is where Android users look for settings.
+- Profil replaces the old Pengaturan tab. Settings lives behind a button at the
+  bottom of the profile screen, where account actions belong.
+- The active tab is a filled rose pill with the icon and label in the accent.
 
 ### Buttons
 
-M3 variants, used by hierarchy:
+| Variant | Treatment | Use |
+|---|---|---|
+| `primary` | Rose fill, white text | One per screen |
+| default | Soft tint fill, ink text | Secondary actions |
+| `on` | Rose fill, white text | Selected toggle |
+| `ghost` | Transparent, muted text | Dismiss, cancel |
+| `danger` | Rose-soft fill, rose-ink text | Destructive |
 
-- **Filled** (`primary`) — one per screen, the primary action.
-- **Tonal** (`secondary-container`) — secondary actions.
-- **Outlined** (`outline` border) — tertiary.
-- **Text** (`primary` text) — inline, lowest emphasis.
+All 44px minimum height. Press feedback is a `scale(.96)` on `:active`.
 
-All 40px minimum height, `full` radius only for icon buttons and chips.
+### Cards
 
-### Sheets
+One radius, one border, one quiet shadow. A card is a grouping device, not
+decoration. Use it when content needs a boundary, not by default.
 
-Bottom sheets use `shape-xl` top corners, `surface-container-high`, and a
-visible drag handle. This is the M3 modal bottom sheet, not a custom panel.
+### Sheets and modals
 
-### State layers
-
-M3 state layers: hover 8%, focus 12%, pressed 12% of `on-surface`. Replaces
-opacity changes, so the feedback is consistent across every control.
+Bottom sheets slide up with a spring, modals pop in with a scale. Both use
+`--r-xl` top corners and the level-3 shadow.
 
 ## 7. Motion
 
-M3 motion tokens:
-
 | Token | Duration | Easing | Use |
 |---|---|---|---|
-| Short | 150ms | emphasized-decelerate | State change |
-| Medium | 250ms | emphasized-decelerate | Enter |
-| Long | 400ms | emphasized | Sheet, nav |
+| Short | 140ms | `cubic-bezier(.2,.8,.2,1)` | State change, press |
+| Medium | 240ms | `cubic-bezier(.22,1,.36,1)` | Enter, reveal |
+| Long | 380ms | `cubic-bezier(.34,1.4,.64,1)` | Sheet, modal, nav |
 
-Every animation must have a stated purpose (feedback, state transition,
-hierarchy). `prefers-reduced-motion` collapses all of them.
+Rules:
+
+- Animate only `transform` and `opacity`. Never `top`, `left`, `width`, `height`.
+- Every animation states a purpose: feedback, state change, or hierarchy.
+- Stagger card and list enters with a small cascade so content arrives in order.
+- `prefers-reduced-motion: reduce` collapses all of it to instant.
 
 ## 8. Rules
 
 **Do**
-- Use M3 roles by name, never raw hex in a component.
-- Use tone-based surfaces for elevation, not shadows.
-- Use one filled button per screen.
-- Keep the 3-tab nav; account lives in the top bar.
-- Use M3 state layers for interaction feedback.
+- Use tokens by name. If a colour is missing, add the token, not a raw hex.
+- Use the rose family for anything interactive.
+- Use tabular numbers for every stat.
+- Give every control a visible pressed state.
+- Check contrast from real values before shipping a palette change.
 
 **Don't**
-- Hand-roll a component Material 3 already defines.
-- Add a fourth bottom-nav tab.
-- Use a drop shadow for a card.
-- Mix this with the old Lovable tokens. It replaces them.
-- Put raw hex in a component. If a colour is missing from the token set, add the
-  token, not the hex.
+- Put raw hex in a component. Two escaped today (`#c9333a`, `#fff`); both move
+  into tokens.
+- Use a pure black shadow.
+- Add a sixth bottom-nav tab.
+- Use blue or purple as an accent.
+- Animate anything on a timer the user did not trigger, except the loading state.
+- Ship one theme and assume the other works.
 
 ## 9. Verification
 
-- The palette generator prints a contrast report; 0 failures required.
-- `test/design-tokens.test.ts` computes contrast from the real token values.
+- `node scripts/palette.mjs` prints the contrast report; 0 failures required.
+- `test/design-tokens.test.ts` computes contrast from the live token values in
+  both light and dark.
+- `test/class-coverage.test.ts` proves every class used in a component exists in
+  the stylesheet.
 - Both themes are checked. Shipping one broken mode is a defect.
 
 ## 10. Migration note
 
-The old tokens (`--bg`, `--ink`, `--muted`, `--rose`, `--green`, `--radius`) are
-**removed**, not aliased. Keeping both would leave two systems in the tree and
-the next change would pick whichever it found first.
+The M3 role names (`--md-*`) and the old token set are replaced. The token
+names here (`--bg`, `--card`, `--ink`, `--period`, `--rose`, ...) are the ones
+the components already use, so the swap is a value change, not a rewrite.
