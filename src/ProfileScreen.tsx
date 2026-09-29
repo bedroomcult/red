@@ -1,9 +1,9 @@
 import Icon from './Icon';
 import { t } from './i18n';
 
-// Profile tab: identity header, cycle stats from existing state, and one
-// button into settings at the bottom. Settings content itself stays in
-// SettingsScreen; this screen never edits anything.
+// Profil: an identity banner, then the cycle figures as an editorial stat row,
+// then one entry into Pengaturan. This screen never edits anything; settings
+// owns the editing surface.
 export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpenSettings, onLogout }: {
   name: string | null;
   avgCycle: number | null;
@@ -12,30 +12,31 @@ export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpe
   onOpenSettings: () => void;
   onLogout: () => void;
 }) {
-  const initial = (name?.trim()?.[0] ?? '•').toUpperCase();
+  const initial = (name?.trim()?.[0] ?? '·').toUpperCase();
   return (
     <>
       <div className="card prof-head">
         <span className="prof-avatar" aria-hidden="true">{initial}</span>
         <div className="prof-id">
+          <span className="eyebrow">{t.profTitle}</span>
           <strong className="prof-name">{name?.trim() || t.obNameTitle}</strong>
         </div>
       </div>
 
-      <div className="card">
-        <h2>{t.profStats}</h2>
-        <div className="prof-stats">
-          <div className="prof-stat">
-            <span className="prof-num">{logged}</span>
-            <span className="muted">{t.profLogged}</span>
+      <div className="section">
+        <span className="eyebrow">{t.profStats}</span>
+        <div className="stat-col">
+          <div className="stat-block">
+            <span className="stat-figure">{logged}</span>
+            <span className="stat-label">{t.profLogged}</span>
           </div>
-          <div className="prof-stat">
-            <span className="prof-num">{avgCycle ?? '–'}</span>
-            <span className="muted">{t.profAvgCycle}</span>
+          <div className="stat-block">
+            <span className="stat-figure">{avgCycle ?? '–'}</span>
+            <span className="stat-label">{t.profAvgCycle}</span>
           </div>
-          <div className="prof-stat">
-            <span className="prof-num">{avgPeriod ?? '–'}</span>
-            <span className="muted">{t.profAvgPeriod}</span>
+          <div className="stat-block">
+            <span className="stat-figure">{avgPeriod ?? '–'}</span>
+            <span className="stat-label">{t.profAvgPeriod}</span>
           </div>
         </div>
       </div>

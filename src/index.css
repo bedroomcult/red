@@ -1,91 +1,102 @@
 :root {
-  /* Direction: DESIGN.md. Warm blush ground, rose-led accent, tinted shadows.
-     Every value here was contrast-checked by scripts/palette.mjs and is
+  /* Direction: DESIGN.md. Warm paper ground, deep rose accent, plum-black ink.
+     Editorial layout, spacious. Contrast verified by scripts/palette.mjs and
      re-checked by test/design-tokens.test.ts in both themes. */
-  --bg: #fff6f2;
+  --bg: #fdf8f6;
   --card: #ffffff;
-  --ink: #2a1a2e;
-  --ink-2: #4a3a4e;
-  --muted: #6d5a70;
-  --line: #f0dcd8;
-  --line-strong: rgba(42, 26, 46, 0.35);
-  --tint: rgba(216, 27, 71, 0.06);
+  --ink: #241018;
+  --ink-2: #4a2f3a;
+  --muted: #7d6068;
+  --line: #f0e0e0;
+  --line-strong: rgba(36, 16, 24, 0.35);
+  --tint: rgba(200, 16, 63, 0.05);
 
   /* Phase colours are data, not decoration: they label the cycle phase and
      repeat on the calendar, the day sheet and the badge. */
-  --period: #d81b47;
-  --fertile: #12855a;
-  --ovulation: #0d6b47;
-  --pms: #b0461c;
-  --neutral: #6d5a70;
+  --period: #c8103f;
+  --fertile: #0f7a52;
+  --ovulation: #0b5f40;
+  --pms: #a8410f;
+  --neutral: #7d6068;
 
   /* Rose text on a soft rose tint needs a darker ink than the fill colour:
-     the tint raises the background luminance, so --period alone drops to
-     4.29:1. --period-ink restores AA at 5.8:1. */
-  --period-ink: #b3133a;
+     the tint raises the background luminance, so --period alone drops below
+     AA. --period-ink restores it. */
+  --period-ink: #a50d34;
   --rose: var(--period);
-  --rose-soft: #fbe8ed;
+  --rose-soft: #fce8ec;
   --green: var(--fertile);
-  --green-soft: #e2f4ea;
-  --amber: #fbe8dc;
-  --amber-line: #8a3d12;
-  --danger-bg: #fbe8ed;
-  --grey-bg: #f7f0f2;
-  --indigo: #4a4ab8;
-  --indigo-soft: #e6e6f7;
-  --heart: #b02f6f;
+  --green-soft: #e4f5ec;
+  --amber: #fbe9dd;
+  --amber-line: #7d3808;
+  --danger-bg: #fce8ec;
+  --grey-bg: #f6eeef;
+  --indigo: #3f3fa8;
+  --indigo-soft: #e8e8fa;
+  --heart: #a3245f;
 
-  /* Radius scale. DESIGN.md section 4: six steps, no long tail. */
-  --r-sm: 6px;
-  --r: 10px;
-  --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 28px;
+  /* Radius scale. DESIGN.md section 5: six steps, no long tail. */
+  --r-sm: 8px;
+  --r: 12px;
+  --r-md: 16px;
+  --r-lg: 22px;
+  --r-xl: 32px;
   --r-full: 9999px;
   --radius: var(--r-md);
 
+  /* Space scale. An 8px base; section gaps are the lever that makes the
+     layout read editorial rather than dashboard. */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --s-8: 64px;
+
   /* Tinted shadows: the hue matches the rose ground, so a raised surface reads
      as part of the same world rather than a black cut-out. */
-  --shadow-inset: rgba(255, 255, 255, 0.5) 0 0.5px 0 0 inset, rgba(90, 20, 45, 0.06) 0 0 0 0.5px inset;
-  --shadow-1: 0 1px 2px rgba(90, 20, 45, 0.05);
-  --shadow-2: 0 6px 20px rgba(90, 20, 45, 0.10);
-  --shadow-sheet: 0 -8px 30px rgba(90, 20, 45, 0.18);
+  --shadow-inset: rgba(255, 255, 255, 0.6) 0 0.5px 0 0 inset, rgba(80, 12, 36, 0.06) 0 0 0 0.5px inset;
+  --shadow-1: 0 1px 2px rgba(80, 12, 36, 0.04);
+  --shadow-2: 0 8px 24px rgba(80, 12, 36, 0.08);
+  --shadow-sheet: 0 -10px 40px rgba(80, 12, 36, 0.16);
   color-scheme: light;
 }
 
-/* Dark mode: warm-tinted near-black rather than neutral, so the blush
-   character survives the flip. */
+/* Dark mode: warm plum near-black rather than neutral, so the character
+   survives the flip. */
 [data-theme="dark"] {
-  --bg: #1a1119;
-  --card: #261a26;
-  --ink: #fdf2f5;
-  --ink-2: #e2cdd6;
-  --muted: #b09aa8;
-  --line: #3a2a38;
-  --line-strong: rgba(253, 242, 245, 0.35);
-  --tint: rgba(255, 107, 138, 0.08);
+  --bg: #160c11;
+  --card: #221319;
+  --ink: #fdf4f6;
+  --ink-2: #e6d0d7;
+  --muted: #b39aa2;
+  --line: #382028;
+  --line-strong: rgba(253, 244, 246, 0.35);
+  --tint: rgba(255, 92, 130, 0.08);
 
-  --period: #ff6b8a;
-  --fertile: #4fd39a;
-  --ovulation: #3ec48c;
-  --pms: #ffa06b;
-  --neutral: #b09aa8;
+  --period: #ff5c82;
+  --fertile: #48cc93;
+  --ovulation: #3bbd88;
+  --pms: #ff9a63;
+  --neutral: #b39aa2;
 
   --period-ink: #ff8ba3;
-  --rose-soft: #3d2432;
-  --green-soft: #1e3a2e;
-  --amber: #3d2a1e;
-  --amber-line: #e08b5c;
-  --danger-bg: #3d2432;
-  --grey-bg: #2e2130;
-  --indigo: #8f8fe8;
-  --indigo-soft: #2a2a4a;
-  --heart: #e878b0;
+  --rose-soft: #3a1f28;
+  --green-soft: #16352a;
+  --amber: #3a2318;
+  --amber-line: #e59062;
+  --danger-bg: #3a1f28;
+  --grey-bg: #2a1a20;
+  --indigo: #a0a0f0;
+  --indigo-soft: #26264a;
+  --heart: #f07ab0;
 
   --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
   --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-  --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
-  --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.55);
+  --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+  --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
 }
 
@@ -93,16 +104,16 @@
    alias a whole custom-property set. Keep the two in step. */
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
-    --bg: #1a1119; --card: #261a26; --ink: #fdf2f5; --ink-2: #e2cdd6; --muted: #b09aa8;
-    --line: #3a2a38; --line-strong: rgba(253, 242, 245, 0.35); --tint: rgba(255, 107, 138, 0.08);
-    --period: #ff6b8a; --fertile: #4fd39a; --ovulation: #3ec48c; --pms: #ffa06b; --neutral: #b09aa8;
-    --period-ink: #ff8ba3; --rose-soft: #3d2432; --green-soft: #1e3a2e;
-    --amber: #3d2a1e; --amber-line: #e08b5c; --danger-bg: #3d2432; --grey-bg: #2e2130;
-    --indigo: #8f8fe8; --indigo-soft: #2a2a4a; --heart: #e878b0;
+    --bg: #160c11; --card: #221319; --ink: #fdf4f6; --ink-2: #e6d0d7; --muted: #b39aa2;
+    --line: #382028; --line-strong: rgba(253, 244, 246, 0.35); --tint: rgba(255, 92, 130, 0.08);
+    --period: #ff5c82; --fertile: #48cc93; --ovulation: #3bbd88; --pms: #ff9a63; --neutral: #b39aa2;
+    --period-ink: #ff8ba3; --rose-soft: #3a1f28; --green-soft: #16352a;
+    --amber: #3a2318; --amber-line: #e59062; --danger-bg: #3a1f28; --grey-bg: #2a1a20;
+    --indigo: #a0a0f0; --indigo-soft: #26264a; --heart: #f07ab0;
     --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
     --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-2: 0 6px 20px rgba(0, 0, 0, 0.45);
-    --shadow-sheet: 0 -8px 30px rgba(0, 0, 0, 0.55);
+    --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
+    --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
     color-scheme: dark;
   }
 }
@@ -114,24 +125,32 @@
 * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; }
 body {
-  font-family: -apple-system, system-ui, "Segoe UI", Roboto, sans-serif;
+  font-family: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   background: var(--bg);
   color: var(--ink);
+  font-size: 16px;
+  line-height: 1.6;
   padding-bottom: env(safe-area-inset-bottom);
 }
-.app { max-width: 480px; margin: 0 auto; padding: 16px 16px 104px; }
+.app { max-width: 480px; margin: 0 auto; padding: var(--s-4) var(--s-4) 104px; }
 .hidden { display: none !important; }
-.muted { color: var(--muted); font-size: 13px; }
-.err { color: var(--rose); font-size: 13px; margin: 8px 0; }
+.muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
+.err { color: var(--period-ink); font-size: 13px; margin: 8px 0; }
 
 /* header */
-.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
-.top h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; }
+.top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-5); }
+.top h1 { font-size: 20px; margin: 0; letter-spacing: -0.03em; font-weight: 700; }
+
+/* Section eyebrow: rationed per DESIGN.md section 3. Small, uppercase, spaced. */
+.eyebrow {
+  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
+  color: var(--muted); margin-bottom: var(--s-2);
+}
 
 /* cards */
 .card {
-  background: var(--card); border-radius: var(--r-lg); padding: 16px;
-  border: 1px solid var(--line); margin-bottom: 12px; box-shadow: var(--shadow-1);
+  background: var(--card); border-radius: var(--r-lg); padding: var(--s-5);
+  border: 1px solid var(--line); margin-bottom: var(--s-3); box-shadow: var(--shadow-1);
   animation: rise .28s cubic-bezier(.22,1,.36,1) both;
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -141,27 +160,45 @@ body {
 .card:nth-child(3) { animation-delay: .08s; }
 .card:nth-child(4) { animation-delay: .12s; }
 .card:nth-child(5) { animation-delay: .16s; }
-.card h2 { font-size: 15px; margin: 0 0 12px; font-weight: 600; }
+.card h2 { font-size: 19px; margin: 0 0 var(--s-4); font-weight: 700; letter-spacing: -0.015em; }
+
+/* A screen section: heading + body with editorial breathing room. */
+.section { margin-bottom: var(--s-6); }
+.section > h2 { font-size: 19px; margin: 0 0 var(--s-4); font-weight: 700; letter-spacing: -0.015em; }
+
+/* Rows separated by hairlines instead of cards. Used by Pengaturan. */
+.rows { border-top: 1px solid var(--line); }
+.rows > * {
+  display: flex; align-items: center; gap: var(--s-3); width: 100%;
+  padding: var(--s-4) 0; border-bottom: 1px solid var(--line);
+  background: none; border-left: 0; border-right: 0; border-top: 0;
+  font: inherit; color: inherit; text-align: left;
+}
+.rows > .row-head { font-weight: 600; font-size: 14px; }
+.rows .row-sub { color: var(--muted); font-size: 12px; }
 
 /* month nav */
-.month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
-.month-nav strong { font-size: 16px; }
+.month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-4); }
+.month-nav strong { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
 .nav-btn {
-  border: none; background: var(--bg); border-radius: var(--r); width: 36px; height: 36px;
-  font-size: 18px; cursor: pointer; color: var(--ink);
+  border: none; background: var(--grey-bg); border-radius: var(--r-full); width: 40px; height: 40px;
+  font-size: 18px; cursor: pointer; color: var(--ink); display: grid; place-items: center;
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease;
 }
+.nav-btn:active { transform: scale(.92); }
 
 /* calendar */
-.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
-.dow { font-size: 11px; text-align: center; color: var(--muted); padding: 4px 0; font-weight: 600; }
+.grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; }
+.dow { font-size: 11px; text-align: center; color: var(--muted); padding: var(--s-2) 0; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
 .day { aspect-ratio: 1; display: flex; align-items: center; justify-content: center; position: relative; }
 .dnum {
   /* Fluid, capped at the 44px tap-target minimum. A fixed 38px overflowed the
      7-column grid at 320px and was under the minimum at every width. */
   width: 100%; max-width: 44px; aspect-ratio: 1;
   display: flex; align-items: center; justify-content: center;
-  border-radius: 50%; font-size: 14px; border: 2px solid transparent;
+  border-radius: 50%; font-size: 15px; border: 2px solid transparent;
   cursor: pointer; background: none; color: var(--ink); font-family: inherit;
+  font-variant-numeric: tabular-nums;
   transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
 }
 .dnum:active { transform: scale(.88); }
@@ -336,32 +373,32 @@ input, select {
   transition: border-color .18s ease, box-shadow .18s ease;
 }
 input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; border-color: transparent; }
-.field { margin-bottom: 10px; }
+.field { margin-bottom: var(--s-3); }
 .field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
 .field.inline { display: flex; align-items: center; gap: 10px; }
 .field.inline label { margin: 0; }
-.check { display: flex; align-items: center; gap: 8px; font-size: 14px; margin-top: 10px; }
+.check { display: flex; align-items: center; gap: var(--s-2); font-size: 15px; margin-top: 0; }
 .check input { width: auto; }
 
 /* auth */
-.auth { padding-top: 28px; }
-.auth-hero { text-align: center; margin-bottom: 22px; animation: rise .4s ease both; }
+.auth { padding-top: var(--s-6); }
+.auth-hero { margin-bottom: var(--s-6); animation: rise .4s ease both; }
 .ob-mark {
-  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r-lg);
-  display: grid; place-items: center; color: var(--rose);
+  width: 72px; height: 72px; margin: 0 0 var(--s-4); border-radius: var(--r-lg);
+  display: grid; place-items: center; color: var(--period-ink);
   background: var(--rose-soft);
 }
 .auth-mark {
-  width: 68px; height: 68px; margin: 0 auto 14px; border-radius: var(--r-xl);
+  width: 72px; height: 72px; margin: 0 0 var(--s-5); border-radius: var(--r-xl);
   display: grid; place-items: center; color: #fff;
-  background: linear-gradient(150deg, #ff7a80 0%, var(--period) 55%, #b3262b 100%);
-  box-shadow: 0 10px 24px -10px rgba(216,27,71,.6);
+  background: var(--period);
+  box-shadow: var(--shadow-2);
 }
-.auth h1 { font-size: 27px; margin: 0 0 6px; letter-spacing: -0.03em; }
-.auth .sub { color: var(--muted); margin: 0; font-size: 14px; line-height: 1.45; }
+.auth h1 { font-size: 32px; margin: 0 0 var(--s-2); letter-spacing: -0.035em; font-weight: 700; line-height: 1.1; }
+.auth .sub { color: var(--muted); margin: 0; font-size: 15px; line-height: 1.55; max-width: 32ch; }
 .auth-card {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-xl);
-  padding: 18px 16px; box-shadow: var(--shadow-1);
+  padding: var(--s-5); box-shadow: var(--shadow-1);
   animation: rise .4s .05s ease both;
 }
 @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
@@ -575,21 +612,30 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .sheet-raised { z-index: 30; }
 .sheet-overlay-raised { z-index: 29; }
 
-/* Profile header: avatar initial + name, one row. Stats read as three
-   columns below; settings entry lives at the screen bottom per spec. */
-.prof-head { display: flex; align-items: center; gap: 12px; }
+/* Profile identity banner: avatar + name on one line, eyebrow above the name. */
+.prof-head { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-5); }
 .prof-avatar {
-  width: 52px; height: 52px; flex: 0 0 auto;
+  width: 64px; height: 64px; flex: 0 0 auto;
   display: grid; place-items: center;
   border-radius: var(--r-full);
   background: var(--rose-soft); color: var(--period-ink);
-  font-size: 22px; font-weight: 700;
+  font-size: 26px; font-weight: 700;
 }
-.prof-id { min-width: 0; }
-.prof-name { font-size: 18px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-.prof-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
-.prof-stat { display: flex; flex-direction: column; gap: 2px; }
-.prof-num { font-size: 26px; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+.prof-id { min-width: 0; display: flex; flex-direction: column; }
+.prof-id .eyebrow { margin-bottom: 2px; }
+.prof-name { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; overflow-wrap: anywhere; }
+
+/* Symptom chip: a pill toggle. Separate from .btn so the pressed state can be a
+   filled rose pill rather than a rectangular button. */
+.chip-btn {
+  border: 1px solid var(--line); background: var(--card); color: var(--ink-2);
+  border-radius: var(--r-full); padding: 8px 14px; font: inherit; font-size: 13px;
+  font-weight: 600; cursor: pointer;
+  transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease, color .18s ease, border-color .18s ease;
+}
+.chip-btn:active { transform: scale(.95); }
+.chip-btn.on { background: var(--period); color: #fff; border-color: var(--period); }
+.chip-btn:focus-visible { outline: 2px solid var(--period); outline-offset: 2px; }
 
 /* bottom nav */
 /* Floating pill nav. A detached capsule rather than a full-width bar, so the
@@ -608,38 +654,38 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   bottom: calc(10px + env(safe-area-inset-bottom));
 }
 
-/* phase hero. Full-bleed: the .app wrapper's 16px side padding is cancelled so
-   the gradient reaches both edges and the top of the screen. */
+/* Phase statement. Full-bleed: the .app gutter is cancelled on all three sides
+   the hero touches, so the field reaches the screen edges. Editorial, not a
+   card: one oversized statement with the phase colour as the whole surface. */
 .home-hero-wrap {
-  /* Cancel the .app padding on all three sides the hero touches, including the
-     top: leaving the top padding in place put a strip of page background above
-     the gradient, which read as a gap under the status bar. */
-  margin: -16px -16px 0;
+  margin: calc(-1 * var(--s-4)) calc(-1 * var(--s-4)) 0;
 }
 .hero {
-  border-radius: 0 0 var(--r-lg) var(--r-lg);
-  padding: calc(10px + env(safe-area-inset-top)) 20px 28px;
-  min-height: 240px; display: flex; flex-direction: column;
+  border-radius: 0 0 var(--r-xl) var(--r-xl);
+  padding: calc(var(--s-5) + env(safe-area-inset-top)) var(--s-5) var(--s-7);
+  min-height: 300px; display: flex; flex-direction: column;
   transition: background .4s ease;
+  /* The wash sits under ink text, so the phase colour is a field the type lives
+     on rather than a bar beside it. Contrast is checked per phase. */
 }
-.hero-body { flex: 1; display: flex; flex-direction: column; justify-content: center; }
-/* Hero title and subtitle sit on the cream surface, not on the wash, so they
-   keep full contrast at every phase. The accent bar is the single deliberate
-   accent and carries the phase colour. */
+.hero-body { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
 .hero-title {
-  font-size: 26px; font-weight: 600; line-height: 1.25; letter-spacing: -0.02em;
+  font-size: 34px; font-weight: 700; line-height: 1.08; letter-spacing: -0.035em;
   color: var(--ink);
 }
 .hero-accent {
-  width: 40px; height: 3px; border-radius: var(--r-full);
-  margin: 12px 0 0; background: var(--muted);
+  width: 48px; height: 4px; border-radius: var(--r-full);
+  margin: var(--s-4) 0 0; background: var(--muted);
 }
-.hero-sub { margin-top: 10px; font-size: 14px; line-height: 1.5; color: var(--muted); }
+.hero-sub { margin-top: var(--s-3); font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 34ch; }
 .hero-meta {
-  margin-top: 18px; font-size: 12px; font-weight: 600;
-  letter-spacing: .04em; text-transform: uppercase; color: var(--muted);
+  /* --ink-2, not --muted: the phase wash raises the background luminance, and
+     --muted on the wash measures 3.9-4.1:1 in light mode, below AA. --ink-2
+     holds 8.2+ across every phase. */
+  margin-top: var(--s-5); font-size: 11px; font-weight: 700;
+  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
 }
-.home-lower { padding: 16px 16px 0; }
+.home-lower { padding: var(--s-5) var(--s-4) 0; }
 
 /* pregnancy chance estimate */
 .chance-card { transition: border-color .2s ease; }
@@ -668,7 +714,7 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 
 /* next period: lead with the countdown, then the date, then the window */
 .next-count { display: flex; align-items: baseline; gap: 8px; margin-top: 2px; }
-.next-num { font-size: 44px; font-weight: 600; line-height: 1; letter-spacing: -0.03em; color: var(--rose); }
+.next-num { font-size: 64px; font-weight: 700; line-height: 0.95; letter-spacing: -0.04em; color: var(--period); font-variant-numeric: tabular-nums; }
 .next-unit { font-size: 15px; font-weight: 600; color: var(--muted); }
 .next-date { margin-top: 6px; font-size: 16px; font-weight: 600; }
 .next-range {
@@ -714,14 +760,24 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   flex: 1; border: none; background: none; cursor: pointer;
   padding: 9px 0 8px; border-radius: var(--r-full);
   font-size: 10px; color: var(--muted); display: flex; flex-direction: column;
-  align-items: center; gap: 3px; font-family: inherit; font-weight: 500;
-  transition: color .18s ease, background .18s ease, transform .12s ease;
+  align-items: center; gap: 3px; font-family: inherit; font-weight: 600;
+  transition: color .18s ease, background .18s ease, transform .14s cubic-bezier(.2,.8,.2,1);
 }
 .tab:active { transform: scale(.94); }
 /* The icon is an inline SVG using currentColor, so the active tab colours it via
    .tab.active { color }. Emoji could not be recoloured reliably across OEMs. */
-.tab svg { transition: transform .2s cubic-bezier(.34,1.56,.64,1); }
-.tab.active svg { transform: translateY(-1px) scale(1.1); }
-.tab.active { color: var(--period-ink); background: var(--rose-soft); }
+.tab svg { transition: transform .24s cubic-bezier(.34,1.4,.64,1); }
+.tab.active svg { transform: translateY(-1px) scale(1.12); }
+.tab.active { color: #fff; background: var(--period); box-shadow: var(--shadow-1); }
 
 footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.5; }
+
+/* Editorial stat column: oversized figures stacked with generous space, used by
+   Wawasan and Profil. One number per row, label beneath. */
+.stat-col { display: flex; flex-direction: column; gap: var(--s-6); }
+.stat-block { display: flex; flex-direction: column; gap: var(--s-1); }
+.stat-figure {
+  font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+}
+.stat-label { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }

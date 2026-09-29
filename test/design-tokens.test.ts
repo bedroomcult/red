@@ -122,10 +122,15 @@ describe('DESIGN.md rules are reflected in the stylesheet', () => {
     expect(rule).not.toMatch(/width:\s*38px/);
   });
 
-  it('the hero is a wash, not a saturated radial field', () => {
+  it('the hero keeps its secondary text readable on the phase wash', () => {
     const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
     expect(home).not.toMatch(/radial-gradient/);
     expect(home).toMatch(/linear-gradient\(160deg, rgba/);
+    // The wash raises the background luminance, so secondary hero text must be
+    // --ink-2 (8.2+ on every phase) and never --muted (3.9-4.1 in light mode).
+    const heroMeta = /\.hero-meta\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
+    expect(heroMeta).toMatch(/color:\s*var\(--ink-2\)/);
+    expect(heroMeta).not.toMatch(/color:\s*var\(--muted\)/);
   });
 });
 

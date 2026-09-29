@@ -39,15 +39,17 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
   const maxPhase = Math.max(1, ...Object.values(hist.byPhase));
   return (
     <>
-      <div className="card">
+      <div className="section">
         <h2>{t.insTitle}</h2>
         {ins.avgCycle === null ? (
           <div className="muted">{t.insEmpty}</div>
         ) : (
           <>
-            <div className="pred">
-              <span className="big">{ins.avgCycle}</span>
-              <span className="muted">{t.insDays} · {t.insAvgCycle}</span>
+            <div className="stat-col">
+              <div className="stat-block">
+                <span className="stat-figure">{ins.avgCycle}</span>
+                <span className="stat-label">{t.insDays} · {t.insAvgCycle}</span>
+              </div>
             </div>
             <div className="row tight">
               {ins.avgPeriod !== null && <span className="badge grey">{t.insAvgPeriod}: {ins.avgPeriod} {t.insDays}</span>}
@@ -57,35 +59,35 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
                 </span>
               )}
             </div>
-            <ul className="list" style={{ marginTop: 12 }}>
-              <li><span className="date">{t.insRange}</span><span className="meta" style={{ marginLeft: 'auto' }}>{ins.shortest} sampai {ins.longest} {t.insDays}</span></li>
-              <li><span className="date">{t.insCount}</span><span className="meta" style={{ marginLeft: 'auto' }}>{ins.count}</span></li>
-            </ul>
+            <div className="rows" style={{ marginTop: 'var(--s-5)' }}>
+              <div><span className="row-head">{t.insRange}</span><span className="row-sub" style={{ marginLeft: 'auto' }}>{ins.shortest} sampai {ins.longest} {t.insDays}</span></div>
+              <div><span className="row-head">{t.insCount}</span><span className="row-sub" style={{ marginLeft: 'auto' }}>{ins.count}</span></div>
+            </div>
           </>
         )}
       </div>
 
       {next.length > 0 && (
-        <div className="card">
+        <div className="section">
           <h2>{t.insNext6}</h2>
-          <ul className="list">
+          <div className="rows">
             {next.map((d, i) => (
-              <li key={d}>
-                <span className="date">{fmt(d)}</span>
+              <div key={d}>
+                <span className="row-head">{fmt(d)}</span>
                 {/* Confidence falls with distance: the projection compounds the
                     average cycle length, so cycle 1 is a date and cycle 6 is a
                     rough one. Saying which is which is the point. */}
-                <span className={`meta ${i >= 3 ? 'ins-approx' : ''}`} style={{ marginLeft: 'auto' }}>
+                <span className={`row-sub ${i >= 3 ? 'ins-approx' : ''}`} style={{ marginLeft: 'auto' }}>
                   {i < 3 ? `#${i + 1}` : `#${i + 1} · ${t.insApprox}`}
                 </span>
-              </li>
+              </div>
             ))}
-          </ul>
+          </div>
           <div className="muted ins-note">{t.insNext6Note}</div>
         </div>
       )}
 
-      <div className="card">
+      <div className="section">
         <h2>{t.symHistoryTitle}</h2>
         {hist.total === 0 ? (
           <div className="muted">{t.symHistoryEmpty}</div>
@@ -96,18 +98,18 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
               <span className="badge grey">{t.symHistoryDays.replace('{n}', String(hist.days))}</span>
             </div>
             {hist.first && hist.last && (
-              <div className="muted" style={{ marginTop: 8 }}>
+              <div className="muted" style={{ marginTop: 'var(--s-2)' }}>
                 {t.symHistoryRange.replace('{first}', fmtShort(hist.first)).replace('{last}', fmtShort(hist.last))}
               </div>
             )}
 
             {/* Per kind, with the phase it clusters in. A kind without enough
                 observations to name a phase says so instead of guessing. */}
-            <ul className="list" style={{ marginTop: 12 }}>
+            <div className="rows" style={{ marginTop: 'var(--s-5)' }}>
               {hist.stats.map((s) => (
-                <li key={s.kind}>
-                  <span className="date">{SYM_LABEL[s.kind] ?? s.kind}</span>
-                  <span className="meta" style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                <div key={s.kind}>
+                  <span className="row-head">{SYM_LABEL[s.kind] ?? s.kind}</span>
+                  <span className="row-sub" style={{ marginLeft: 'auto', textAlign: 'right' }}>
                     {s.count}×
                     <div>
                       {s.topPhase
@@ -115,20 +117,20 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
                         : <span className="muted">{t.symHistoryNoPhase}</span>}
                     </div>
                   </span>
-                </li>
+                </div>
               ))}
-            </ul>
+            </div>
 
             {/* Which phases carry symptoms overall. Bars are scaled against the
                 largest bucket, so the shape is readable at any volume. */}
-            <div className="muted" style={{ marginTop: 16, marginBottom: 6 }}>{t.symByPhaseTitle}</div>
+            <div className="muted" style={{ marginTop: 'var(--s-5)', marginBottom: 'var(--s-2)' }}>{t.symByPhaseTitle}</div>
             {PHASE_ORDER.filter((p) => hist.byPhase[p]).map((p) => (
-              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+              <div key={p} style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-3)', marginTop: 'var(--s-2)' }}>
                 <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 96 }}>{PHASE_LABEL[p]}</span>
                 <span className="chance-bar" style={{ flex: 1, marginTop: 0 }}>
                   <span
                     className="chance-fill"
-                    style={{ width: `${Math.round((hist.byPhase[p] / maxPhase) * 100)}%`, background: 'var(--rose)' }}
+                    style={{ width: `${Math.round((hist.byPhase[p] / maxPhase) * 100)}%`, background: 'var(--period)' }}
                   />
                 </span>
                 <span style={{ fontSize: 12, color: 'var(--muted)', minWidth: 24, textAlign: 'right' }}>{hist.byPhase[p]}</span>
