@@ -5,11 +5,13 @@ import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
 import { apiFetch, readJson } from './api';
 
-export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout }: {
+export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout, onBack }: {
   profile: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null;
   nextPeriod: string | null;
   onSaved: (s: any) => void;
   onLogout: () => void;
+  // Opened from the profile bottom; back returns to profile.
+  onBack: () => void;
 }) {
   const [name, setName] = useState(profile?.display_name ?? '');
   const [cycle, setCycle] = useState(profile?.cycle_len ?? 28);
@@ -94,6 +96,11 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
 
   return (
     <>
+      <div className="row" style={{ marginTop: 0, marginBottom: 12 }}>
+        <button className="btn" onClick={onBack} aria-label={t.setBack}>
+          ← {t.setBack}
+        </button>
+      </div>
       <div className="card">
         <h2>{t.setTitle}</h2>
         <div className="field">
@@ -116,7 +123,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
 
       <div className="card">
         <h2>{t.setAppearance}</h2>
-        <div className="row" style={{ marginTop: 0 }}>
+        <div className="row" style={{ marginTop: 0 }} role="group" aria-label={t.setAppearance}>
           {([['light', t.themeLight], ['dark', t.themeDark], ['system', t.themeSystem]] as const).map(([v, label]) => (
             <button key={v} className={`btn ${theme === v ? 'primary' : ''}`} aria-pressed={theme === v} onClick={() => pickTheme(v)}>{label}</button>
           ))}
@@ -183,6 +190,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout 
       <div className="card">
         <h2>{t.setAccount}</h2>
         <div className="row" style={{ marginTop: 0 }}>
+          <button className="btn" onClick={onBack}>{t.setBack}</button>
           <button className="btn danger" onClick={onLogout}>{t.setLogout}</button>
         </div>
       </div>

@@ -133,6 +133,16 @@ export const t = {
   // insights
   navInsights: 'Wawasan',
   navSettings: 'Pengaturan',
+  navProfile: 'Profil',
+  profTitle: 'Profil',
+  profStats: 'Ringkasan siklus',
+  profLogged: 'Haid tercatat',
+  profAvgCycle: 'Siklus rata-rata',
+  profAvgPeriod: 'Haid rata-rata',
+  profOpenSettings: 'Pengaturan',
+  profLogout: 'Keluar',
+  // settings (opened from the profile bottom; back returns to profile)
+  setBack: 'Kembali',
   insTitle: 'Wawasan siklus',
   insAvgCycle: 'Rata-rata siklus',
   insAvgPeriod: 'Rata-rata haid',

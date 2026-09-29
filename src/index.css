@@ -570,6 +570,22 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .sheet-raised { z-index: 30; }
 .sheet-overlay-raised { z-index: 29; }
 
+/* Profile header: avatar initial + name, one row. Stats read as three
+   columns below; settings entry lives at the screen bottom per spec. */
+.prof-head { display: flex; align-items: center; gap: 12px; }
+.prof-avatar {
+  width: 52px; height: 52px; flex: 0 0 auto;
+  display: grid; place-items: center;
+  border-radius: var(--r-full);
+  background: var(--rose-soft); color: var(--rose);
+  font-size: 22px; font-weight: 600;
+}
+.prof-id { min-width: 0; }
+.prof-name { font-size: 18px; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.prof-stats { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; }
+.prof-stat { display: flex; flex-direction: column; gap: 2px; }
+.prof-num { font-size: 24px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+
 /* bottom nav */
 /* Floating pill nav. A detached capsule rather than a full-width bar, so the
    content behind it stays visible and the nav reads as an overlay rather than as
