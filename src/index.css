@@ -1,51 +1,51 @@
 :root {
-  /* Direction: DESIGN.md. Warm paper ground, deep rose accent, plum-black ink.
-     Editorial layout, spacious. Contrast verified by scripts/palette.mjs and
-     re-checked by test/design-tokens.test.ts in both themes. */
-  --bg: #fdf8f6;
+  /* Direction: DESIGN.md. Flo-inspired: soft pink ground, white rounded cards,
+     rose accent. Contrast verified by scripts/palette.mjs and re-checked by
+     test/design-tokens.test.ts in both themes. */
+  --bg: #fff7f9;
   --card: #ffffff;
-  --ink: #241018;
-  --ink-2: #4a2f3a;
-  --muted: #7d6068;
-  --line: #f0e0e0;
-  --line-strong: rgba(36, 16, 24, 0.35);
-  --tint: rgba(200, 16, 63, 0.05);
+  --ink: #2b1a22;
+  --ink-2: #5a3d4a;
+  --muted: #83636f;
+  --line: #f7e3ea;
+  --line-strong: rgba(43, 26, 34, 0.3);
+  --tint: rgba(217, 26, 82, 0.05);
 
   /* Phase colours are data, not decoration: they label the cycle phase and
-     repeat on the calendar, the day sheet and the badge. */
-  --period: #c8103f;
-  --fertile: #0f7a52;
-  --ovulation: #0b5f40;
-  --pms: #a8410f;
-  --neutral: #7d6068;
+     repeat on the ring, the calendar, the day sheet and the badge. */
+  --period: #d91a52;
+  --fertile: #0a7a57;
+  --ovulation: #086a4b;
+  --pms: #ab4d0c;
+  --neutral: #83636f;
 
   /* Rose text on a soft rose tint needs a darker ink than the fill colour:
      the tint raises the background luminance, so --period alone drops below
      AA. --period-ink restores it. */
-  --period-ink: #a50d34;
+  --period-ink: #b81446;
   --rose: var(--period);
-  --rose-soft: #fce8ec;
+  --rose-soft: #ffe4ec;
   --green: var(--fertile);
-  --green-soft: #e4f5ec;
-  --amber: #fbe9dd;
-  --amber-line: #7d3808;
-  --danger-bg: #fce8ec;
-  --grey-bg: #f6eeef;
-  --indigo: #3f3fa8;
+  --green-soft: #e0f5ed;
+  --amber: #fdecd8;
+  --amber-line: #803806;
+  --danger-bg: #ffe4ec;
+  --grey-bg: #faf0f3;
+  --indigo: #4a4ab8;
   --indigo-soft: #e8e8fa;
-  --heart: #a3245f;
+  --heart: #b02f6f;
 
-  /* Radius scale. DESIGN.md section 5: six steps, no long tail. */
-  --r-sm: 8px;
-  --r: 12px;
-  --r-md: 16px;
-  --r-lg: 22px;
+  /* Radius scale. Flo's feel comes mostly from the radius and the tinted
+     fills, so this scale is generous. */
+  --r-sm: 10px;
+  --r: 14px;
+  --r-md: 18px;
+  --r-lg: 24px;
   --r-xl: 32px;
   --r-full: 9999px;
   --radius: var(--r-md);
 
-  /* Space scale. An 8px base; section gaps are the lever that makes the
-     layout read editorial rather than dashboard. */
+  /* Space scale. An 8px base, comfortable spacing. */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
@@ -53,48 +53,47 @@
   --s-5: 24px;
   --s-6: 32px;
   --s-7: 48px;
-  --s-8: 64px;
 
-  /* Tinted shadows: the hue matches the rose ground, so a raised surface reads
-     as part of the same world rather than a black cut-out. */
-  --shadow-inset: rgba(255, 255, 255, 0.6) 0 0.5px 0 0 inset, rgba(80, 12, 36, 0.06) 0 0 0 0.5px inset;
-  --shadow-1: 0 1px 2px rgba(80, 12, 36, 0.04);
-  --shadow-2: 0 8px 24px rgba(80, 12, 36, 0.08);
-  --shadow-sheet: 0 -10px 40px rgba(80, 12, 36, 0.16);
+  /* Soft, low, rose-tinted shadows. Flo cards float lightly rather than sit in
+     a frame. */
+  --shadow-inset: rgba(255, 255, 255, 0.6) 0 0.5px 0 0 inset, rgba(140, 30, 70, 0.06) 0 0 0 0.5px inset;
+  --shadow-1: 0 2px 8px rgba(140, 30, 70, 0.05);
+  --shadow-2: 0 8px 24px rgba(140, 30, 70, 0.09);
+  --shadow-sheet: 0 -10px 40px rgba(140, 30, 70, 0.16);
   color-scheme: light;
 }
 
 /* Dark mode: warm plum near-black rather than neutral, so the character
    survives the flip. */
 [data-theme="dark"] {
-  --bg: #160c11;
-  --card: #221319;
-  --ink: #fdf4f6;
-  --ink-2: #e6d0d7;
-  --muted: #b39aa2;
-  --line: #382028;
-  --line-strong: rgba(253, 244, 246, 0.35);
-  --tint: rgba(255, 92, 130, 0.08);
+  --bg: #191016;
+  --card: #241820;
+  --ink: #fdf3f6;
+  --ink-2: #e4cdd7;
+  --muted: #ad919d;
+  --line: #3a2531;
+  --line-strong: rgba(253, 243, 246, 0.3);
+  --tint: rgba(255, 107, 147, 0.08);
 
-  --period: #ff5c82;
-  --fertile: #48cc93;
-  --ovulation: #3bbd88;
-  --pms: #ff9a63;
-  --neutral: #b39aa2;
+  --period: #ff6b93;
+  --fertile: #4ed4a0;
+  --ovulation: #40c394;
+  --pms: #ffa266;
+  --neutral: #ad919d;
 
-  --period-ink: #ff8ba3;
-  --rose-soft: #3a1f28;
+  --period-ink: #ff9ab4;
+  --rose-soft: #3d1f2c;
   --green-soft: #16352a;
-  --amber: #3a2318;
-  --amber-line: #e59062;
-  --danger-bg: #3a1f28;
-  --grey-bg: #2a1a20;
+  --amber: #3a2517;
+  --amber-line: #f0a06e;
+  --danger-bg: #3d1f2c;
+  --grey-bg: #2b1c24;
   --indigo: #a0a0f0;
   --indigo-soft: #26264a;
   --heart: #f07ab0;
 
   --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-  --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
   --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
   color-scheme: dark;
@@ -104,14 +103,14 @@
    alias a whole custom-property set. Keep the two in step. */
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
-    --bg: #160c11; --card: #221319; --ink: #fdf4f6; --ink-2: #e6d0d7; --muted: #b39aa2;
-    --line: #382028; --line-strong: rgba(253, 244, 246, 0.35); --tint: rgba(255, 92, 130, 0.08);
-    --period: #ff5c82; --fertile: #48cc93; --ovulation: #3bbd88; --pms: #ff9a63; --neutral: #b39aa2;
-    --period-ink: #ff8ba3; --rose-soft: #3a1f28; --green-soft: #16352a;
-    --amber: #3a2318; --amber-line: #e59062; --danger-bg: #3a1f28; --grey-bg: #2a1a20;
+    --bg: #191016; --card: #241820; --ink: #fdf3f6; --ink-2: #e4cdd7; --muted: #ad919d;
+    --line: #3a2531; --line-strong: rgba(253, 243, 246, 0.3); --tint: rgba(255, 107, 147, 0.08);
+    --period: #ff6b93; --fertile: #4ed4a0; --ovulation: #40c394; --pms: #ffa266; --neutral: #ad919d;
+    --period-ink: #ff9ab4; --rose-soft: #3d1f2c; --green-soft: #16352a;
+    --amber: #3a2517; --amber-line: #f0a06e; --danger-bg: #3d1f2c; --grey-bg: #2b1c24;
     --indigo: #a0a0f0; --indigo-soft: #26264a; --heart: #f07ab0;
     --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-    --shadow-1: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
     --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
     --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
     color-scheme: dark;
@@ -139,13 +138,7 @@ body {
 
 /* header */
 .top { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-5); }
-.top h1 { font-size: 20px; margin: 0; letter-spacing: -0.03em; font-weight: 700; }
-
-/* Section eyebrow: rationed per DESIGN.md section 3. Small, uppercase, spaced. */
-.eyebrow {
-  font-size: 11px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--muted); margin-bottom: var(--s-2);
-}
+.top h1 { font-size: 20px; margin: 0; letter-spacing: -0.02em; font-weight: 700; }
 
 /* cards */
 .card {
@@ -160,29 +153,28 @@ body {
 .card:nth-child(3) { animation-delay: .08s; }
 .card:nth-child(4) { animation-delay: .12s; }
 .card:nth-child(5) { animation-delay: .16s; }
-.card h2 { font-size: 19px; margin: 0 0 var(--s-4); font-weight: 700; letter-spacing: -0.015em; }
+.card h2 { font-size: 18px; margin: 0 0 var(--s-4); font-weight: 600; letter-spacing: -0.01em; }
 
-/* A screen section: heading + body with editorial breathing room. */
-.section { margin-bottom: var(--s-6); }
-.section > h2 { font-size: 19px; margin: 0 0 var(--s-4); font-weight: 700; letter-spacing: -0.015em; }
-
-/* Rows separated by hairlines instead of cards. Used by Pengaturan. */
-.rows { border-top: 1px solid var(--line); }
+/* Rows inside a card: label left, value right, hairline between. Used by
+   Pengaturan, Riwayat and the Wawasan lists. Flo groups with cards and divides
+   with hairlines inside them. */
 .rows > * {
   display: flex; align-items: center; gap: var(--s-3); width: 100%;
-  padding: var(--s-4) 0; border-bottom: 1px solid var(--line);
-  background: none; border-left: 0; border-right: 0; border-top: 0;
+  padding: var(--s-3) 0;
+  background: none; border: 0; border-bottom: 1px solid var(--line);
   font: inherit; color: inherit; text-align: left;
 }
-.rows > .row-head { font-weight: 600; font-size: 14px; }
-.rows .row-sub { color: var(--muted); font-size: 12px; }
+.rows > *:last-child { border-bottom: 0; padding-bottom: 0; }
+.rows > *:first-child { padding-top: 0; }
+.rows > .row-head { font-weight: 600; font-size: 15px; }
+.rows .row-sub { color: var(--muted); font-size: 13px; }
 
 /* month nav */
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-4); }
-.month-nav strong { font-size: 16px; font-weight: 600; letter-spacing: -0.01em; }
+.month-nav strong { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
 .nav-btn {
-  border: none; background: var(--grey-bg); border-radius: var(--r-full); width: 40px; height: 40px;
-  font-size: 18px; cursor: pointer; color: var(--ink); display: grid; place-items: center;
+  border: none; background: var(--rose-soft); border-radius: var(--r-full); width: 40px; height: 40px;
+  font-size: 18px; cursor: pointer; color: var(--period-ink); display: grid; place-items: center;
   transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease;
 }
 .nav-btn:active { transform: scale(.92); }
@@ -394,7 +386,7 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
   background: var(--period);
   box-shadow: var(--shadow-2);
 }
-.auth h1 { font-size: 32px; margin: 0 0 var(--s-2); letter-spacing: -0.035em; font-weight: 700; line-height: 1.1; }
+.auth h1 { font-size: 26px; margin: 0 0 var(--s-2); letter-spacing: -0.02em; font-weight: 700; line-height: 1.2; }
 .auth .sub { color: var(--muted); margin: 0; font-size: 15px; line-height: 1.55; max-width: 32ch; }
 .auth-card {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-xl);
@@ -406,7 +398,7 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 /* segmented login/signup switch */
 .seg {
   display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px;
-  background: var(--grey-bg); border-radius: var(--r-md); margin-bottom: 18px;
+  background: var(--rose-soft); border-radius: var(--r-md); margin-bottom: var(--s-5);
 }
 .seg-btn {
   border: none; background: transparent; border-radius: var(--r); padding: 9px 0;
@@ -612,7 +604,7 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .sheet-raised { z-index: 30; }
 .sheet-overlay-raised { z-index: 29; }
 
-/* Profile identity banner: avatar + name on one line, eyebrow above the name. */
+/* Profile identity banner: avatar + name on one line. */
 .prof-head { display: flex; align-items: center; gap: var(--s-4); padding: var(--s-5); }
 .prof-avatar {
   width: 64px; height: 64px; flex: 0 0 auto;
@@ -621,9 +613,8 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   background: var(--rose-soft); color: var(--period-ink);
   font-size: 26px; font-weight: 700;
 }
-.prof-id { min-width: 0; display: flex; flex-direction: column; }
-.prof-id .eyebrow { margin-bottom: 2px; }
-.prof-name { font-size: 24px; font-weight: 700; letter-spacing: -0.03em; line-height: 1.15; overflow-wrap: anywhere; }
+.prof-id { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.prof-name { font-size: 22px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.2; overflow-wrap: anywhere; }
 
 /* Symptom chip: a pill toggle. Separate from .btn so the pressed state can be a
    filled rose pill rather than a rectangular button. */
@@ -654,38 +645,61 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   bottom: calc(10px + env(safe-area-inset-bottom));
 }
 
-/* Phase statement. Full-bleed: the .app gutter is cancelled on all three sides
-   the hero touches, so the field reaches the screen edges. Editorial, not a
-   card: one oversized statement with the phase colour as the whole surface. */
-.home-hero-wrap {
-  margin: calc(-1 * var(--s-4)) calc(-1 * var(--s-4)) 0;
+/* Cycle ring: the home screen's anchor. One SVG circle drawn as a progress
+   arc; the arc colour is the phase colour and the track is rose-soft. The
+   phase is also written as text beside the ring, so the ring is never the only
+   carrier of meaning (colour-blind and screen-reader safety). */
+.home-hero-wrap { margin: 0 0 var(--s-5); }
+.ring-card {
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-xl);
+  padding: var(--s-6) var(--s-5); box-shadow: var(--shadow-1);
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-5);
+  animation: rise .28s cubic-bezier(.22,1,.36,1) both;
 }
-.hero {
-  border-radius: 0 0 var(--r-xl) var(--r-xl);
-  padding: calc(var(--s-5) + env(safe-area-inset-top)) var(--s-5) var(--s-7);
-  min-height: 300px; display: flex; flex-direction: column;
-  transition: background .4s ease;
-  /* The wash sits under ink text, so the phase colour is a field the type lives
-     on rather than a bar beside it. Contrast is checked per phase. */
+.ring-wrap { position: relative; display: grid; place-items: center; }
+.ring-svg { transform: rotate(-90deg); }
+.ring-track { stroke: var(--rose-soft); }
+.ring-arc {
+  stroke: var(--period); transition: stroke-dashoffset .7s cubic-bezier(.22,1,.36,1), stroke .3s ease;
 }
-.hero-body { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; }
-.hero-title {
-  font-size: 34px; font-weight: 700; line-height: 1.08; letter-spacing: -0.035em;
-  color: var(--ink);
+.ring-centre {
+  position: absolute; inset: 0; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; gap: 2px; text-align: center;
 }
-.hero-accent {
-  width: 48px; height: 4px; border-radius: var(--r-full);
-  margin: var(--s-4) 0 0; background: var(--muted);
+.ring-figure {
+  font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums; color: var(--ink);
 }
-.hero-sub { margin-top: var(--s-3); font-size: 15px; line-height: 1.55; color: var(--ink-2); max-width: 34ch; }
-.hero-meta {
-  /* --ink-2, not --muted: the phase wash raises the background luminance, and
-     --muted on the wash measures 3.9-4.1:1 in light mode, below AA. --ink-2
-     holds 8.2+ across every phase. */
-  margin-top: var(--s-5); font-size: 11px; font-weight: 700;
-  letter-spacing: .14em; text-transform: uppercase; color: var(--ink-2);
+.ring-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.ring-copy { text-align: center; }
+.ring-title {
+  font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em;
+  color: var(--ink); margin: 0;
 }
-.home-lower { padding: var(--s-5) var(--s-4) 0; }
+.ring-sub { margin-top: var(--s-2); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
+.ring-phase {
+  margin-top: var(--s-3); display: inline-flex; align-items: center; gap: var(--s-2);
+  font-size: 13px; font-weight: 600; color: var(--ink-2);
+}
+.ring-dot { width: 10px; height: 10px; border-radius: var(--r-full); }
+.home-lower { padding: 0; }
+
+/* Stat rows: label left, figure right. Used by Profil and the insights
+   summary. Tabular figures so values do not jitter. */
+.stat-row { display: flex; align-items: baseline; justify-content: space-between; gap: var(--s-3); padding: var(--s-3) 0; }
+.stat-row + .stat-row { border-top: 1px solid var(--line); }
+.stat-row-label { font-size: 14px; color: var(--ink-2); }
+.stat-row-value { font-size: 20px; font-weight: 700; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+
+/* Stat column: one oversized figure with a caption. Used by the Wawasan
+   summary. */
+.stat-col { display: flex; flex-direction: column; gap: var(--s-2); }
+.stat-block { display: flex; flex-direction: column; gap: var(--s-1); }
+.stat-figure {
+  font-size: 44px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;
+  font-variant-numeric: tabular-nums; color: var(--period);
+}
+.stat-label { font-size: 13px; font-weight: 500; color: var(--muted); }
 
 /* pregnancy chance estimate */
 .chance-card { transition: border-color .2s ease; }

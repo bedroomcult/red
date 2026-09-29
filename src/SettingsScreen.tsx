@@ -102,7 +102,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
         </button>
       </div>
 
-      <div className="section">
+      <div className="card">
         <h2>{t.setTitle}</h2>
         <div className="rows">
           <div className="field" style={{ display: 'block' }}>
@@ -124,7 +124,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
         </div>
       </div>
 
-      <div className="section">
+      <div className="card">
         <h2>{t.setAppearance}</h2>
         <div className="row" style={{ marginTop: 0 }} role="group" aria-label={t.setAppearance}>
           {([['light', t.themeLight], ['dark', t.themeDark], ['system', t.themeSystem]] as const).map(([v, label]) => (
@@ -133,7 +133,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
         </div>
       </div>
 
-      <div className="section">
+      <div className="card">
         <h2>{t.setReminders}</h2>
         <div className="rows">
           <label className="check">
@@ -161,7 +161,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
         </div>
       </div>
 
-      <div className="section">
+      <div className="card">
         <h2>{t.setPrivacy}</h2>
         <div className="muted">{t.setExportHint}</div>
         <div className="row">
@@ -192,7 +192,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
         )}
       </div>
 
-      <div className="section">
+      <div className="card">
         <h2>{t.setAccount}</h2>
         <div className="row" style={{ marginTop: 0 }}>
           <button className="btn" onClick={onBack}>{t.setBack}</button>

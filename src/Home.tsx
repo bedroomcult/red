@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import type { ReactNode } from 'react';
 import { cycleStatus, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
@@ -7,6 +6,7 @@ import { localDate } from '../lib/today';
 import { needsEndPrompt } from '../lib/cycle';
 import OngoingPrompt from './OngoingPrompt';
 import ChanceCard from './ChanceCard';
+import CycleRing from './CycleRing';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -17,21 +17,9 @@ const symLabel: Record<string, string> = {
 
 const fmtShort = (d: string) => new Date(d + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'short' });
 
-// Phase wash. A low-saturation atmospheric layer behind the text block, per
-// DESIGN.md section 4, rather than a saturated field the text sits on. The old
-// radial gradients put white text over stops as light as 1.45:1; a wash at this
-// opacity keeps the text at full contrast while still signalling the phase.
-const WASH: Record<Phase, string> = {
-  period: 'linear-gradient(160deg, rgba(192,57,47,.18) 0%, rgba(192,57,47,.06) 100%)',
-  fertile: 'linear-gradient(160deg, rgba(47,125,82,.18) 0%, rgba(47,125,82,.06) 100%)',
-  ovulation: 'linear-gradient(160deg, rgba(31,107,69,.20) 0%, rgba(31,107,69,.07) 100%)',
-  pms: 'linear-gradient(160deg, rgba(168,86,42,.18) 0%, rgba(168,86,42,.06) 100%)',
-  neutral: 'linear-gradient(160deg, rgba(28,28,28,.06) 0%, rgba(28,28,28,.02) 100%)',
-  bc: 'linear-gradient(160deg, rgba(28,28,28,.06) 0%, rgba(28,28,28,.02) 100%)',
-};
-
-// The accent bar under the title: one deliberate accent, carrying the phase.
-const ACCENT: Record<Phase, string> = {
+// The phase dot colour, restated as text beside the ring so colour is never the
+// only signal. Mirrors the ring arc and the calendar.
+const PHASE_DOT: Record<Phase, string> = {
   period: 'var(--period)',
   fertile: 'var(--fertile)',
   ovulation: 'var(--ovulation)',
@@ -41,7 +29,7 @@ const ACCENT: Record<Phase, string> = {
 };
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null } | null };
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
@@ -67,31 +55,31 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
     } catch { setSyms(syms); }
   }
 
-  let title: ReactNode;
+  let title: string;
   let subtitle = '';
   if (st.phase === 'bc') {
-    title = <>{t.homeBcTitle}</>;
+    title = t.homeBcTitle;
     subtitle = t.homeBcSub;
   } else if (st.phase === 'period') {
-    title = <>{t.homePeriodTitle.replace('{n}', String(st.cycleDay ?? 1))}</>;
+    title = t.homePeriodTitle.replace('{n}', String(st.cycleDay ?? 1));
     subtitle = t.homePeriodAsk;
   } else if (st.phase === 'ovulation') {
-    title = <>{t.homeOvTitle}</>;
+    title = t.homeOvTitle;
     subtitle = t.homeOvSub;
   } else if (st.phase === 'fertile') {
-    title = <>{t.homeFertileTitle}</>;
+    title = t.homeFertileTitle;
     subtitle = t.homeFertileSub;
   } else if (st.phase === 'pms') {
-    title = <>{t.homePmsTitle}</>;
+    title = t.homePmsTitle;
     subtitle = t.homePmsSub;
   } else if (st.daysToNext !== null && st.daysToNext < 0) {
-    title = <>{t.homeOverdue}</>;
+    title = t.homeOverdue;
     subtitle = `${Math.abs(st.daysToNext)} ${t.homeDays}`;
   } else if (st.daysToNext !== null) {
-    title = <><span style={{ fontSize: 15, fontWeight: 600, display: 'block', marginBottom: 'var(--s-2)', letterSpacing: 0, color: 'var(--ink-2)' }}>{t.homeNeutral}</span><span style={{ fontSize: 88, fontWeight: 700, lineHeight: 0.92, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.045em' }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 'var(--s-2)', fontWeight: 600 }}>{t.homeDays}</span></>;
+    title = `${st.daysToNext} ${t.homeDays}`;
     subtitle = me.prediction.next ? `${fmtShort(me.prediction.next)} · ${fmtShort(me.prediction.lo!)} sampai ${fmtShort(me.prediction.hi!)}` : '';
   } else {
-    title = <>{t.homeNoData}</>;
+    title = t.homeNoData;
   }
 
   // The ongoing period that has reached its expected length, if any. The user is
@@ -102,18 +90,22 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   return (
     <div className="home-hero-wrap">
-      <div className="hero" style={{ background: WASH[st.phase] }}>
-        {/* Full-bleed phase statement. The type sits on the wash, so the phase
-            colour is the surface rather than a bar beside the text. */}
-        <div className="hero-body">
-          <div className="hero-title">{title}</div>
-          <div className="hero-accent" style={{ background: ACCENT[st.phase] }} />
-          {subtitle && <div className="hero-sub">{subtitle}</div>}
-          {st.cycleDay !== null && st.phase !== 'period' && (
-            <div className="hero-meta">
-              {t.homeCycleDay} {st.cycleDay}
-            </div>
-          )}
+      <div className="ring-card">
+        <CycleRing day={st.cycleDay} total={me.profile?.cycle_len ?? 28} phase={st.phase} />
+        <div className="ring-copy">
+          <h1 className="ring-title">{title}</h1>
+          {subtitle && <div className="ring-sub">{subtitle}</div>}
+          {/* Phase restated as text + dot, so the ring colour is never the only
+              carrier of meaning. */}
+          <div className="ring-phase">
+            <span className="ring-dot" style={{ background: PHASE_DOT[st.phase] }} aria-hidden="true" />
+            {st.phase === 'bc' ? t.phaseBc
+              : st.phase === 'period' ? t.phasePeriod
+              : st.phase === 'fertile' ? t.phaseFertile
+              : st.phase === 'ovulation' ? t.phaseOvulation
+              : st.phase === 'pms' ? t.phasePms
+              : t.phaseNeutral}
+          </div>
         </div>
       </div>
 
