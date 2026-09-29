@@ -7,6 +7,7 @@ import EcPanel from './EcPanel';
 import Home from './Home';
 import InsightsScreen from './InsightsScreen';
 import SettingsScreen from './SettingsScreen';
+import ProfileScreen from './ProfileScreen';
 import Onboarding from './Onboarding';
 import LoginScreen from './LoginScreen';
 import Icon from './Icon';
@@ -41,7 +42,9 @@ export default function App() {
   // The EC event being edited; undefined = a new one. `ecOpen` alone would lose
   // which row the user tapped.
   const [ecEditId, setEcEditId] = useState<string | null>(null);
-  const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'settings'>('home');
+  const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'profile'>('home');
+  // Settings opens above the profile tab (not a tab itself); back returns.
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const [needLogin, setNeedLogin] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
 
@@ -258,9 +261,20 @@ export default function App() {
         />
       )}
 
-      {me && tab === 'settings' && (
+      {me && tab === 'profile' && !settingsOpen && (
+        <ProfileScreen
+          name={me.profile?.display_name ?? null}
+          avgCycle={me.insights?.avgCycle ?? null}
+          avgPeriod={me.insights?.avgPeriod ?? null}
+          logged={me.periods.filter((p) => p.type === 'menstruation').length}
+          onOpenSettings={() => setSettingsOpen(true)}
+          onLogout={doLogout}
+        />
+      )}
+
+      {me && tab === 'profile' && settingsOpen && (
         <SettingsScreen profile={me.profile ?? null} nextPeriod={me.prediction.next}
-          onSaved={setMe} onLogout={doLogout} />
+          onSaved={setMe} onLogout={doLogout} onBack={() => setSettingsOpen(false)} />
       )}
 
       {sel && (
@@ -296,6 +310,8 @@ export default function App() {
         onRequestClose={() => {
           // Any open sheet eats the back press first, matching Android.
           // Topmost layer wins: nested LogSheet > card modal > DaySheet.
+          // Settings sits above profile; back returns to profile first.
+          if (settingsOpen) { setSettingsOpen(false); return true; }
           if (sel || logDate || bcOpen || ecOpen) {
             if (logDate) setLogDate(null);
             else if (dayModalOpen) { setCloseDayModal((c) => c + 1); setDayModalOpen(false); }
@@ -323,8 +339,8 @@ export default function App() {
         <button className={`tab ${tab === 'history' ? 'active' : ''}`} aria-current={tab === 'history' ? 'page' : undefined} onClick={() => setTab('history')}>
           <Icon name="history" />{t.navHistory}
         </button>
-        <button className={`tab ${tab === 'settings' ? 'active' : ''}`} aria-current={tab === 'settings' ? 'page' : undefined} onClick={() => setTab('settings')}>
-          <Icon name="settings" />{t.navSettings}
+        <button className={`tab ${tab === 'profile' ? 'active' : ''}`} aria-current={tab === 'profile' ? 'page' : undefined} onClick={() => { setTab('profile'); setSettingsOpen(false); }}>
+          <Icon name="settings" />{t.navProfile}
         </button>
       </nav>
     </div>

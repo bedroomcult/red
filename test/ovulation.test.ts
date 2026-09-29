@@ -252,4 +252,17 @@ describe('day sheet, nav and back button', () => {
     expect(modal).toMatch(/e\.key !== 'Tab'/);
     expect(modal).toMatch(/querySelectorAll/);
   });
+
+  it('the last tab is a profile that opens settings above it', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toContain('ProfileScreen');
+    expect(app).toMatch(/tab === 'profile'/);
+    expect(app).not.toMatch(/tab === 'settings'/);
+    expect(app).toMatch(/settingsOpen/);
+    const prof = readFileSync(ROOT + 'src/ProfileScreen.tsx', 'utf8');
+    expect(prof).toMatch(/onOpenSettings/);
+    expect(prof).toMatch(/onLogout/);
+    const set = readFileSync(ROOT + 'src/SettingsScreen.tsx', 'utf8');
+    expect(set).toMatch(/onBack/);
+  });
 });
