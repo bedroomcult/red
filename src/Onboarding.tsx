@@ -45,14 +45,15 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
   const lastStep = step === steps.length - 1;
 
   return (
-    <div className="app auth" style={{ paddingTop: 60 }}>
+    <div className="app auth">
       <div key={step} className="pop">
         <div className="ob-mark" aria-hidden="true">
-          <Icon name={(['home', 'home', 'calendar', 'insights'] as const)[step]} size={38} />
+          <Icon name={(['home', 'home', 'calendar', 'insights'] as const)[step]} size={36} />
         </div>
         <h1>{s.title}</h1>
         <div className="sub">{s.sub}</div>
 
+        <div style={{ marginTop: 'var(--s-6)' }}>
         {step === 1 && (
           <div className="field">
             <input value={name} maxLength={40} placeholder={t.obNameTitle}
@@ -67,13 +68,14 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
         )}
         {step === 3 && (
           <div className="field">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--s-4)' }}>
               <input type="range" min={15} max={60} value={cycle}
                 onChange={(e) => setCycle(Number(e.target.value))} style={{ flex: 1, padding: 0 }} />
-              <strong style={{ fontSize: 22, minWidth: 52, textAlign: 'right' }}>{cycle}</strong>
+              <strong style={{ fontSize: 34, minWidth: 64, textAlign: 'right', fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>{cycle}</strong>
             </div>
           </div>
         )}
+        </div>
 
         {err && <div className="err">{err}</div>}
 
@@ -89,12 +91,12 @@ export default function Onboarding({ onDone }: { onDone: (s: any) => void }) {
         </div>
       </div>
 
-      <div style={{ display: 'flex', gap: 6, justifyContent: 'center', marginTop: 24 }}>
+      <div style={{ display: 'flex', gap: 6, marginTop: 'var(--s-7)' }}>
         {steps.map((_, i) => (
           <span key={i} style={{
-            width: i === step ? 20 : 6, height: 6, borderRadius: 3,
-            background: i === step ? 'var(--rose)' : 'var(--line)',
-            transition: 'width .25s ease, background .25s ease',
+            width: i === step ? 24 : 8, height: 4, borderRadius: 2,
+            background: i === step ? 'var(--period)' : 'var(--line)',
+            transition: 'width .26s cubic-bezier(.22,1,.36,1), background .26s ease',
           }} />
         ))}
       </div>

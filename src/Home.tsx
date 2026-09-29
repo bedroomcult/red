@@ -88,7 +88,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
     title = <>{t.homeOverdue}</>;
     subtitle = `${Math.abs(st.daysToNext)} ${t.homeDays}`;
   } else if (st.daysToNext !== null) {
-    title = <><span style={{ fontSize: 15, fontWeight: 500, display: 'block', marginBottom: 4 }}>{t.homeNeutral}</span><span style={{ fontSize: 56, fontWeight: 700, lineHeight: 1, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.03em' }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 8 }}>{t.homeDays}</span></>;
+    title = <><span style={{ fontSize: 15, fontWeight: 600, display: 'block', marginBottom: 'var(--s-2)', letterSpacing: 0, color: 'var(--ink-2)' }}>{t.homeNeutral}</span><span style={{ fontSize: 88, fontWeight: 700, lineHeight: 0.92, fontVariantNumeric: 'tabular-nums', letterSpacing: '-0.045em' }}>{st.daysToNext}</span><span style={{ fontSize: 18, marginLeft: 'var(--s-2)', fontWeight: 600 }}>{t.homeDays}</span></>;
     subtitle = me.prediction.next ? `${fmtShort(me.prediction.next)} · ${fmtShort(me.prediction.lo!)} sampai ${fmtShort(me.prediction.hi!)}` : '';
   } else {
     title = <>{t.homeNoData}</>;
@@ -103,9 +103,8 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
   return (
     <div className="home-hero-wrap">
       <div className="hero" style={{ background: WASH[st.phase] }}>
-        {/* Full-bleed: the .app wrapper's 16px side padding is cancelled so the
-            gradient reaches both edges. The app name and logout live in the
-            shared header above, so the hero carries only phase status. */}
+        {/* Full-bleed phase statement. The type sits on the wash, so the phase
+            colour is the surface rather than a bar beside the text. */}
         <div className="hero-body">
           <div className="hero-title">{title}</div>
           <div className="hero-accent" style={{ background: ACCENT[st.phase] }} />
@@ -125,12 +124,12 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
             not noise, and hiding the chips loses exactly those days. */}
         <div className="card">
           <h2>{t.homeSymptomsToday}</h2>
-          <div className="muted" style={{ marginTop: -6, marginBottom: 10 }}>{t.homeSymptomHint}</div>
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+          <div className="muted" style={{ marginTop: 'calc(-1 * var(--s-3))', marginBottom: 'var(--s-3)' }}>{t.homeSymptomHint}</div>
+          <div className="chips">
             {SYMPTOMS.map((k) => {
               const on = syms.includes(k);
               return (
-                <button key={k} className={`btn ${on ? 'on' : ''}`} onClick={() => toggle(k)}
+                <button key={k} className={`chip-btn ${on ? 'on' : ''}`} onClick={() => toggle(k)}
                   aria-pressed={on}>
                   {symLabel[k]}
                 </button>

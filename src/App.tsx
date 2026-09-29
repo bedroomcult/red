@@ -164,11 +164,11 @@ export default function App() {
 
       {me && tab === 'calendar' && (
         <>
-          <div className="card">
+          <div className="section">
             <div className="month-nav">
-              <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 0 ? v.y - 1 : v.y, m: (v.m + 11) % 12 }))}>‹</button>
+              <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 0 ? v.y - 1 : v.y, m: (v.m + 11) % 12 }))} aria-label="bulan sebelumnya">‹</button>
               <strong>{label}</strong>
-              <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))}>›</button>
+              <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))} aria-label="bulan berikutnya">›</button>
             </div>
             <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} periodLen={me.profile?.period_len ?? 5} />
             <div className="legend">
@@ -189,7 +189,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="card next-card">
+          <div className="section next-card">
             <h2>{t.nextPeriod}</h2>
             {(() => {
               // Never show a prediction whose date has already passed. The server
@@ -233,21 +233,21 @@ export default function App() {
       )}
 
       {me && tab === 'history' && (
-        <div className="card">
+        <div className="section">
           <h2>{t.history}</h2>
           {history.length === 0 && <div className="muted">{t.nothing}</div>}
-          <ul className="list">
+          <div className="rows">
             {history.map((p) => (
-              <li key={p.id}>
-                <button className="btn" onClick={() => setSel(p.start_date)} style={{ padding: '6px 12px' }}>{fmt(p.start_date)}</button>
-                <span className="meta">
+              <button key={p.id} onClick={() => setSel(p.start_date)} style={{ borderBottom: '1px solid var(--line)' }}>
+                <span className="row-head">{fmt(p.start_date)}</span>
+                <span className="row-sub" style={{ marginLeft: 'auto', textAlign: 'right' }}>
                   {p.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}
                   {p.flow ? ` · ${p.flow === 'light' ? t.flowLight : p.flow === 'heavy' ? t.flowHeavy : t.flowMedium}` : ''}
                   {p.end_date ? ` · ${fmt(p.end_date)}` : ''}
                 </span>
-              </li>
+              </button>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 

@@ -223,7 +223,9 @@ describe('day sheet, nav and back button', () => {
   it('content clears the floating pill', () => {
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     const app = /\.app\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-    expect(app).toMatch(/padding: 16px 16px 104px/);
+    // Bottom padding must clear the floating nav pill. The value is a token now,
+    // so assert the token and its scale value rather than a raw literal.
+    expect(app).toMatch(/padding:\s*var\(--s-4\)\s+var\(--s-4\)\s+104px/);
   });
 
   it('registers an Android back handler', () => {

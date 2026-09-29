@@ -28,14 +28,14 @@ const over = (hex, alpha, base) => {
 const AA = 4.5;
 
 const LIGHT = {
-  bg: '#fff6f2', card: '#ffffff', ink: '#2a1a2e', 'ink-2': '#4a3a4e', muted: '#6d5a70',
-  period: '#d81b47', fertile: '#12855a', ovulation: '#0d6b47', pms: '#b0461c', neutral: '#6d5a70',
-  'period-ink': '#b3133a', 'rose-soft': '#fbe8ed', 'amber-line': '#8a3d12',
+  bg: '#fdf8f6', card: '#ffffff', ink: '#241018', 'ink-2': '#4a2f3a', muted: '#7d6068',
+  period: '#c8103f', fertile: '#0f7a52', ovulation: '#0b5f40', pms: '#a8410f', neutral: '#7d6068',
+  'period-ink': '#a50d34', 'rose-soft': '#fce8ec', 'amber-line': '#7d3808', amber: '#fbe9dd',
 };
 const DARK = {
-  bg: '#1a1119', card: '#261a26', ink: '#fdf2f5', 'ink-2': '#e2cdd6', muted: '#b09aa8',
-  period: '#ff6b8a', fertile: '#4fd39a', ovulation: '#3ec48c', pms: '#ffa06b', neutral: '#b09aa8',
-  'period-ink': '#ff8ba3', 'rose-soft': '#3d2432', 'amber-line': '#e08b5c',
+  bg: '#160c11', card: '#221319', ink: '#fdf4f6', 'ink-2': '#e6d0d7', muted: '#b39aa2',
+  period: '#ff5c82', fertile: '#48cc93', ovulation: '#3bbd88', pms: '#ff9a63', neutral: '#b39aa2',
+  'period-ink': '#ff8ba3', 'rose-soft': '#3a1f28', 'amber-line': '#e59062', amber: '#3a2318',
 };
 
 function report(name, t) {
@@ -53,6 +53,7 @@ function report(name, t) {
   }
   for (const k of ['period', 'fertile', 'ovulation', 'pms', 'neutral']) check(`${k} on card`, t[k], t.card);
   check('period-ink on rose-soft', t['period-ink'], t['rose-soft']);
+  check('amber-line on amber', t['amber-line'], t.amber);
   return fails;
 }
 
