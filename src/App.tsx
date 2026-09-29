@@ -45,6 +45,7 @@ export default function App() {
   const [tab, setTab] = useState<'home' | 'calendar' | 'insights' | 'history' | 'profile'>('home');
   // Settings opens above the profile tab (not a tab itself); back returns.
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const openProfile = () => { setTab('profile'); setSettingsOpen(false); };
   const [needLogin, setNeedLogin] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
 
@@ -339,7 +340,7 @@ export default function App() {
         <button className={`tab ${tab === 'history' ? 'active' : ''}`} aria-current={tab === 'history' ? 'page' : undefined} onClick={() => setTab('history')}>
           <Icon name="history" />{t.navHistory}
         </button>
-        <button className={`tab ${tab === 'profile' ? 'active' : ''}`} aria-current={tab === 'profile' ? 'page' : undefined} onClick={() => { setTab('profile'); setSettingsOpen(false); }}>
+        <button className={`tab ${tab === 'profile' ? 'active' : ''}`} aria-current={tab === 'profile' ? 'page' : undefined} onClick={() => openProfile()}>
           <Icon name="settings" />{t.navProfile}
         </button>
       </nav>
