@@ -164,7 +164,7 @@ export default function App() {
 
       {me && tab === 'calendar' && (
         <>
-          <div className="section">
+          <div className="card">
             <div className="month-nav">
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 0 ? v.y - 1 : v.y, m: (v.m + 11) % 12 }))} aria-label="bulan sebelumnya">‹</button>
               <strong>{label}</strong>
@@ -189,7 +189,7 @@ export default function App() {
             </div>
           </div>
 
-          <div className="section next-card">
+          <div className="card next-card">
             <h2>{t.nextPeriod}</h2>
             {(() => {
               // Never show a prediction whose date has already passed. The server
@@ -233,7 +233,7 @@ export default function App() {
       )}
 
       {me && tab === 'history' && (
-        <div className="section">
+        <div className="card">
           <h2>{t.history}</h2>
           {history.length === 0 && <div className="muted">{t.nothing}</div>}
           <div className="rows">

@@ -122,15 +122,18 @@ describe('DESIGN.md rules are reflected in the stylesheet', () => {
     expect(rule).not.toMatch(/width:\s*38px/);
   });
 
-  it('the hero keeps its secondary text readable on the phase wash', () => {
+  it('the home ring states its value as text, not colour alone', () => {
+    const ring = readFileSync(ROOT + 'src/CycleRing.tsx', 'utf8');
+    // The ring is the direction's signature element, so its accessibility
+    // contract is pinned: an SVG progress arc plus a visible text figure, and
+    // an aria-label that carries the value for screen readers.
+    expect(ring).toMatch(/strokeDasharray/);
+    expect(ring).toMatch(/strokeLinecap="round"/);
+    expect(ring).toMatch(/aria-label=/);
+    expect(ring).toMatch(/className="ring-figure"/);
+    // Home must also restate the phase as text beside the ring.
     const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
-    expect(home).not.toMatch(/radial-gradient/);
-    expect(home).toMatch(/linear-gradient\(160deg, rgba/);
-    // The wash raises the background luminance, so secondary hero text must be
-    // --ink-2 (8.2+ on every phase) and never --muted (3.9-4.1 in light mode).
-    const heroMeta = /\.hero-meta\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
-    expect(heroMeta).toMatch(/color:\s*var\(--ink-2\)/);
-    expect(heroMeta).not.toMatch(/color:\s*var\(--muted\)/);
+    expect(home).toMatch(/className="ring-phase"/);
   });
 });
 

@@ -39,7 +39,7 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
   const maxPhase = Math.max(1, ...Object.values(hist.byPhase));
   return (
     <>
-      <div className="section">
+      <div className="card">
         <h2>{t.insTitle}</h2>
         {ins.avgCycle === null ? (
           <div className="muted">{t.insEmpty}</div>
@@ -68,7 +68,7 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
       </div>
 
       {next.length > 0 && (
-        <div className="section">
+        <div className="card">
           <h2>{t.insNext6}</h2>
           <div className="rows">
             {next.map((d, i) => (
@@ -87,7 +87,7 @@ export default function InsightsScreen({ ins, periods = [], prediction = null, b
         </div>
       )}
 
-      <div className="section">
+      <div className="card">
         <h2>{t.symHistoryTitle}</h2>
         {hist.total === 0 ? (
           <div className="muted">{t.symHistoryEmpty}</div>

@@ -28,14 +28,14 @@ const over = (hex, alpha, base) => {
 const AA = 4.5;
 
 const LIGHT = {
-  bg: '#fdf8f6', card: '#ffffff', ink: '#241018', 'ink-2': '#4a2f3a', muted: '#7d6068',
-  period: '#c8103f', fertile: '#0f7a52', ovulation: '#0b5f40', pms: '#a8410f', neutral: '#7d6068',
-  'period-ink': '#a50d34', 'rose-soft': '#fce8ec', 'amber-line': '#7d3808', amber: '#fbe9dd',
+  bg: '#fff7f9', card: '#ffffff', ink: '#2b1a22', 'ink-2': '#5a3d4a', muted: '#83636f',
+  period: '#d91a52', fertile: '#0a7a57', ovulation: '#086a4b', pms: '#ab4d0c', neutral: '#83636f',
+  'period-ink': '#b81446', 'rose-soft': '#ffe4ec', 'amber-line': '#803806', amber: '#fdecd8',
 };
 const DARK = {
-  bg: '#160c11', card: '#221319', ink: '#fdf4f6', 'ink-2': '#e6d0d7', muted: '#b39aa2',
-  period: '#ff5c82', fertile: '#48cc93', ovulation: '#3bbd88', pms: '#ff9a63', neutral: '#b39aa2',
-  'period-ink': '#ff8ba3', 'rose-soft': '#3a1f28', 'amber-line': '#e59062', amber: '#3a2318',
+  bg: '#191016', card: '#241820', ink: '#fdf3f6', 'ink-2': '#e4cdd7', muted: '#ad919d',
+  period: '#ff6b93', fertile: '#4ed4a0', ovulation: '#40c394', pms: '#ffa266', neutral: '#ad919d',
+  'period-ink': '#ff9ab4', 'rose-soft': '#3d1f2c', 'amber-line': '#f0a06e', amber: '#3a2517',
 };
 
 function report(name, t) {

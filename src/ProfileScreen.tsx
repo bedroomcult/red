@@ -1,9 +1,9 @@
 import Icon from './Icon';
 import { t } from './i18n';
 
-// Profil: an identity banner, then the cycle figures as an editorial stat row,
-// then one entry into Pengaturan. This screen never edits anything; settings
-// owns the editing surface.
+// Profil: identity banner, the cycle figures as a card of stat rows, then one
+// entry into Pengaturan. This screen never edits anything; settings owns the
+// editing surface.
 export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpenSettings, onLogout }: {
   name: string | null;
   avgCycle: number | null;
@@ -18,26 +18,24 @@ export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpe
       <div className="card prof-head">
         <span className="prof-avatar" aria-hidden="true">{initial}</span>
         <div className="prof-id">
-          <span className="eyebrow">{t.profTitle}</span>
           <strong className="prof-name">{name?.trim() || t.obNameTitle}</strong>
+          <span className="muted">{t.profTitle}</span>
         </div>
       </div>
 
-      <div className="section">
-        <span className="eyebrow">{t.profStats}</span>
-        <div className="stat-col">
-          <div className="stat-block">
-            <span className="stat-figure">{logged}</span>
-            <span className="stat-label">{t.profLogged}</span>
-          </div>
-          <div className="stat-block">
-            <span className="stat-figure">{avgCycle ?? '–'}</span>
-            <span className="stat-label">{t.profAvgCycle}</span>
-          </div>
-          <div className="stat-block">
-            <span className="stat-figure">{avgPeriod ?? '–'}</span>
-            <span className="stat-label">{t.profAvgPeriod}</span>
-          </div>
+      <div className="card">
+        <h2>{t.profStats}</h2>
+        <div className="stat-row">
+          <span className="stat-row-label">{t.profLogged}</span>
+          <span className="stat-row-value">{logged}</span>
+        </div>
+        <div className="stat-row">
+          <span className="stat-row-label">{t.profAvgCycle}</span>
+          <span className="stat-row-value">{avgCycle ?? '–'}</span>
+        </div>
+        <div className="stat-row">
+          <span className="stat-row-label">{t.profAvgPeriod}</span>
+          <span className="stat-row-value">{avgPeriod ?? '–'}</span>
         </div>
       </div>
 
