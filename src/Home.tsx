@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { cycleStatus, type Phase } from '../lib/cycle';
+import { symptomHistory } from '../lib/symptom-history';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
@@ -9,6 +10,7 @@ import ChanceCard from './ChanceCard';
 import CycleRing from './CycleRing';
 import WeekStrip from './WeekStrip';
 import { makeDayState } from './dayState';
+import { loadLateDismissed, saveLateDismissed } from './lateDismiss';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -40,7 +42,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[]; next6Ov?: string[] } | null };
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; symptomLog?: { date: string; kind: string }[]; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[]; next6Ov?: string[] } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
@@ -122,6 +124,25 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
     (p) => p.type === 'menstruation' && !p.end_date && needsEndPrompt(p, periodLen, today)
   );
 
+  // Symptom heads-up: name the symptom this user's own history clusters in the
+  // phase they are in now. The two-observation floor is symptomHistory's own
+  // (topPhase is null below it), so no second threshold is invented here.
+  const hist = symptomHistory(me.symptomLog ?? [], me.periods, me.prediction, bcMode, periodLen);
+  const pattern = bcMode || st.phase === 'bc'
+    ? null
+    : hist.stats.find((s) => s.topPhase === st.phase && s.topPhaseCount >= 2) ?? null;
+
+  // Late period: offer the two things a user wants. The dismissal is keyed to
+  // the prediction it was dismissed against, so a new prediction re-arms it.
+  const overdue = st.daysToNext !== null && st.daysToNext < 0;
+  const [lateDismissed, setLateDismissed] = useState(() => loadLateDismissed());
+  const showLate = overdue && !bcMode && lateDismissed !== me.prediction.next;
+  const dismissLate = () => {
+    if (!me.prediction.next) return;
+    saveLateDismissed(me.prediction.next);
+    setLateDismissed(me.prediction.next);
+  };
+
   return (
     <div className="home-hero-wrap">
       <WeekStrip selected={sel} today={today} dayClass={dayState} onPick={setSel} />
@@ -149,6 +170,29 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
       <div className="home-lower">
         {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} />}
+        {/* Symptom heads-up: states a pattern from the user's own log, never a
+            prediction. The count is shown so the claim is auditable. */}
+        {pattern && (
+          <div className="card">
+            <h2>{t.homeSymptomsToday}</h2>
+            <div className="muted">
+              {t.homeSymptomPattern
+                .replace('{sym}', symLabel[pattern.kind] ?? pattern.kind)
+                .replace('{n}', String(pattern.topPhaseCount))}
+            </div>
+          </div>
+        )}
+        {/* Late period: a dead end before this — it stated the period was late
+            and offered no next step. */}
+        {showLate && (
+          <div className="card">
+            <h2>{t.homeOverdue}</h2>
+            <div className="row" style={{ marginTop: 0 }}>
+              <button className="btn primary" onClick={() => onLogToday(today)}>{t.homeLateLog}</button>
+              <button className="btn" onClick={dismissLate}>{t.homeLateDismiss}</button>
+            </div>
+          </div>
+        )}
         <ChanceCard date={today} prediction={me.prediction} bcMode={bcMode} />
         {/* Symptoms log in every phase: fertile-window symptoms are data,
             not noise, and hiding the chips loses exactly those days. */}

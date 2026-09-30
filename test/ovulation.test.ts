@@ -301,3 +301,53 @@ describe('day sheet, nav and back button', () => {
     expect(set).toMatch(/onBack/);
   });
 });
+
+// Tier 1: the app acting on data it already stores. All three are source-reading
+// assertions, matching this file's style — the logic is either pure math already
+// covered by lib/ self-checks, or a wiring claim that only a read can verify.
+describe('tier 1: symptom heads-up, late period, reminder re-sync', () => {
+  const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
+
+  it('shows the symptom heads-up only above the data floor', () => {
+    // symptomHistory returns topPhase: null below two observations, and the card
+    // must respect that floor rather than inventing its own.
+    expect(home).toMatch(/s\.topPhase === st\.phase && s\.topPhaseCount >= 2/);
+    // Suppressed cycles have no phase attribution, so no card.
+    expect(home).toMatch(/bcMode \|\| st\.phase === 'bc'/);
+  });
+
+  it('the heads-up states a pattern with its count, not a prediction', () => {
+    expect(home).toMatch(/t\.homeSymptomPattern/);
+    expect(home).toMatch(/\.replace\('\{n\}', String\(pattern\.topPhaseCount\)\)/);
+    const i18n = readFileSync(ROOT + 'src/i18n.ts', 'utf8');
+    // The count placeholder must exist in the copy, or the claim is unauditable.
+    expect(i18n).toMatch(/homeSymptomPattern: '[^']*\{n\}/);
+  });
+
+  it('the late-period card offers log and dismiss', () => {
+    expect(home).toMatch(/showLate &&/);
+    expect(home).toMatch(/onLogToday\(today\)\}\>\{t\.homeLateLog/);
+    expect(home).toMatch(/onClick=\{dismissLate\}/);
+  });
+
+  it('dismissal is keyed to the prediction, so a new one re-arms it', () => {
+    const late = readFileSync(ROOT + 'src/lateDismiss.ts', 'utf8');
+    expect(late).toContain("pt.lateDismissed");
+    expect(late).toMatch(/export const loadLateDismissed/);
+    expect(late).toMatch(/export const saveLateDismissed/);
+    // The comparison is against the current prediction date, not a boolean flag:
+    // that is what makes it re-arm on its own.
+    expect(home).toMatch(/lateDismissed !== me\.prediction\.next/);
+    expect(home).toMatch(/saveLateDismissed\(me\.prediction\.next\)/);
+  });
+
+  it('re-syncs the period reminder when the prediction moves', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    // The effect keys on prediction.next, which is what logging a period changes.
+    expect(app).toMatch(/syncReminders\(p, me\?\.prediction\.next/);
+    expect(app).toMatch(/\}, \[me\?\.prediction\.next\]\)/);
+    // It must never request permission: only run when the user already enabled it.
+    expect(app).toMatch(/if \(p\.periodEnabled\)/);
+    expect(app).not.toMatch(/requestPermission\(\)/);
+  });
+});
