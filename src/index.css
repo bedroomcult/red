@@ -432,7 +432,6 @@ input:focus, select:focus { outline: 2px solid var(--period-ink); outline-offset
   padding: var(--s-5); box-shadow: var(--shadow-1);
   animation: rise .4s .05s ease both;
 }
-@keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
 
 /* segmented login/signup switch */
 .seg {
@@ -841,9 +840,12 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .loading-dots i:nth-child(3) { animation-delay: .3s; }
 @keyframes dotpulse { 0%, 100% { opacity: .25; transform: translateY(0); } 50% { opacity: 1; transform: translateY(-3px); } }
 
-/* success pop */
-.pop { animation: pop .35s cubic-bezier(.34,1.56,.64,1) both; }
-@keyframes pop { 0% { transform: scale(.8); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
+/* success pop, used by the onboarding step container. Named `pop-in`, not
+   `pop`: the modal below also animates on `pop`, and two @keyframes with the
+   same name collide — the later one wins for both, which made the modal lose
+   its translateY(-50%) centering mid-animation and snap back at the end. */
+.pop { animation: pop-in .35s cubic-bezier(.34,1.56,.64,1) both; }
+@keyframes pop-in { 0% { transform: scale(.8); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
 .tab {
   flex: 1; border: none; background: none; cursor: pointer;
   padding: 8px 0 6px; border-radius: var(--r-sm);

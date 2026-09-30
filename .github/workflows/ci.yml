@@ -92,6 +92,10 @@ jobs:
           echo "$KEYSTORE_BASE64" | base64 -d > "$KEYSTORE_FILE"
           node .github/scripts/android-signing.mjs
       - run: npx cap sync android
+      # After `cap sync`, not before: sync merges plugin manifest requirements
+      # into AndroidManifest.xml, and would overwrite a patch applied earlier.
+      - name: Patch notification permissions
+        run: node .github/scripts/android-manifest.mjs
       - name: Build signed release apk
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/red-release.jks
