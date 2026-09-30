@@ -341,7 +341,7 @@ export default function App() {
           <Icon name="history" />{t.navHistory}
         </button>
         <button className={`tab ${tab === 'profile' ? 'active' : ''}`} aria-current={tab === 'profile' ? 'page' : undefined} onClick={() => openProfile()}>
-          <Icon name="settings" />{t.navProfile}
+          <Icon name="user" />{t.navProfile}
         </button>
       </nav>
     </div>

@@ -15,15 +15,32 @@ export const loadTheme = (): Theme => {
 const isDark = (t: Theme) =>
   t === 'dark' || (t === 'system' && window.matchMedia?.('(prefers-color-scheme: dark)').matches);
 
-// Native status bar follows the app surface: cream bg + dark icons in light,
-// near-black bg + light icons in dark. Fire-and-forget: a slow or missing
-// plugin bridge must never block the theme paint. Capacitor `Style` names the
-// *icon* color, so dark mode takes Style.Light (white icons).
+// Read a CSS token's live value, so the native bar can never drift from the
+// stylesheet. Falls back to a literal if the token is missing.
+function token(name: string, fallback: string): string {
+  try {
+    const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+    return v || fallback;
+  } catch { return fallback; }
+}
+
+// Native status bar follows the app surface: the page background plus icons in
+// the opposite tone.
+//
+// Capacitor's Style enum names the BACKGROUND, not the icon: Style.Dark means
+// "light text for dark backgrounds", Style.Light means "dark text for light
+// backgrounds". So a light app takes Style.Light (dark icons) and a dark app
+// takes Style.Dark (light icons). Getting this backwards is what left white
+// icons on a near-white bar.
+//
+// Fire-and-forget: a slow or missing plugin bridge must never block the theme
+// paint.
 function syncStatusBar(dark: boolean) {
   if (!Capacitor.isNativePlatform()) return;
+  const bg = token('--bg', dark ? '#16121a' : '#fff8f8');
   import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-    void StatusBar.setBackgroundColor({ color: dark ? '#1a1917' : '#f7f4ed' }).catch(() => {});
-    void StatusBar.setStyle({ style: dark ? Style.Light : Style.Dark }).catch(() => {});
+    void StatusBar.setBackgroundColor({ color: bg }).catch(() => {});
+    void StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }).catch(() => {});
   }).catch(() => {});
 }
 
@@ -31,7 +48,9 @@ export const applyTheme = (t: Theme) => {
   document.documentElement.setAttribute('data-theme', t);
   const dark = isDark(t);
   const meta = document.querySelector('meta[name="theme-color"]');
-  if (meta) meta.setAttribute('content', dark ? '#1a1917' : '#f7f4ed');
+  // The meta must match the bar too, so the PWA chrome and the native bar agree.
+  // Read after the attribute is set, so the tokens are already resolved.
+  if (meta) meta.setAttribute('content', token('--bg', dark ? '#16121a' : '#fff8f8'));
   syncStatusBar(dark);
 };
 

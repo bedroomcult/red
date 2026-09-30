@@ -4,7 +4,7 @@
 // 24x24 grid, 1.8 stroke, currentColor so the active tab picks up the accent.
 import type { ReactNode } from 'react';
 
-export type IconName = 'home' | 'calendar' | 'insights' | 'history' | 'settings' | 'check' | 'cross' | 'dash' | 'droplet' | 'info' | 'pulse' | 'pencil' | 'pill' | 'heart';
+export type IconName = 'home' | 'calendar' | 'insights' | 'history' | 'settings' | 'user' | 'check' | 'cross' | 'dash' | 'droplet' | 'info' | 'pulse' | 'pencil' | 'pill' | 'heart';
 
 const PATHS: Record<IconName, ReactNode> = {
   // Heart, matching the sex-log marker.
@@ -60,6 +60,13 @@ const PATHS: Record<IconName, ReactNode> = {
   check: <path d="M4 12.5l5 5L20 6.5" />,
   cross: <path d="M6 6l12 12M18 6L6 18" />,
   dash: <path d="M5 12h14" />,
+  // Person, for the Profil tab. Head + shoulders, the standard account glyph.
+  user: (
+    <>
+      <circle cx="12" cy="8" r="4" />
+      <path d="M4.5 20.5a7.5 7.5 0 0 1 15 0" />
+    </>
+  ),
   // Gear.
   settings: (
     <>
