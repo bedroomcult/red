@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- One widget, resizable from 2x2 to 4x2. updatePeriodMillis repaints once a
+     day so the countdown advances even when the app is never opened (Android
+     clamps this to a 30-minute minimum; 0 would mean "only when asked").
+
+     minWidth/minHeight are the smallest supported size; minResizeWidth/Height
+     let the user drag it wider, at which point CycleWidgetProvider swaps to the
+     wide layout. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="110dp"
+    android:minHeight="110dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="110dp"
+    android:targetCellWidth="2"
+    android:targetCellHeight="2"
+    android:maxResizeWidth="320dp"
+    android:maxResizeHeight="180dp"
+    android:updatePeriodMillis="86400000"
+    android:initialLayout="@layout/widget_cycle"
+    android:previewLayout="@layout/widget_cycle"
+    android:resizeMode="horizontal|vertical"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_description" />

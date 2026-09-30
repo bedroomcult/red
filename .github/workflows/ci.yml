@@ -96,6 +96,10 @@ jobs:
       # into AndroidManifest.xml, and would overwrite a patch applied earlier.
       - name: Patch notification permissions
         run: node .github/scripts/android-manifest.mjs
+      # Also after sync: copies native/widget/ into the generated project and
+      # registers the Capacitor plugin (android/ is not tracked in git).
+      - name: Add the home-screen widget
+        run: node .github/scripts/android-widget.mjs
       - name: Build signed release apk
         env:
           KEYSTORE_FILE: ${{ github.workspace }}/red-release.jks
