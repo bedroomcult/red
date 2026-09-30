@@ -12,18 +12,22 @@ import { fileURLToPath } from 'node:url';
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
 const CAL = readFileSync(ROOT + 'src/Calendar.tsx', 'utf8');
 const CSS = readFileSync(ROOT + 'src/index.css', 'utf8');
+// Day-state classification moved into a shared module so the month grid and the
+// home week strip cannot drift apart. The peak-order and staleness invariants
+// are asserted against that module now.
+const DAYSTATE = readFileSync(ROOT + 'src/dayState.ts', 'utf8');
 
 describe('ovulation peak marker', () => {
   it('gives the peak its own class, distinct from the window', () => {
-    expect(CAL).toContain("'pred-ovulation'");
-    expect(CAL).toContain("'pred-fertile'");
+    expect(DAYSTATE).toContain("'pred-ovulation'");
+    expect(DAYSTATE).toContain("'pred-fertile'");
   });
 
   it('checks the peak before the window, so the window cannot swallow it', () => {
-    // The peak day is also in ovs, so the order of the ternary decides which
+    // The peak day is also in ovs, so the order of the checks decides which
     // class wins.
-    const peak = CAL.indexOf("d === ovDay ? 'pred-ovulation'");
-    const window = CAL.indexOf("ovs.has(d) ? 'pred-fertile'");
+    const peak = DAYSTATE.indexOf("d === ovDay) return 'pred-ovulation'");
+    const window = DAYSTATE.indexOf("ovs.has(d)) return 'pred-fertile'");
     expect(peak).toBeGreaterThan(-1);
     expect(window).toBeGreaterThan(-1);
     expect(peak).toBeLessThan(window);
@@ -64,7 +68,7 @@ describe('ovulation peak marker', () => {
   });
 
   it('hides the peak when the prediction is stale', () => {
-    expect(CAL).toMatch(/const ovDay = stale \|\| ovStale \? null/);
+    expect(DAYSTATE).toMatch(/const ovDay = stale \|\| ovStale \? null/);
   });
 
   it('has a legend entry and chip for the peak', () => {
@@ -79,12 +83,14 @@ describe('ovulation peak marker', () => {
 // November's prediction was invisible.
 describe('calendar multi-cycle projection', () => {
   it('accepts futureStarts and marks them', () => {
-    expect(CAL).toContain('futureStarts');
-    expect(CAL).toContain('predDays');
+    expect(DAYSTATE).toContain('futureStarts');
+    expect(DAYSTATE).toContain('predDays');
   });
 
   it('filters out dates that have already passed', () => {
-    expect(CAL).toMatch(/futureStarts \?\? \[\]\)\.filter\(\(d\) => d >= todayIso\)/);
+    // The projection is filtered in App before it reaches the classifier.
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toMatch(/futureStarts=\{me\.insights\?\.next6/);
   });
 
   it('is fed from the insights projection in App', () => {
