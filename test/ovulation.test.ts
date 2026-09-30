@@ -374,3 +374,43 @@ describe('keyframe names are unique and the modal keeps its centering', () => {
     expect(frames).toMatch(/translateY\(-50%\)/);
   });
 });
+
+// The home-screen widget: native-only, fed the next period DATE (not a
+// precomputed count) so it stays correct while the app is closed.
+describe('home-screen widget wiring', () => {
+  it('the bridge is native-only and never throws into the app', () => {
+    const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
+    expect(w).toMatch(/registerPlugin<CycleWidgetPlugin>\('CycleWidget'\)/);
+    expect(w).toMatch(/if \(!Capacitor\.isNativePlatform\(\)\) return;/);
+    // A widget failure must never break the app.
+    expect(w).toMatch(/\.catch\(\(\) => \{\}\)/);
+  });
+
+  it('sends the date and phase, never a precomputed count', () => {
+    const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
+    expect(w).toMatch(/nextPeriod: string; phase: string/);
+    // The count is derived natively at paint time; sending "days" would freeze
+    // the moment the app closes.
+    expect(w).not.toMatch(/days: number/);
+    const provider = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+    expect(provider).toMatch(/fun daysUntil\(/);
+  });
+
+  it('the app pushes widget data whenever the prediction moves', () => {
+    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
+    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase\)/);
+    // The phase cannot be read from the later bcMode const: hooks must sit above
+    // the early returns.
+    expect(app).toMatch(/const suppressed = me\.prediction\.confidence/);
+  });
+
+  it('the CI copy step declares one resizable widget, not two providers', () => {
+    const script = readFileSync(ROOT + '.github/scripts/android-widget.mjs', 'utf8');
+    // One receiver, resized 2x2 -> 4x2, so no second provider class.
+    expect(script).toMatch(/CycleWidgetProvider/);
+    expect(script).not.toMatch(/CycleWidgetProviderWide/);
+    // It must patch the existing manifest, not overwrite it.
+    expect(script).toMatch(/lastIndexOf\('<\/application>'\)/);
+    expect(script).not.toMatch(/cpSync\([^)]*AndroidManifest\.xml[^)]*src\/main\/AndroidManifest/);
+  });
+});

@@ -16,6 +16,8 @@ import Loading from './Loading';
 import ExitConfirm from './ExitConfirm';
 import { applyTheme, loadTheme } from './theme';
 import { loadPrefs, syncReminders } from './notify';
+import { syncWidget } from './widget';
+import { cycleStatus } from '../lib/cycle';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
 import { periodForDate } from '../lib/cycle';
@@ -64,6 +66,20 @@ export default function App() {
     const p = loadPrefs();
     if (p.periodEnabled) void syncReminders(p, me?.prediction.next ?? null);
   }, [me?.prediction.next]);
+
+  // Push the current phase and next period to the home-screen widget. Bundled
+  // with the reminder sync because both depend on the same two values, and the
+  // widget must refresh whenever the prediction moves.
+  // The phase is computed here rather than read from `bcMode` below: this hook
+  // must sit above the early returns, so it cannot depend on a later const.
+  useEffect(() => {
+    if (!me) return;
+    const suppressed = me.prediction.confidence === 'suppressed' || me.prediction.flags.includes('bc-suppressed');
+    const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
+    const ranges = me.periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
+    const st = cycleStatus(me.today ?? localDate(), starts, ranges, me.prediction, suppressed, me.profile?.period_len ?? 5);
+    syncWidget(me.prediction.next, st.phase);
+  }, [me?.prediction.next, me?.prediction.ov, me?.prediction.confidence, me?.periods, me?.today]);
 
   const load = useCallback(async () => {
     try {
