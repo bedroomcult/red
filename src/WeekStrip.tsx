@@ -1,8 +1,13 @@
 import { t } from './i18n';
 
-// Week strip, per DESIGN.md section 4.1 zone 2. Seven equal cells: weekday
-// initial above a date number in a circle. Today is a filled circle; logged
-// period days carry a coloured dot. Tapping a day selects it.
+// Week strip, per DESIGN.md section 4.1 zone 2. Seven cells: weekday initial
+// above a date number in a circle.
+//
+// The day marks reuse the SAME classes as the calendar (Calendar.tsx), so a day
+// reads identically in both places: logged fill, dashed predicted period, light
+// fertile fill, solid peak fill. Today is only the ring, never a red fill — a
+// filled circle means "logged period" everywhere else, so filling today would
+// claim a log that does not exist.
 const DOW = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
 
 const iso = (d: Date) => d.toISOString().slice(0, 10);
@@ -15,11 +20,12 @@ function weekOf(anchor: string): string[] {
   return Array.from({ length: 7 }, (_, i) => iso(new Date(start + i * 864e5)));
 }
 
-export default function WeekStrip({ selected, today, periodDays, onPick }: {
+export default function WeekStrip({ selected, today, dayClass, onPick }: {
   selected: string;
   today: string;
-  // Dates inside a logged period, so the dot only marks real logs.
-  periodDays: Set<string>;
+  // Maps a date to the same state class the calendar uses (logged, pred-period,
+  // pred-fertile, pred-ovulation, or ''). One source of truth for day state.
+  dayClass: (d: string) => string;
   onPick: (d: string) => void;
 }) {
   const days = weekOf(selected);
@@ -28,7 +34,7 @@ export default function WeekStrip({ selected, today, periodDays, onPick }: {
       {days.map((d, i) => {
         const isToday = d === today;
         const isSel = d === selected;
-        const inPeriod = periodDays.has(d);
+        const cls = dayClass(d);
         return (
           <button
             key={d}
@@ -38,8 +44,7 @@ export default function WeekStrip({ selected, today, periodDays, onPick }: {
             aria-pressed={isSel}
           >
             <span className="week-dow" aria-hidden="true">{DOW[i]}</span>
-            <span className={`week-num ${isToday ? 'today' : ''}`}>{Number(d.slice(8))}</span>
-            {inPeriod && <span className="week-dot" aria-hidden="true" />}
+            <span className={`week-num ${cls} ${isToday ? 'today' : ''}`}>{Number(d.slice(8))}</span>
           </button>
         );
       })}

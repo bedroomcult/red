@@ -7,8 +7,6 @@ export type Dose = { date: string; taken: boolean };
 export type SexLog = { date: string; protected: boolean };
 
 // ponytail: string compare works, dates are YYYY-MM-DD UTC.
-const inRange = (d: string, lo: string | null, hi: string | null) =>
-  !!lo && !!hi && d >= lo && d <= hi;
 
 // A calendar month, padded to whole weeks with the neighbouring months' days.
 // Padding with the real dates rather than blanks means the last row is not half
@@ -38,7 +36,6 @@ function monthCells(year: number, mon: number): Cell[] {
 }
 
 const parse = (d: string) => Date.parse(d + 'T00:00:00Z');
-
 function ovSet(ov: string | null): Set<string> {
   if (!ov) return new Set();
   const t = Date.parse(ov + 'T00:00:00Z');
@@ -54,6 +51,7 @@ import { periodDays, predictionStale, dateStale } from '../lib/cycle';
 import { useEffect, useRef } from 'react';
 import { localDate } from '../lib/today';
 import { t } from './i18n';
+import { makeDayState } from './dayState';
 
 export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [], futureStarts = [], periodLen = 5 }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
@@ -67,21 +65,15 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const logged = new Map(periods.map((p) => [p.start_date, p]));
   const doseByDate = new Map(doses.map((d) => [d.date, d]));
   const sexByDate = new Map(sex.map((s) => [s.date, s]));
-  // Expand each period start into its full range (end_date, or start+4 default) so
-  // in-progress periods paint every day, not just day 1.
-  const inPeriod = new Set<string>();
-  for (const p of periods) if (p.type === 'menstruation') for (const d of periodDays(p)) inPeriod.add(d);
 
-  // Stale once a logged period overlaps the window, or the window is entirely
-  // behind the latest logged period. Hide the WHOLE window (see predictionStale).
+  // Day state comes from the shared classifier, so the month grid and the home
+  // week strip can never disagree about what a day is.
+  const dayState = makeDayState({ periods, prediction, futureStarts, periodLen });
+
+  // Fertile window, for the sex-log heart colour.
   const stale = predictionStale(periods, prediction?.lo ?? null, prediction?.hi ?? null);
-  // ovStale: single date, only hides when behind the latest logged period.
   const ovStale = dateStale(periods, prediction?.ov ?? null);
   const ovs = stale || ovStale ? new Set<string>() : ovSet(prediction?.ov ?? null);
-  // Peak day, only when the window itself is still valid.
-  const ovDay = stale || ovStale ? null : prediction?.ov ?? null;
-  const predLo = stale ? null : prediction?.lo ?? null;
-  const predHi = stale ? null : prediction?.hi ?? null;
   const cells = monthCells(year, mon);
   const todayIso = localDate();
 
@@ -94,22 +86,6 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
     : key > prevKey.current ? 'slide-next' : 'slide-prev';
   useEffect(() => { prevKey.current = key; }, [key]);
 
-  // Dates to mark as predicted periods. Prefer the multi-cycle projection: it
-  // covers later months, which the single next window cannot.
-  //
-  // A predicted period is a RANGE, not a day. Marking only the start date left
-  // cycles 2-6 as a single highlighted cell, so a month view looked like the
-  // period was one day long. Every projected start now expands to periodLen
-  // days, matching how a logged period paints.
-  const future = (futureStarts ?? []).filter((d) => d >= todayIso);
-  const predDays = new Set<string>();
-  if (future.length) {
-    for (const start of future) {
-      for (let t = parse(start); t <= parse(start) + (periodLen - 1) * 864e5; t += 864e5) {
-        predDays.add(new Date(t).toISOString().slice(0, 10));
-      }
-    }
-  }
   // Keying the grid on year-month restarts the slide animation on every change,
   // in the direction the user moved.
   return (
@@ -123,12 +99,8 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const p = logged.get(d);
               const dose = doseByDate.get(d);
               const sexLog = sexByDate.get(d);
-              const cls = inPeriod.has(d) ? 'logged'
-                : p ? '' // spotting: plain + dot below
-                : predDays.has(d) ? 'pred-period'
-                : inRange(d, predLo, predHi) ? 'pred-period'
-                : d === ovDay ? 'pred-ovulation'
-                : ovs.has(d) ? 'pred-fertile' : '';
+              const state = dayState(d);
+              const cls = state === 'spotting' ? '' : state;
               // The heart turns green when the date falls in the fertile window,
               // matching the green used for the ovulation circle. That is the
               // signal that this day carried pregnancy risk.
