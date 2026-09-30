@@ -15,6 +15,7 @@ import UpdateBanner from './UpdateBanner';
 import Loading from './Loading';
 import ExitConfirm from './ExitConfirm';
 import { applyTheme, loadTheme } from './theme';
+import { loadPrefs, syncReminders } from './notify';
 import { t } from './i18n';
 import type { Insights } from '../lib/insights';
 import { periodForDate } from '../lib/cycle';
@@ -51,6 +52,18 @@ export default function App() {
 
   // Apply saved theme on first paint.
   useEffect(() => { applyTheme(loadTheme()); }, []);
+
+  // Keep the period reminder on the current prediction. syncReminders was only
+  // ever called from the Settings toggles, so logging a period moved
+  // prediction.next while the scheduled notification stayed on the old date.
+  // One effect on the date covers every path that mutates it (log, delete,
+  // onboarding) instead of threading a call through each handler.
+  // Never requests permission: it only runs when periodEnabled is already on,
+  // which is only reachable after Settings obtained permission.
+  useEffect(() => {
+    const p = loadPrefs();
+    if (p.periodEnabled) void syncReminders(p, me?.prediction.next ?? null);
+  }, [me?.prediction.next]);
 
   const load = useCallback(async () => {
     try {
