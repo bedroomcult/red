@@ -28,14 +28,18 @@ const over = (hex, alpha, base) => {
 const AA = 4.5;
 
 const LIGHT = {
-  bg: '#fff7f9', card: '#ffffff', ink: '#2b1a22', 'ink-2': '#5a3d4a', muted: '#83636f',
-  period: '#d91a52', fertile: '#0a7a57', ovulation: '#086a4b', pms: '#ab4d0c', neutral: '#83636f',
-  'period-ink': '#b81446', 'rose-soft': '#ffe4ec', 'amber-line': '#803806', amber: '#fdecd8',
+  bg: '#fff8f8', card: '#ffffff', ink: '#2b2230', 'ink-2': '#4a3d52', muted: '#7a707f',
+  period: '#f0507a', fertile: '#5bb8e8', ovulation: '#2f8fd0', pms: '#f5a94a', neutral: '#b9a8c9',
+  'period-ink': '#ac3957', 'fertile-ink': '#3d7c9c', 'ovulation-ink': '#287bb3',
+  'pms-ink': '#8e622b', 'neutral-ink': '#7d7187', 'success-ink': '#33835d', 'danger-ink': '#d14246',
+  'rose-soft': '#ffd9e3', amber: '#fdecd8',
 };
 const DARK = {
-  bg: '#191016', card: '#241820', ink: '#fdf3f6', 'ink-2': '#e4cdd7', muted: '#ad919d',
-  period: '#ff6b93', fertile: '#4ed4a0', ovulation: '#40c394', pms: '#ffa266', neutral: '#ad919d',
-  'period-ink': '#ff9ab4', 'rose-soft': '#3d1f2c', 'amber-line': '#f0a06e', amber: '#3a2517',
+  bg: '#16121a', card: '#221c28', ink: '#f6eef4', 'ink-2': '#ded2e0', muted: '#a99fb0',
+  period: '#ff6b93', fertile: '#6cc4ee', ovulation: '#4a9fdd', pms: '#f5b366', neutral: '#c4b4d4',
+  'period-ink': '#ff9ab4', 'fertile-ink': '#8ed4f5', 'ovulation-ink': '#7cc0ec',
+  'pms-ink': '#f5c68f', 'neutral-ink': '#c4b4d4', 'success-ink': '#6fd6a4', 'danger-ink': '#ff8a8e',
+  'rose-soft': '#4a2a38', amber: '#3a2c1c',
 };
 
 function report(name, t) {
@@ -51,9 +55,11 @@ function report(name, t) {
     check(`${k} on bg`, t[k], t.bg);
     check(`${k} on card`, t[k], t.card);
   }
-  for (const k of ['period', 'fertile', 'ovulation', 'pms', 'neutral']) check(`${k} on card`, t[k], t.card);
+  for (const k of ['period', 'fertile', 'ovulation', 'pms', 'neutral']) check(`${k}-ink on card`, t[k + '-ink'], t.card);
   check('period-ink on rose-soft', t['period-ink'], t['rose-soft']);
-  check('amber-line on amber', t['amber-line'], t.amber);
+  check('pms-ink on amber', t['pms-ink'], t.amber);
+  check('success-ink on card', t['success-ink'], t.card);
+  check('danger-ink on card', t['danger-ink'], t.card);
   return fails;
 }
 

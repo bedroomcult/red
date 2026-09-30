@@ -29,14 +29,19 @@ describe('ovulation peak marker', () => {
     expect(peak).toBeLessThan(window);
   });
 
-  it('styles the peak as a dashed green ring', () => {
-    expect(CSS).toMatch(/\.dnum\.pred-ovulation\s*\{[^}]*border-color:\s*var\(--green\)/);
-    expect(CSS).toMatch(/\.dnum\.pred-ovulation\s*\{[^}]*border-style:\s*dashed/);
+  it('styles the peak as a solid distinct fill', () => {
+    // The new DESIGN.md makes the peak a solid fill in the peak hue, distinct
+    // from the dashed predicted-period outline and the light fertile fill.
+    expect(CSS).toMatch(/\.dnum\.pred-ovulation\s*\{[^}]*background:\s*var\(--ovulation\)/);
+    expect(CSS).toMatch(/\.dnum\.pred-ovulation\s*\{[^}]*color:\s*#fff/);
   });
 
-  it('does not use a fill for the peak (a fill already means logged)', () => {
-    const block = /\.dnum\.pred-ovulation\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
-    expect(block).not.toMatch(/background:/);
+  it('keeps the peak distinct from the logged fill', () => {
+    // A logged day fills with --period; the peak fills with --ovulation, so the
+    // two are still distinguishable. Predicted days stay dashed, not filled.
+    const predBlock = /\.dnum\.pred-period\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
+    expect(predBlock).toMatch(/border-style:\s*dashed/);
+    expect(predBlock).not.toMatch(/background:/);
   });
 
   it('hides the peak when the prediction is stale', () => {
@@ -46,7 +51,7 @@ describe('ovulation peak marker', () => {
   it('has a legend entry and chip for the peak', () => {
     expect(CAL + readFileSync(ROOT + 'src/App.tsx', 'utf8')).toContain('chip ovulation');
     expect(readFileSync(ROOT + 'src/i18n.ts', 'utf8')).toContain('legendOvulation');
-    expect(CSS).toMatch(/\.chip\.ovulation\s*\{[^}]*border-style:\s*dashed/);
+    expect(CSS).toMatch(/\.chip\.ovulation\s*\{[^}]*background:\s*var\(--ovulation\)/);
   });
 });
 
@@ -213,19 +218,19 @@ describe('day sheet, nav and back button', () => {
     }
   });
 
-  it('the nav is a floating pill, not a flush bar', () => {
+  it('the nav is a docked bar with a hairline top border', () => {
+    // The new DESIGN.md docks the bar (spec 2.3) and drops the floating pill.
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     const rule = /\.tabbar\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-    expect(rule).toMatch(/border-radius: var\(--r-full\)/);
-    expect(rule).not.toMatch(/border-top:/);
+    expect(rule).toMatch(/border-top:\s*1px solid var\(--line\)/);
+    expect(rule).toMatch(/bottom:\s*0/);
   });
 
-  it('content clears the floating pill', () => {
+  it('content clears the docked bar', () => {
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     const app = /\.app\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-    // Bottom padding must clear the floating nav pill. The value is a token now,
-    // so assert the token and its scale value rather than a raw literal.
-    expect(app).toMatch(/padding:\s*var\(--s-4\)\s+var\(--s-4\)\s+104px/);
+    // Bottom padding must clear the docked bar plus the safe-area inset.
+    expect(app).toMatch(/padding:\s*var\(--s-5\)\s+var\(--s-5\)\s+calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   });
 
   it('registers an Android back handler', () => {

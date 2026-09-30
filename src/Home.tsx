@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cycleStatus, type Phase } from '../lib/cycle';
+import { cycleStatus, periodDays as periodDaysOf, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
@@ -7,6 +7,7 @@ import { needsEndPrompt } from '../lib/cycle';
 import OngoingPrompt from './OngoingPrompt';
 import ChanceCard from './ChanceCard';
 import CycleRing from './CycleRing';
+import WeekStrip from './WeekStrip';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -24,23 +25,49 @@ const PHASE_DOT: Record<Phase, string> = {
   fertile: 'var(--fertile)',
   ovulation: 'var(--ovulation)',
   pms: 'var(--pms)',
-  neutral: 'var(--muted)',
-  bc: 'var(--muted)',
+  neutral: 'var(--neutral)',
+  bc: 'var(--neutral)',
+};
+
+const PHASE_LABEL: Record<Phase, string> = {
+  period: t.phasePeriod,
+  fertile: t.phaseFertile,
+  ovulation: t.phaseOvulation,
+  pms: t.phasePms,
+  neutral: t.phaseNeutral,
+  bc: t.phaseBc,
 };
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null };
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
 }) {
   const today = me.today ?? localDate();
+  const [sel, setSel] = useState(today);
   const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
   const ranges = me.periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
   const bcMode = me.prediction.confidence === 'suppressed';
   const periodLen = me.profile?.period_len ?? 5;
-  const st = cycleStatus(today, starts, ranges, me.prediction, bcMode, periodLen);
+  // The dial must share its denominator with the prediction, or the arc and the
+  // "in N days" line contradict each other. Prefer the observed average the
+  // prediction is built from, falling back to the configured length.
+  const cycleLen = me.insights?.avgCycle ?? me.profile?.cycle_len ?? 28;
+  const st = cycleStatus(sel, starts, ranges, me.prediction, bcMode, periodLen);
   const [syms, setSyms] = useState<string[]>(me.todaySymptoms ?? []);
+
+  // Dates inside a logged period, for the week-strip dot.
+  const loggedDays = new Set<string>();
+  for (const p of me.periods) if (p.type === 'menstruation') for (const d of periodDaysOf(p)) loggedDays.add(d);
+
+  // Predicted ovulation and next start as cycle-day offsets, for the ring arcs.
+  const anchor = starts.length ? starts[starts.length - 1] : null;
+  const toCycleDay = (d: string | null) => (d && anchor
+    ? Math.round((Date.parse(d + 'T00:00:00Z') - Date.parse(anchor + 'T00:00:00Z')) / 864e5) + 1
+    : null);
+  const ovDay = toCycleDay(me.prediction.ov);
+  const nextStart = toCycleDay(me.prediction.next);
 
   async function toggle(kind: string) {
     const next = syms.includes(kind) ? syms.filter((s) => s !== kind) : [...syms, kind];
@@ -90,21 +117,25 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   return (
     <div className="home-hero-wrap">
+      <WeekStrip selected={sel} today={today} periodDays={loggedDays} onPick={setSel} />
+
       <div className="ring-card">
-        <CycleRing day={st.cycleDay} total={me.profile?.cycle_len ?? 28} phase={st.phase} />
+        <CycleRing
+          day={st.cycleDay}
+          total={cycleLen}
+          phase={st.phase}
+          periodLen={periodLen}
+          ovDay={ovDay}
+          nextStart={nextStart}
+        />
         <div className="ring-copy">
           <h1 className="ring-title">{title}</h1>
           {subtitle && <div className="ring-sub">{subtitle}</div>}
-          {/* Phase restated as text + dot, so the ring colour is never the only
+          {/* Phase restated as text + dot, so the dial colour is never the only
               carrier of meaning. */}
           <div className="ring-phase">
             <span className="ring-dot" style={{ background: PHASE_DOT[st.phase] }} aria-hidden="true" />
-            {st.phase === 'bc' ? t.phaseBc
-              : st.phase === 'period' ? t.phasePeriod
-              : st.phase === 'fertile' ? t.phaseFertile
-              : st.phase === 'ovulation' ? t.phaseOvulation
-              : st.phase === 'pms' ? t.phasePms
-              : t.phaseNeutral}
+            {PHASE_LABEL[st.phase]}
           </div>
         </div>
       </div>
