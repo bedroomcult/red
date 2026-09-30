@@ -24,14 +24,18 @@ function token(name: string, fallback: string): string {
   } catch { return fallback; }
 }
 
-// Native status bar follows the app surface: the page background plus icons in
-// the opposite tone.
+// Native status bar follows the app theme.
+//
+// On Android 15 the bar is transparent and setStatusBarColor is a no-op, so the
+// bar colour comes from the app background drawn under it (overlaysWebView) and
+// only the icon style can be set here. Setting a background colour anyway is
+// harmless on older versions, where it still works.
 //
 // Capacitor's Style enum names the BACKGROUND, not the icon: Style.Dark means
 // "light text for dark backgrounds", Style.Light means "dark text for light
 // backgrounds". So a light app takes Style.Light (dark icons) and a dark app
 // takes Style.Dark (light icons). Getting this backwards is what left white
-// icons on a near-white bar.
+// icons on a white bar.
 //
 // Fire-and-forget: a slow or missing plugin bridge must never block the theme
 // paint.
@@ -39,8 +43,8 @@ function syncStatusBar(dark: boolean) {
   if (!Capacitor.isNativePlatform()) return;
   const bg = token('--bg', dark ? '#16121a' : '#fff8f8');
   import('@capacitor/status-bar').then(({ StatusBar, Style }) => {
-    void StatusBar.setBackgroundColor({ color: bg }).catch(() => {});
     void StatusBar.setStyle({ style: dark ? Style.Dark : Style.Light }).catch(() => {});
+    void StatusBar.setBackgroundColor({ color: bg }).catch(() => {});
   }).catch(() => {});
 }
 

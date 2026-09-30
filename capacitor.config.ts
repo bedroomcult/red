@@ -8,26 +8,25 @@ const config: CapacitorConfig = {
     androidScheme: 'https'
   },
   android: {
-    // Capacitor 7 defaults this to 'disable', which leaves the WebView drawing
-    // under the system status bar on Android 15 (edge-to-edge is forced there).
-    // 'auto' insets the WebView when the platform is edge-to-edge, so content
-    // starts below the status bar. env(safe-area-inset-*) is 0 in the Android
-    // WebView, so the CSS alone could not fix this.
-    // ponytail: 'auto', not 'force' — on pre-Android-15 it stays a no-op.
-    adjustMarginsForEdgeToEdge: 'auto'
+    // Android 15 enforces edge-to-edge: the status bar is transparent and
+    // setStatusBarColor is a no-op. With the WebView inset ('auto'), the strip
+    // behind the bar is the Android theme's default white window background, so
+    // the bar always read white regardless of the app theme.
+    //
+    // 'disable' lets the WebView draw under the bar instead, so the app's own
+    // --bg fills it and the bar colour tracks the theme. The content is padded
+    // by env(safe-area-inset-top) in index.css.
+    adjustMarginsForEdgeToEdge: 'disable'
   },
   plugins: {
     StatusBar: {
-      // Capacitor's style enum names the BACKGROUND, not the icon: 'DARK' means
-      // "light text for dark backgrounds". The app boots light, so the cold-boot
-      // value must be 'LIGHT' (dark icons on the light bar). Getting this
-      // backwards is what left white icons on a near-white bar.
-      // The runtime sync in src/theme.ts corrects this on the first paint, and
-      // tracks every later theme change.
-      style: 'LIGHT',
-      // The WebView is inset by adjustMarginsForEdgeToEdge, so the bar must not
-      // overlay it, or the inset and the overlay cancel out.
-      overlaysWebView: false
+      // Draw under the bar so the app background is the bar background.
+      overlaysWebView: true,
+      // Capacitor's style enum names the BACKGROUND, not the icon: 'LIGHT' means
+      // "dark text for light backgrounds". The app boots light, so the cold-boot
+      // value is 'LIGHT' (dark icons). src/theme.ts corrects this on first paint
+      // and tracks every later theme change.
+      style: 'LIGHT'
     }
   }
 };
