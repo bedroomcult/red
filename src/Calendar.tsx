@@ -36,29 +36,25 @@ function monthCells(year: number, mon: number): Cell[] {
 }
 
 const parse = (d: string) => Date.parse(d + 'T00:00:00Z');
-function ovSet(ov: string | null): Set<string> {
-  if (!ov) return new Set();
-  const t = Date.parse(ov + 'T00:00:00Z');
-  // Fertile window = ovulation -5d .. +1d (spec).
-  return new Set([-5, -4, -3, -2, -1, 0, 1].map((o) => new Date(t + o * 864e5).toISOString().slice(0, 10)));
-}
 
 // The peak is one day inside the window, so it needs to read as the same family
-// (a green ring) but distinct. A dashed ring, not a fill: a fill already means
-// "logged" for periods, and the peak is a prediction.
+// but distinct. Its styling lives in index.css (.dnum.pred-ovulation).
 
-import { periodDays, predictionStale, dateStale } from '../lib/cycle';
+import { periodDays } from '../lib/cycle';
 import { useEffect, useRef } from 'react';
 import { localDate } from '../lib/today';
 import { t } from './i18n';
 import { makeDayState } from './dayState';
 
-export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [], futureStarts = [], periodLen = 5 }: {
+export default function Calendar({ year, mon, periods, prediction, selected, onPick, doses = [], sex = [], futureStarts = [], futureOv = [], periodLen = 5 }: {
   year: number; mon: number; periods: Period[]; prediction: Prediction | null;
   selected: string | null; onPick: (d: string) => void; doses?: Dose[]; sex?: SexLog[];
   // Projected starts for the following cycles. Without these the calendar only
   // ever marks the single next window, so browsing a later month showed nothing.
   futureStarts?: string[];
+  // Projected ovulation per future cycle, so later months show their fertile
+  // window too instead of only the single next one.
+  futureOv?: string[];
   // How many days each projected period should paint.
   periodLen?: number;
 }) {
@@ -67,13 +63,10 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   const sexByDate = new Map(sex.map((s) => [s.date, s]));
 
   // Day state comes from the shared classifier, so the month grid and the home
-  // week strip can never disagree about what a day is.
-  const dayState = makeDayState({ periods, prediction, futureStarts, periodLen });
+  // week strip can never disagree about what a day is. It also returns the
+  // fertile-window set, used to colour the sex-log heart.
+  const { state: dayState, ovs } = makeDayState({ periods, prediction, futureStarts, futureOv, periodLen });
 
-  // Fertile window, for the sex-log heart colour.
-  const stale = predictionStale(periods, prediction?.lo ?? null, prediction?.hi ?? null);
-  const ovStale = dateStale(periods, prediction?.ov ?? null);
-  const ovs = stale || ovStale ? new Set<string>() : ovSet(prediction?.ov ?? null);
   const cells = monthCells(year, mon);
   const todayIso = localDate();
 

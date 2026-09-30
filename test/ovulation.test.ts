@@ -24,9 +24,9 @@ describe('ovulation peak marker', () => {
   });
 
   it('checks the peak before the window, so the window cannot swallow it', () => {
-    // The peak day is also in ovs, so the order of the checks decides which
-    // class wins.
-    const peak = DAYSTATE.indexOf("d === ovDay) return 'pred-ovulation'");
+    // The peak day is also in the fertile set, so the order of the checks
+    // decides which class wins. Peak must be tested first.
+    const peak = DAYSTATE.indexOf("ovDays.has(d)) return 'pred-ovulation'");
     const window = DAYSTATE.indexOf("ovs.has(d)) return 'pred-fertile'");
     expect(peak).toBeGreaterThan(-1);
     expect(window).toBeGreaterThan(-1);
@@ -67,8 +67,10 @@ describe('ovulation peak marker', () => {
     expect(todayRule).not.toMatch(/background:\s*var\(--period\)/);
   });
 
-  it('hides the peak when the prediction is stale', () => {
-    expect(DAYSTATE).toMatch(/const ovDay = stale \|\| ovStale \? null/);
+  it('hides the next-cycle peak when the prediction is stale', () => {
+    // Only the single next prediction can go stale; the projections are derived
+    // from the latest logged period and are always forward-looking.
+    expect(DAYSTATE).toMatch(/if \(!stale && !ovStale && prediction\?\.ov\) ovDates\.add/);
   });
 
   it('has a legend entry and chip for the peak', () => {
@@ -103,7 +105,7 @@ describe('calendar multi-cycle projection', () => {
 // cycles 2-6 as a single highlighted cell, so a month looked like a one-day period.
 describe('predicted period paints the whole period', () => {
   it('expands each projected start by periodLen', () => {
-    expect(DAYSTATE).toMatch(/periodLen - 1\) \* 864e5/);
+    expect(DAYSTATE).toMatch(/periodLen - 1\) \* DAY/);
   });
 
   it('applies the expansion to every projected cycle, not just the first', () => {
@@ -254,8 +256,9 @@ describe('day sheet, nav and back button', () => {
   it('content clears the docked bar', () => {
     const css = readFileSync(ROOT + 'src/index.css', 'utf8');
     const app = /\.app\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
-    // Bottom padding must clear the docked bar plus the safe-area inset.
-    expect(app).toMatch(/padding:\s*var\(--s-5\)\s+var\(--s-5\)\s+calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
+    // Bottom padding must clear the docked bar plus the safe-area inset, and
+    // the top reserves the status-bar inset because the WebView draws under it.
+    expect(app).toMatch(/padding:\s*calc\(var\(--s-5\) \+ env\(safe-area-inset-top\)\)\s+var\(--s-5\)\s+calc\(96px \+ env\(safe-area-inset-bottom\)\)/);
   });
 
   it('registers an Android back handler', () => {

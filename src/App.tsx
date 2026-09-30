@@ -170,7 +170,7 @@ export default function App() {
               <strong>{label}</strong>
               <button className="nav-btn" onClick={() => setYm(v => ({ y: v.m === 11 ? v.y + 1 : v.y, m: (v.m + 1) % 12 }))} aria-label="bulan berikutnya">›</button>
             </div>
-            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} periodLen={me.profile?.period_len ?? 5} />
+            <Calendar year={ym.y} mon={ym.m} periods={me.periods} prediction={me.prediction} selected={sel} onPick={setSel} doses={me.doses ?? []} sex={me.sex ?? []} futureStarts={me.insights?.next6 ?? []} futureOv={me.insights?.next6Ov ?? []} periodLen={me.profile?.period_len ?? 5} />
             <div className="legend">
               <div className="legend-group">
                 <span><i className="chip logged" />{t.legendPeriod}</span>
@@ -254,7 +254,7 @@ export default function App() {
       {me && tab === 'insights' && (
         <InsightsScreen
           today={me.today ?? localDate()}
-          ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, estimated: true, next6: [] }}
+          ins={me.insights ?? { avgCycle: null, avgPeriod: null, variability: null, count: 0, shortest: null, longest: null, estimated: true, next6: [], next6Ov: [] }}
           periods={me.periods}
           prediction={me.prediction}
           bcMode={bcMode}

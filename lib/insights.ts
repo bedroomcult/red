@@ -15,6 +15,11 @@ export type Insights = {
   // cycle 7 the window is wider than a whole cycle and the date stops meaning
   // anything, so the list stops at 6.
   next6: string[];
+  // Projected ovulation for each of those cycles, same length and order as
+  // next6. Without these the calendar and the week strip only ever showed the
+  // single next fertile window, so browsing ahead showed nothing for later
+  // cycles. Derived as start - 14 days (the luteal-phase rule predict() uses).
+  next6Ov: string[];
 };
 
 const DAY = 864e5;
@@ -54,6 +59,7 @@ export function insights(
   // enough data — the same thing predict() does, so next6[0] === prediction.next.
   const last = stats.last;
   const next6: string[] = [];
+  const next6Ov: string[] = [];
   if (last !== null) {
     // Skip cycles that have already elapsed, then project six from the first one
     // still in the future. Anchoring on the last logged period alone meant a user
@@ -63,7 +69,14 @@ export function insights(
     const todayMs = parse(today);
     let ms = last + eff * DAY;
     if (Number.isFinite(todayMs)) while (ms < todayMs) ms += eff * DAY;
-    for (let i = 0; i < 6; i++) next6.push(iso(ms + eff * i * DAY));
+    for (let i = 0; i < 6; i++) {
+      const start = ms + eff * i * DAY;
+      next6.push(iso(start));
+      // Ovulation = projected start - 14 days, the same luteal-phase rule
+      // predict() uses, so a projected fertile window lines up with the
+      // predicted period that closes it.
+      next6Ov.push(iso(start - 14 * DAY));
+    }
   }
 
   return {
@@ -75,6 +88,7 @@ export function insights(
     longest: lens.length ? Math.max(...lens) : null,
     estimated: stats.estimated,
     next6,
+    next6Ov,
   };
 }
 
@@ -90,6 +104,9 @@ if (typeof process !== 'undefined' && process.argv?.[1]?.endsWith('insights.ts')
   console.assert(r.avgPeriod === 5, 'avgPeriod ' + r.avgPeriod);
   console.assert(r.count === 2, 'count');
   console.assert(r.next6.length === 6 && r.next6[0] === '2026-03-26', 'next6 ' + r.next6[0]);
+  // Ovulation projects 14 days before each period start, so it stays aligned
+  // with the window that closes each cycle.
+  console.assert(r.next6Ov.length === 6 && r.next6Ov[0] === '2026-03-12', 'next6Ov ' + r.next6Ov[0]);
   console.assert(insights([]).avgCycle === null, 'empty');
   console.log('insights.ts self-check passed');
 }

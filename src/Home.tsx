@@ -40,7 +40,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[] } | null };
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[]; next6Ov?: string[] } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
@@ -60,10 +60,11 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   // Dates inside a logged period, for the week-strip dot.
   // One classifier shared with the calendar, so both surfaces mark days alike.
-  const dayState = makeDayState({
+  const { state: dayState } = makeDayState({
     periods: me.periods,
     prediction: me.prediction,
     futureStarts: me.insights?.next6 ?? [],
+    futureOv: me.insights?.next6Ov ?? [],
     periodLen,
   });
 
