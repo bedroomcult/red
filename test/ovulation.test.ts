@@ -44,6 +44,25 @@ describe('ovulation peak marker', () => {
     expect(predBlock).not.toMatch(/background:/);
   });
 
+  it('the week strip marks days exactly like the calendar', () => {
+    // One shared classifier feeds both surfaces, so they cannot drift.
+    const calendar = readFileSync(ROOT + 'src/Calendar.tsx', 'utf8');
+    const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
+    const week = readFileSync(ROOT + 'src/WeekStrip.tsx', 'utf8');
+    expect(calendar).toMatch(/makeDayState/);
+    expect(home).toMatch(/makeDayState/);
+    expect(week).toMatch(/dayClass/);
+    // Every state the classifier can return has a week-strip style, mirroring
+    // the .dnum rules.
+    for (const s of ['logged', 'pred-period', 'pred-fertile', 'pred-ovulation']) {
+      expect(CSS, `week ${s}`).toMatch(new RegExp(`\\.week-num\\.${s}\\s*\\{`));
+    }
+    // Today is a ring, never a fill: a filled circle already means "logged".
+    const todayRule = /\.week-num\.today\s*\{([^}]*)\}/.exec(CSS)?.[1] ?? '';
+    expect(todayRule).toMatch(/box-shadow:\s*inset/);
+    expect(todayRule).not.toMatch(/background:\s*var\(--period\)/);
+  });
+
   it('hides the peak when the prediction is stale', () => {
     expect(CAL).toMatch(/const ovDay = stale \|\| ovStale \? null/);
   });

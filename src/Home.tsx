@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { cycleStatus, periodDays as periodDaysOf, type Phase } from '../lib/cycle';
+import { cycleStatus, type Phase } from '../lib/cycle';
 import type { Period, Prediction } from './Calendar';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
@@ -8,6 +8,7 @@ import OngoingPrompt from './OngoingPrompt';
 import ChanceCard from './ChanceCard';
 import CycleRing from './CycleRing';
 import WeekStrip from './WeekStrip';
+import { makeDayState } from './dayState';
 import { apiFetch, readJson } from './api';
 
 const SYMPTOMS = ['cramps', 'bloating', 'headache', 'mood', 'tired', 'breast', 'acne', 'craving'] as const;
@@ -58,8 +59,13 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
   const [syms, setSyms] = useState<string[]>(me.todaySymptoms ?? []);
 
   // Dates inside a logged period, for the week-strip dot.
-  const loggedDays = new Set<string>();
-  for (const p of me.periods) if (p.type === 'menstruation') for (const d of periodDaysOf(p)) loggedDays.add(d);
+  // One classifier shared with the calendar, so both surfaces mark days alike.
+  const dayState = makeDayState({
+    periods: me.periods,
+    prediction: me.prediction,
+    futureStarts: me.insights?.next6 ?? [],
+    periodLen,
+  });
 
   // Predicted ovulation and next start as cycle-day offsets, for the ring arcs.
   const anchor = starts.length ? starts[starts.length - 1] : null;
@@ -117,7 +123,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
 
   return (
     <div className="home-hero-wrap">
-      <WeekStrip selected={sel} today={today} periodDays={loggedDays} onPick={setSel} />
+      <WeekStrip selected={sel} today={today} dayClass={dayState} onPick={setSel} />
 
       <div className="ring-card">
         <CycleRing

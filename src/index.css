@@ -671,8 +671,9 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
   bottom: 0;
 }
 
-/* Week strip (spec 4.1 zone 2): seven equal cells, weekday initial above a
-   date number in a circle. Today is filled; a logged period day carries a dot. */
+/* Week strip (spec 4.1 zone 2). Day marks reuse the calendar's classes, so a
+   day reads identically in both surfaces. Today is only a ring, never a fill:
+   a filled circle means "logged period" everywhere else. */
 .week-strip {
   display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s-1);
   margin-bottom: var(--s-4);
@@ -686,22 +687,25 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 .week-num {
   width: 36px; height: 36px; display: grid; place-items: center;
   border-radius: var(--r-full); font-size: 15px; font-weight: 500;
+  border: 2px solid transparent;
   font-variant-numeric: tabular-nums; color: var(--ink);
-  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+  transition: background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
 }
-.week-cell.sel .week-num { box-shadow: inset 0 0 0 2px var(--period-ink); }
-.week-num.today { background: var(--period); color: #fff; font-weight: 700; }
-.week-dot {
-  position: absolute; bottom: -2px; width: 5px; height: 5px;
-  border-radius: var(--r-full); background: var(--period);
-}
+/* Same states as .dnum in the month grid. */
+.week-num.logged { background: var(--period); color: #fff; border-color: var(--period); font-weight: 700; }
+.week-num.pred-period { border-color: var(--period); border-style: dashed; color: var(--period-ink); }
+.week-num.pred-fertile { background: var(--green-soft); border-color: transparent; }
+.week-num.pred-ovulation { background: var(--ovulation); border-color: var(--ovulation); color: #fff; font-weight: 700; }
+/* Today: ring only, so it never claims a log that does not exist. */
+.week-num.today { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+.week-cell.sel .week-num { outline: 2px solid var(--period-ink); outline-offset: 1px; }
 
 /* Cycle dial (spec 4.1 zone 3, SVG sketch in section 13). */
-.home-hero-wrap { margin: 0 0 var(--s-5); }
+.home-hero-wrap { margin: 0 0 var(--s-4); }
 .ring-card {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
-  padding: var(--s-6) var(--s-5); box-shadow: var(--shadow-1);
-  display: flex; flex-direction: column; align-items: center; gap: var(--s-5);
+  padding: var(--s-5); box-shadow: var(--shadow-1);
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-4);
   animation: rise .28s cubic-bezier(.22,1,.36,1) both;
 }
 .ring-wrap { position: relative; display: grid; place-items: center; }
@@ -724,11 +728,15 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 }
 .ring-sub { margin-top: var(--s-2); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .ring-phase {
-  margin-top: var(--s-3); display: inline-flex; align-items: center; gap: var(--s-2);
+  margin-top: var(--s-2); display: inline-flex; align-items: center; gap: var(--s-2);
   font-size: 13px; font-weight: 500; color: var(--ink-2);
 }
 .ring-dot { width: 10px; height: 10px; border-radius: var(--r-full); }
 .home-lower { padding: 0; }
+/* Cards below the dial sit closer together than the default stack, so the dial
+   block and the log cards read as one column rather than two groups. */
+.home-lower .card { margin-bottom: var(--s-3); }
+.home-lower .card:last-of-type { margin-bottom: 0; }
 
 /* Stat rows: label left, figure right. Used by Profil and the insights
    summary. Tabular figures so values do not jitter. */
