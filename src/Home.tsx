@@ -153,7 +153,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
             not noise, and hiding the chips loses exactly those days. */}
         <div className="card">
           <h2>{t.homeSymptomsToday}</h2>
-          <div className="muted" style={{ marginTop: 'calc(-1 * var(--s-3))', marginBottom: 'var(--s-3)' }}>{t.homeSymptomHint}</div>
+          <div className="muted card-hint">{t.homeSymptomHint}</div>
           <div className="chips">
             {SYMPTOMS.map((k) => {
               const on = syms.includes(k);

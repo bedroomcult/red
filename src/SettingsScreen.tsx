@@ -104,19 +104,17 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
 
       <div className="card">
         <h2>{t.setTitle}</h2>
-        <div className="rows">
-          <div className="field" style={{ display: 'block' }}>
-            <label htmlFor="set-name">{t.setName}</label>
-            <input id="set-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.setName} />
-          </div>
-          <div className="field" style={{ display: 'block' }}>
-            <label htmlFor="set-cycle">{t.setCycle}</label>
-            <input id="set-cycle" type="number" min={15} max={60} value={cycle} onChange={(e) => setCycle(Number(e.target.value))} />
-          </div>
-          <div className="field" style={{ display: 'block' }}>
-            <label htmlFor="set-period">{t.setPeriod}</label>
-            <input id="set-period" type="number" min={1} max={15} value={period} onChange={(e) => setPeriod(Number(e.target.value))} />
-          </div>
+        <div className="field" style={{ display: 'block' }}>
+          <label htmlFor="set-name">{t.setName}</label>
+          <input id="set-name" value={name} maxLength={40} onChange={(e) => setName(e.target.value)} placeholder={t.setName} />
+        </div>
+        <div className="field" style={{ display: 'block' }}>
+          <label htmlFor="set-cycle">{t.setCycle}</label>
+          <input id="set-cycle" type="number" min={15} max={60} value={cycle} onChange={(e) => setCycle(Number(e.target.value))} />
+        </div>
+        <div className="field" style={{ display: 'block' }}>
+          <label htmlFor="set-period">{t.setPeriod}</label>
+          <input id="set-period" type="number" min={1} max={15} value={period} onChange={(e) => setPeriod(Number(e.target.value))} />
         </div>
         {msg && <div className="muted" style={{ marginTop: 'var(--s-3)' }}>{msg}</div>}
         <div className="row">
@@ -135,25 +133,23 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
 
       <div className="card">
         <h2>{t.setReminders}</h2>
-        <div className="rows">
-          <label className="check">
-            <input type="checkbox" checked={prefs.pillEnabled}
-              onChange={(e) => applyReminders({ ...prefs, pillEnabled: e.target.checked })} />
-            {t.remPill}
-          </label>
-          {prefs.pillEnabled && (
-            <div className="field" style={{ display: 'block', marginTop: 0 }}>
-              <label htmlFor="set-pilltime">{t.remPillTime}</label>
-              <input id="set-pilltime" type="time" value={prefs.pillTime}
-                onChange={(e) => applyReminders({ ...prefs, pillTime: e.target.value })} />
-            </div>
-          )}
-          <label className="check">
-            <input type="checkbox" checked={prefs.periodEnabled}
-              onChange={(e) => applyReminders({ ...prefs, periodEnabled: e.target.checked })} />
-            {t.remPeriod}
-          </label>
-        </div>
+        <label className="check">
+          <input type="checkbox" checked={prefs.pillEnabled}
+            onChange={(e) => applyReminders({ ...prefs, pillEnabled: e.target.checked })} />
+          {t.remPill}
+        </label>
+        {prefs.pillEnabled && (
+          <div className="field" style={{ display: 'block' }}>
+            <label htmlFor="set-pilltime">{t.remPillTime}</label>
+            <input id="set-pilltime" type="time" value={prefs.pillTime}
+              onChange={(e) => applyReminders({ ...prefs, pillTime: e.target.value })} />
+          </div>
+        )}
+        <label className="check">
+          <input type="checkbox" checked={prefs.periodEnabled}
+            onChange={(e) => applyReminders({ ...prefs, periodEnabled: e.target.checked })} />
+          {t.remPeriod}
+        </label>
         {nativeOnly && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{t.remNativeOnly}</div>}
         {remMsg && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{remMsg}</div>}
         <div className="row">
@@ -177,7 +173,7 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
             <button className="btn danger" onClick={() => setConfirmDelete(true)}>{t.setDelete}</button>
           </div>
         ) : (
-          <div className="rows" style={{ marginTop: 'var(--s-3)' }}>
+          <div style={{ marginTop: 'var(--s-3)' }}>
             <div className="field" style={{ display: 'block' }}>
               <label htmlFor="set-del-email">{t.setDeleteConfirmLabel}</label>
               <input id="set-del-email" type="email" value={deleteEmail}

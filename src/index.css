@@ -37,6 +37,10 @@
   --rose-soft: #ffd9e3;
   --green: var(--success-ink);
   --green-soft: #e4f5ec;
+  /* Soft fill that matches the fertile HUE. --green-soft is a green tint and
+     --fertile is blue, so using the green tint for fertile days made the fill
+     contradict the phase colour shown on the dial, the badge and the legend. */
+  --fertile-soft: #e4f1fa;
   --amber: #fdecd8;
   --amber-line: var(--pms-ink);
   --danger-bg: #ffd9e3;
@@ -102,6 +106,7 @@
 
   --rose-soft: #4a2a38;
   --green-soft: #16352a;
+  --fertile-soft: #16303f;
   --amber: #3a2c1c;
   --amber-line: #f5c68f;
   --danger-bg: #4a2a38;
@@ -127,7 +132,7 @@
     --period: #ff6b93; --fertile: #6cc4ee; --ovulation: #4a9fdd; --pms: #f5b366; --neutral: #c4b4d4;
     --period-ink: #ff9ab4; --fertile-ink: #8ed4f5; --ovulation-ink: #7cc0ec; --pms-ink: #f5c68f; --neutral-ink: #c4b4d4;
     --success: #4cc38a; --success-ink: #6fd6a4; --danger: #e5484d; --danger-ink: #ff8a8e;
-    --rose-soft: #4a2a38; --green-soft: #16352a; --amber: #3a2c1c; --amber-line: #f5c68f;
+    --rose-soft: #4a2a38; --green-soft: #16352a; --fertile-soft: #16303f; --amber: #3a2c1c; --amber-line: #f5c68f;
     --danger-bg: #4a2a38; --grey-bg: #2c2433; --indigo: #a0a0f0; --indigo-soft: #26264a; --heart: #f07ab0;
     --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
     --shadow-1: 0 4px 20px rgba(0, 0, 0, 0.3);
@@ -235,7 +240,7 @@ body {
 /* Predicted period: dashed outline in the period hue, never a solid fill. */
 .dnum.pred-period { border-color: var(--period); border-style: dashed; color: var(--period-ink); }
 /* Fertile window: a light fill in the fertile hue, not a ring. */
-.dnum.pred-fertile { background: var(--green-soft); border-color: transparent; color: var(--ink); }
+.dnum.pred-fertile { background: var(--fertile-soft); border-color: transparent; color: var(--ink); }
 /* Ovulation peak: solid fill, so it reads as one day inside the window. */
 .dnum.pred-ovulation { background: var(--ovulation); border-color: var(--ovulation); color: #fff; font-weight: 700; }
 /* Logged period: solid fill, white number. */
@@ -279,7 +284,7 @@ body {
 .legend span { display: flex; align-items: center; gap: var(--s-2); }
 .chip { width: 12px; height: 12px; border-radius: var(--r-full); border: 2px solid transparent; }
 .chip.period { border-color: var(--period); border-style: dashed; }
-.chip.fertile { background: var(--green-soft); }
+.chip.fertile { background: var(--fertile-soft); }
 .chip.ovulation { background: var(--ovulation); }
 .chip.logged { background: var(--period); }
 .chip.spot { background: var(--muted); width: 6px; height: 6px; }
@@ -694,19 +699,26 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 /* Same states as .dnum in the month grid. */
 .week-num.logged { background: var(--period); color: #fff; border-color: var(--period); font-weight: 700; }
 .week-num.pred-period { border-color: var(--period); border-style: dashed; color: var(--period-ink); }
-.week-num.pred-fertile { background: var(--green-soft); border-color: transparent; }
+/* Fertile: a tinted fill plus a solid ring in the fertile hue, so it reads at a
+   glance in a 36px cell the way the calendar's larger cell does. */
+.week-num.pred-fertile { background: var(--fertile-soft); border-color: var(--fertile); color: var(--ink); }
 .week-num.pred-ovulation { background: var(--ovulation); border-color: var(--ovulation); color: #fff; font-weight: 700; }
 /* Today: ring only, so it never claims a log that does not exist. */
 .week-num.today { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
 .week-cell.sel .week-num { outline: 2px solid var(--period-ink); outline-offset: 1px; }
 
+/* Hint text under a card title. The title carries its own bottom margin, so the
+   hint pulls up to it and then spaces down to the content below. */
+.card-hint { margin-top: calc(-1 * var(--s-3)); margin-bottom: var(--s-3); }
+
 /* Cycle dial (spec 4.1 zone 3, SVG sketch in section 13). */
-.home-hero-wrap { margin: 0 0 var(--s-4); }
+.home-hero-wrap { margin: 0 0 var(--s-3); }
 .ring-card {
   background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
   padding: var(--s-5); box-shadow: var(--shadow-1);
   display: flex; flex-direction: column; align-items: center; gap: var(--s-4);
   animation: rise .28s cubic-bezier(.22,1,.36,1) both;
+  margin-bottom: var(--s-3);
 }
 .ring-wrap { position: relative; display: grid; place-items: center; }
 .ring-svg { transform: rotate(0deg); }
@@ -733,10 +745,12 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 }
 .ring-dot { width: 10px; height: 10px; border-radius: var(--r-full); }
 .home-lower { padding: 0; }
-/* Cards below the dial sit closer together than the default stack, so the dial
-   block and the log cards read as one column rather than two groups. */
+/* One consistent gap between every stacked block on Beranda: the dial, the
+   chance card, the symptom card and the action row. Previously the dial had a
+   larger gap than the rest, which read as a mistake. */
 .home-lower .card { margin-bottom: var(--s-3); }
-.home-lower .card:last-of-type { margin-bottom: 0; }
+.home-lower .card:last-of-type { margin-bottom: var(--s-3); }
+.home-lower .row { margin-top: 0; }
 
 /* Stat rows: label left, figure right. Used by Profil and the insights
    summary. Tabular figures so values do not jitter. */
