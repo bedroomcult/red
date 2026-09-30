@@ -56,18 +56,19 @@ describe('light mode tokens meet WCAG AA', () => {
     expect(contrast(token('muted', lightBlock), card)).toBeGreaterThanOrEqual(AA);
   });
 
-  it('every phase colour as text on the card', () => {
+  it('every phase text colour passes on the card', () => {
+    // The phase hexes are FILL colours: the raw values are far too light for
+    // text (fertile #5bb8e8 is 2.2:1). Text uses the -ink variants.
     for (const p of ['period', 'fertile', 'ovulation', 'pms', 'neutral']) {
-      const ratio = contrast(token(p, lightBlock), card);
-      expect(ratio, `${p} on card`).toBeGreaterThanOrEqual(AA);
+      const ratio = contrast(token(`${p}-ink`, lightBlock), card);
+      expect(ratio, `${p}-ink on card`).toBeGreaterThanOrEqual(AA);
     }
   });
 
-  it('amber-line on amber, and period-ink on rose-soft', () => {
-    // Both are the text-on-tint pairs. --amber and --rose-soft are opaque now,
-    // so no compositing step is needed.
-    expect(contrast(token('amber-line', lightBlock), token('amber', lightBlock))).toBeGreaterThanOrEqual(AA);
+  it('period-ink on rose-soft and pms-ink on amber', () => {
+    // Both are text-on-tint pairs. The tints are opaque, so no compositing.
     expect(contrast(token('period-ink', lightBlock), token('rose-soft', lightBlock))).toBeGreaterThanOrEqual(AA);
+    expect(contrast(token('pms-ink', lightBlock), token('amber', lightBlock))).toBeGreaterThanOrEqual(AA);
   });
 });
 
@@ -82,10 +83,10 @@ describe('dark mode tokens meet WCAG AA', () => {
     }
   });
 
-  it('every phase colour as text on the dark card', () => {
+  it('every phase text colour passes on the dark card', () => {
     for (const p of ['period', 'fertile', 'ovulation', 'pms', 'neutral']) {
-      const ratio = contrast(token(p, darkBlock), card);
-      expect(ratio, `${p} on dark card`).toBeGreaterThanOrEqual(AA);
+      const ratio = contrast(token(`${p}-ink`, darkBlock), card);
+      expect(ratio, `${p}-ink on dark card`).toBeGreaterThanOrEqual(AA);
     }
   });
 });
@@ -122,18 +123,25 @@ describe('DESIGN.md rules are reflected in the stylesheet', () => {
     expect(rule).not.toMatch(/width:\s*38px/);
   });
 
-  it('the home ring states its value as text, not colour alone', () => {
+  it('the dial states its value as text, not colour alone', () => {
     const ring = readFileSync(ROOT + 'src/CycleRing.tsx', 'utf8');
-    // The ring is the direction's signature element, so its accessibility
-    // contract is pinned: an SVG progress arc plus a visible text figure, and
-    // an aria-label that carries the value for screen readers.
+    // The dial is the direction's signature element, so its contract is pinned:
+    // per-phase SVG arcs, a visible text figure, and an aria-label carrying the
+    // value for screen readers (spec checklist: every colour-coded state needs
+    // a non-colour cue).
     expect(ring).toMatch(/strokeDasharray/);
     expect(ring).toMatch(/strokeLinecap="round"/);
     expect(ring).toMatch(/aria-label=/);
     expect(ring).toMatch(/className="ring-figure"/);
-    // Home must also restate the phase as text beside the ring.
+    // Predicted arcs are dimmed, so a forecast never reads as a logged fact.
+    expect(ring).toMatch(/opacity=\{a\.dashed \?/);
+    // Home restates the phase as text beside the dial.
     const home = readFileSync(ROOT + 'src/Home.tsx', 'utf8');
     expect(home).toMatch(/className="ring-phase"/);
+    // The dial and the prediction must share one denominator, or the arc and
+    // the "in N days" line contradict each other on screen.
+    expect(home).toMatch(/const cycleLen = me\.insights\?\.avgCycle/);
+    expect(home).toMatch(/total=\{cycleLen\}/);
   });
 });
 

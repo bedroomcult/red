@@ -1,101 +1,119 @@
 :root {
-  /* Direction: DESIGN.md. Flo-inspired: soft pink ground, white rounded cards,
-     rose accent. Contrast verified by scripts/palette.mjs and re-checked by
-     test/design-tokens.test.ts in both themes. */
-  --bg: #fff7f9;
+  /* Direction: DESIGN.md (Flo-style soft health tracker). Soft pink ground,
+     white surfaces, rose primary. Fills keep the spec's soft hues; TEXT uses
+     AA-safe variants (--*-ink) because the spec's raw hexes fail its own 4.5:1
+     rule: primary 3.42, muted 3.63, fertile 2.22, neutral 2.21 on white.
+     Verified by scripts/palette.mjs and test/design-tokens.test.ts. */
+  --bg: #fff8f8;
   --card: #ffffff;
-  --ink: #2b1a22;
-  --ink-2: #5a3d4a;
-  --muted: #83636f;
-  --line: #f7e3ea;
-  --line-strong: rgba(43, 26, 34, 0.3);
-  --tint: rgba(217, 26, 82, 0.05);
+  --surface-alt: #fdeef0;
+  --ink: #2b2230;
+  --ink-2: #4a3d52;
+  --muted: #7a707f;
+  --line: #f1dde1;
+  --line-strong: rgba(43, 34, 48, 0.3);
+  --tint: rgba(240, 80, 122, 0.06);
 
-  /* Phase colours are data, not decoration: they label the cycle phase and
-     repeat on the ring, the calendar, the day sheet and the badge. */
-  --period: #d91a52;
-  --fertile: #0a7a57;
-  --ovulation: #086a4b;
-  --pms: #ab4d0c;
-  --neutral: #83636f;
+  /* Phase colours are data: one hue per phase, identical on the dial, the
+     calendar, the week strip and the legend. */
+  --period: #f0507a;
+  --fertile: #5bb8e8;
+  --ovulation: #2f8fd0;
+  --pms: #f5a94a;
+  --neutral: #b9a8c9;
 
-  /* Rose text on a soft rose tint needs a darker ink than the fill colour:
-     the tint raises the background luminance, so --period alone drops below
-     AA. --period-ink restores it. */
-  --period-ink: #b81446;
+  /* AA-safe text variants of the phase hues (the raw values are fill-only). */
+  --period-ink: #ac3957;
+  --fertile-ink: #3d7c9c;
+  --ovulation-ink: #287bb3;
+  --pms-ink: #8e622b;
+  --neutral-ink: #7d7187;
+  --success: #4cc38a;
+  --success-ink: #33835d;
+  --danger: #e5484d;
+  --danger-ink: #d14246;
+
   --rose: var(--period);
-  --rose-soft: #ffe4ec;
-  --green: var(--fertile);
-  --green-soft: #e0f5ed;
+  --rose-soft: #ffd9e3;
+  --green: var(--success-ink);
+  --green-soft: #e4f5ec;
   --amber: #fdecd8;
-  --amber-line: #803806;
-  --danger-bg: #ffe4ec;
-  --grey-bg: #faf0f3;
+  --amber-line: var(--pms-ink);
+  --danger-bg: #ffd9e3;
+  --grey-bg: #fdeef0;
   --indigo: #4a4ab8;
   --indigo-soft: #e8e8fa;
   --heart: #b02f6f;
 
-  /* Radius scale. Flo's feel comes mostly from the radius and the tinted
-     fills, so this scale is generous. */
-  --r-sm: 10px;
-  --r: 14px;
-  --r-md: 18px;
+  /* Radius. Roundness everywhere: pills for controls, 24 for cards,
+     28 for sheet tops. */
+  --r-sm: 12px;
+  --r: 16px;
+  --r-md: 20px;
   --r-lg: 24px;
-  --r-xl: 32px;
+  --r-xl: 28px;
   --r-full: 9999px;
   --radius: var(--r-md);
 
-  /* Space scale. An 8px base, comfortable spacing. */
+  /* Spacing scale (spec section 7): 4,8,12,16,20,24,32,48. */
   --s-1: 4px;
   --s-2: 8px;
   --s-3: 12px;
   --s-4: 16px;
-  --s-5: 24px;
-  --s-6: 32px;
-  --s-7: 48px;
+  --s-5: 20px;
+  --s-6: 24px;
+  --s-7: 32px;
+  --s-8: 48px;
 
-  /* Soft, low, rose-tinted shadows. Flo cards float lightly rather than sit in
-     a frame. */
+  /* Elevation: nearly flat. Tint and hairlines carry the structure. */
   --shadow-inset: rgba(255, 255, 255, 0.6) 0 0.5px 0 0 inset, rgba(140, 30, 70, 0.06) 0 0 0 0.5px inset;
-  --shadow-1: 0 2px 8px rgba(140, 30, 70, 0.05);
-  --shadow-2: 0 8px 24px rgba(140, 30, 70, 0.09);
-  --shadow-sheet: 0 -10px 40px rgba(140, 30, 70, 0.16);
+  --shadow-1: 0 4px 20px rgba(240, 80, 122, 0.08);
+  --shadow-2: 0 8px 24px rgba(240, 80, 122, 0.10);
+  --shadow-sheet: 0 -8px 32px rgba(43, 34, 48, 0.12);
   color-scheme: light;
 }
 
-/* Dark mode: warm plum near-black rather than neutral, so the character
-   survives the flip. */
 [data-theme="dark"] {
-  --bg: #191016;
-  --card: #241820;
-  --ink: #fdf3f6;
-  --ink-2: #e4cdd7;
-  --muted: #ad919d;
-  --line: #3a2531;
-  --line-strong: rgba(253, 243, 246, 0.3);
+  --bg: #16121a;
+  --card: #221c28;
+  --surface-alt: #2c2433;
+  --ink: #f6eef4;
+  --ink-2: #ded2e0;
+  --muted: #a99fb0;
+  --line: #3a3042;
+  --line-strong: rgba(246, 238, 244, 0.3);
   --tint: rgba(255, 107, 147, 0.08);
 
   --period: #ff6b93;
-  --fertile: #4ed4a0;
-  --ovulation: #40c394;
-  --pms: #ffa266;
-  --neutral: #ad919d;
+  --fertile: #6cc4ee;
+  --ovulation: #4a9fdd;
+  --pms: #f5b366;
+  --neutral: #c4b4d4;
 
   --period-ink: #ff9ab4;
-  --rose-soft: #3d1f2c;
+  --fertile-ink: #8ed4f5;
+  --ovulation-ink: #7cc0ec;
+  --pms-ink: #f5c68f;
+  --neutral-ink: #c4b4d4;
+  --success: #4cc38a;
+  --success-ink: #6fd6a4;
+  --danger: #e5484d;
+  --danger-ink: #ff8a8e;
+
+  --rose-soft: #4a2a38;
   --green-soft: #16352a;
-  --amber: #3a2517;
-  --amber-line: #f0a06e;
-  --danger-bg: #3d1f2c;
-  --grey-bg: #2b1c24;
+  --amber: #3a2c1c;
+  --amber-line: #f5c68f;
+  --danger-bg: #4a2a38;
+  --grey-bg: #2c2433;
   --indigo: #a0a0f0;
   --indigo-soft: #26264a;
   --heart: #f07ab0;
 
   --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-  --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+  --shadow-1: 0 4px 20px rgba(0, 0, 0, 0.3);
   --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
-  --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
+  --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.5);
   color-scheme: dark;
 }
 
@@ -103,16 +121,18 @@
    alias a whole custom-property set. Keep the two in step. */
 @media (prefers-color-scheme: dark) {
   html[data-theme="system"] {
-    --bg: #191016; --card: #241820; --ink: #fdf3f6; --ink-2: #e4cdd7; --muted: #ad919d;
-    --line: #3a2531; --line-strong: rgba(253, 243, 246, 0.3); --tint: rgba(255, 107, 147, 0.08);
-    --period: #ff6b93; --fertile: #4ed4a0; --ovulation: #40c394; --pms: #ffa266; --neutral: #ad919d;
-    --period-ink: #ff9ab4; --rose-soft: #3d1f2c; --green-soft: #16352a;
-    --amber: #3a2517; --amber-line: #f0a06e; --danger-bg: #3d1f2c; --grey-bg: #2b1c24;
-    --indigo: #a0a0f0; --indigo-soft: #26264a; --heart: #f07ab0;
+    --bg: #16121a; --card: #221c28; --surface-alt: #2c2433;
+    --ink: #f6eef4; --ink-2: #ded2e0; --muted: #a99fb0; --line: #3a3042;
+    --line-strong: rgba(246, 238, 244, 0.3); --tint: rgba(255, 107, 147, 0.08);
+    --period: #ff6b93; --fertile: #6cc4ee; --ovulation: #4a9fdd; --pms: #f5b366; --neutral: #c4b4d4;
+    --period-ink: #ff9ab4; --fertile-ink: #8ed4f5; --ovulation-ink: #7cc0ec; --pms-ink: #f5c68f; --neutral-ink: #c4b4d4;
+    --success: #4cc38a; --success-ink: #6fd6a4; --danger: #e5484d; --danger-ink: #ff8a8e;
+    --rose-soft: #4a2a38; --green-soft: #16352a; --amber: #3a2c1c; --amber-line: #f5c68f;
+    --danger-bg: #4a2a38; --grey-bg: #2c2433; --indigo: #a0a0f0; --indigo-soft: #26264a; --heart: #f07ab0;
     --shadow-inset: rgba(255, 255, 255, 0.08) 0 0.5px 0 0 inset, rgba(0, 0, 0, 0.4) 0 0 0 0.5px inset;
-    --shadow-1: 0 2px 8px rgba(0, 0, 0, 0.3);
+    --shadow-1: 0 4px 20px rgba(0, 0, 0, 0.3);
     --shadow-2: 0 8px 24px rgba(0, 0, 0, 0.45);
-    --shadow-sheet: 0 -10px 40px rgba(0, 0, 0, 0.55);
+    --shadow-sheet: 0 -8px 32px rgba(0, 0, 0, 0.5);
     color-scheme: dark;
   }
 }
@@ -131,7 +151,7 @@ body {
   line-height: 1.6;
   padding-bottom: env(safe-area-inset-bottom);
 }
-.app { max-width: 480px; margin: 0 auto; padding: var(--s-4) var(--s-4) 104px; }
+.app { max-width: 480px; margin: 0 auto; padding: var(--s-5) var(--s-5) calc(96px + env(safe-area-inset-bottom)); }
 .hidden { display: none !important; }
 .muted { color: var(--muted); font-size: 13px; line-height: 1.5; }
 .err { color: var(--period-ink); font-size: 13px; margin: 8px 0; }
@@ -155,19 +175,23 @@ body {
 .card:nth-child(5) { animation-delay: .16s; }
 .card h2 { font-size: 18px; margin: 0 0 var(--s-4); font-weight: 600; letter-spacing: -0.01em; }
 
-/* Rows inside a card: label left, value right, hairline between. Used by
-   Pengaturan, Riwayat and the Wawasan lists. Flo groups with cards and divides
-   with hairlines inside them. */
+/* List rows (spec 8): 56 tall, leading icon in a tinted circle, chevron at the
+   right. Used by Profil and Pengaturan. */
 .rows > * {
   display: flex; align-items: center; gap: var(--s-3); width: 100%;
-  padding: var(--s-3) 0;
+  min-height: 56px; padding: var(--s-2) 0;
   background: none; border: 0; border-bottom: 1px solid var(--line);
-  font: inherit; color: inherit; text-align: left;
+  font: inherit; color: inherit; text-align: left; cursor: pointer;
 }
-.rows > *:last-child { border-bottom: 0; padding-bottom: 0; }
-.rows > *:first-child { padding-top: 0; }
+.rows > *:last-child { border-bottom: 0; }
+.rows > * > svg {
+  flex: 0 0 auto; width: 40px; height: 40px; padding: 10px;
+  border-radius: var(--r-full); background: var(--surface-alt); color: var(--period-ink);
+}
 .rows > .row-head { font-weight: 600; font-size: 15px; }
+.rows .row-head { font-weight: 500; font-size: 15px; flex: 1; }
 .rows .row-sub { color: var(--muted); font-size: 13px; }
+.rows .row-chevron { color: var(--muted); font-size: 20px; line-height: 1; }
 
 /* month nav */
 .month-nav { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-4); }
@@ -194,7 +218,6 @@ body {
   transition: background .18s ease, color .18s ease, border-color .18s ease, transform .12s ease;
 }
 .dnum:active { transform: scale(.88); }
-.dnum.today { box-shadow: inset 0 0 0 2px var(--muted); }
 /* Month change: the grid slides in from the direction of travel, so the month
    nav reads as movement rather than an instant swap. */
 .grid.slide-next { animation: slide-next .22s cubic-bezier(.22,1,.36,1) both; }
@@ -202,19 +225,24 @@ body {
 @keyframes slide-next { from { opacity: 0; transform: translateX(14px); } to { opacity: 1; transform: none; } }
 @keyframes slide-prev { from { opacity: 0; transform: translateX(-14px); } to { opacity: 1; transform: none; } }
 
+/* Day cell states (spec 4.2). Every colour-coded state also carries a non-colour
+   cue: predicted is dashed, the peak is a distinct fill, today is a ring. */
 .dnum.dim {
   /* Days from the neighbouring month, kept visible so the grid is full. Dimmer
      and lighter than the current month, so the boundary is still obvious. */
   color: var(--muted); opacity: .45; font-weight: 400;
 }
-.dnum.pred-period { border-color: var(--rose); }
-.dnum.pred-fertile { border-color: var(--green); }
-/* Ovulation peak: same green ring, dashed, so it reads as one day inside the
-   window rather than a different kind of day. */
-.dnum.pred-ovulation { border-color: var(--green); border-style: dashed; }
-.dnum.logged { background: var(--rose); color: #fff; border-color: var(--rose); font-weight: 600; }
-.dnum.fertile-logged { background: var(--green); color: #fff; border-color: var(--green); font-weight: 600; }
-.dnum.sel { outline: 2px solid var(--rose); outline-offset: 1px; }
+/* Predicted period: dashed outline in the period hue, never a solid fill. */
+.dnum.pred-period { border-color: var(--period); border-style: dashed; color: var(--period-ink); }
+/* Fertile window: a light fill in the fertile hue, not a ring. */
+.dnum.pred-fertile { background: var(--green-soft); border-color: transparent; color: var(--ink); }
+/* Ovulation peak: solid fill, so it reads as one day inside the window. */
+.dnum.pred-ovulation { background: var(--ovulation); border-color: var(--ovulation); color: #fff; font-weight: 700; }
+/* Logged period: solid fill, white number. */
+.dnum.logged { background: var(--period); color: #fff; border-color: var(--period); font-weight: 700; }
+.dnum.fertile-logged { background: var(--fertile); color: #fff; border-color: var(--fertile); font-weight: 700; }
+.dnum.today { box-shadow: inset 0 0 0 2px var(--ink); font-weight: 700; }
+.dnum.sel { outline: 2px solid var(--period-ink); outline-offset: 1px; }
 .dot { position: absolute; top: 2px; right: 2px; width: 5px; height: 5px; border-radius: 50%; background: var(--muted); }
 
 /* Medication marker. A capsule, not a dot: the dot already means spotting, and
@@ -245,18 +273,15 @@ body {
 .dnum.sex.logged .heart { stroke: #fff; }
 .dnum.sex.logged.fertile .heart { stroke: #fff; }
 
-/* legend */
-/* Legend: three families (log state, prediction, tracked events). Each family
-   hugs internally and separates from the next, so proximity carries the
-   grouping instead of a divider rule. */
-.legend { display: flex; flex-wrap: wrap; gap: 8px 18px; margin-top: 14px; font-size: 12px; color: var(--muted); }
-.legend-group { display: flex; flex-wrap: wrap; gap: 8px 14px; }
-.legend span { display: flex; align-items: center; gap: 5px; }
-.chip { width: 12px; height: 12px; border-radius: 50%; border: 2px solid transparent; }
-.chip.period { border-color: var(--rose); }
-.chip.fertile { border-color: var(--green); }
-.chip.ovulation { border-color: var(--green); border-style: dashed; }
-.chip.logged { background: var(--rose); border-color: var(--rose); }
+/* Legend (spec 4.2): dot + caption per item, above the sticky CTA. */
+.legend { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); margin-top: var(--s-5); font-size: 13px; color: var(--muted); }
+.legend-group { display: flex; flex-wrap: wrap; gap: var(--s-2) var(--s-4); }
+.legend span { display: flex; align-items: center; gap: var(--s-2); }
+.chip { width: 12px; height: 12px; border-radius: var(--r-full); border: 2px solid transparent; }
+.chip.period { border-color: var(--period); border-style: dashed; }
+.chip.fertile { background: var(--green-soft); }
+.chip.ovulation { background: var(--ovulation); }
+.chip.logged { background: var(--period); }
 .chip.spot { background: var(--muted); width: 6px; height: 6px; }
 .chip.dose-taken, .chip.dose-missed { width: 13px; height: 5px; border-radius: var(--r-full); border: none; }
 .chip.dose-taken { background: var(--indigo); }
@@ -340,37 +365,40 @@ body {
 
 /* buttons */
 button { font-family: inherit; }
+/* Buttons (spec 8): pill, 52 tall, pressed darkens and scales .98. */
 .btn {
-  border: none; background: var(--grey-bg); border-radius: var(--r-md); padding: 12px 16px;
-  min-height: 44px; font-size: 14px; cursor: pointer; color: var(--ink); font-weight: 600;
+  border: none; background: var(--rose-soft); border-radius: var(--r-full); padding: 14px 20px;
+  min-height: 48px; font-size: 16px; cursor: pointer; color: var(--period-ink); font-weight: 600;
+  display: inline-flex; align-items: center; justify-content: center; gap: var(--s-2);
   transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease, color .18s ease, box-shadow .18s ease;
 }
-.btn:active { transform: scale(.96); }
+.btn:active { transform: scale(.98); filter: brightness(.92); }
 .btn:focus-visible, .tab:focus-visible, .nav-btn:focus-visible {
-  outline: 2px solid var(--period); outline-offset: 2px;
+  outline: 2px solid var(--period-ink); outline-offset: 2px;
 }
 .btn.primary { background: var(--period); color: #fff; box-shadow: var(--shadow-1); }
 .btn.on { background: var(--period); color: #fff; }
-.btn.green { background: var(--fertile); color: #fff; }
+.btn.green { background: var(--success); color: #fff; }
 .btn.ghost { background: transparent; color: var(--muted); }
-.btn.danger { background: var(--danger-bg); color: var(--period-ink); }
-.btn:disabled { opacity: .5; }
+.btn.danger { background: transparent; color: var(--danger-ink); box-shadow: inset 0 0 0 1.5px var(--danger-ink); }
+.btn:disabled { opacity: .4; }
 .row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
 .row.tight { margin-top: 8px; }
 
 /* inputs */
+/* Inputs (spec 8): radius 16, 52 tall, focus ring in primary. */
 input, select {
-  font: inherit; padding: 11px 12px; border-radius: var(--r-md); border: 1px solid var(--line);
-  background: var(--bg); color: var(--ink); width: 100%;
+  font: inherit; padding: 14px 16px; border-radius: var(--r); border: 1px solid var(--line);
+  background: var(--card); color: var(--ink); width: 100%; min-height: 52px;
   transition: border-color .18s ease, box-shadow .18s ease;
 }
-input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; border-color: transparent; }
-.field { margin-bottom: var(--s-3); }
-.field label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 5px; font-weight: 600; }
-.field.inline { display: flex; align-items: center; gap: 10px; }
+input:focus, select:focus { outline: 2px solid var(--period-ink); outline-offset: 0; border-color: transparent; }
+.field { margin-bottom: var(--s-4); }
+.field label { display: block; font-size: 13px; color: var(--muted); margin-bottom: var(--s-2); font-weight: 500; }
+.field.inline { display: flex; align-items: center; gap: var(--s-3); }
 .field.inline label { margin: 0; }
-.check { display: flex; align-items: center; gap: var(--s-2); font-size: 15px; margin-top: 0; }
-.check input { width: auto; }
+.check { display: flex; align-items: center; gap: var(--s-3); font-size: 15px; margin-top: 0; min-height: 48px; }
+.check input { width: auto; min-height: 0; }
 
 /* auth */
 .auth { padding-top: var(--s-6); }
@@ -434,26 +462,26 @@ input:focus, select:focus { outline: 2px solid var(--rose); outline-offset: 0; b
 .link { border: none; background: none; color: var(--rose); font: inherit; font-weight: 600; cursor: pointer; padding: 0; }
 .link:focus-visible { outline: 2px solid var(--rose); outline-offset: 2px; border-radius: var(--r-sm); }
 
-/* sheet */
-.overlay { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 10; animation: fade .18s ease both; }
+/* Sheets (spec 8): radius 28 top corners, scrim at 40%. */
+.overlay { position: fixed; inset: 0; background: rgba(43, 34, 48, .4); z-index: 10; animation: fade .18s ease both; }
 @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
 .sheet {
   position: fixed; inset: auto 0 0 0; background: var(--card); z-index: 11;
-  border-radius: var(--r-lg) var(--r-lg) 0 0;
+  border-radius: var(--r-xl) var(--r-xl) 0 0;
   max-width: 480px; margin: 0 auto; box-shadow: var(--shadow-sheet);
-  animation: up .18s ease-out;
+  animation: up .32s cubic-bezier(.34,1.2,.64,1);
   /* Cap the height so the action bar is always on screen. Without this a long
      note pushes the buttons past the bottom of the viewport. */
   display: flex; flex-direction: column;
-  max-height: 88dvh;
+  max-height: 90dvh;
 }
 @supports not (height: 100dvh) {
-  .sheet { max-height: 88vh; }
+  .sheet { max-height: 90vh; }
 }
 @keyframes up { from { transform: translateY(100%); } to { transform: translateY(0); } }
 .sheet-body {
   overflow-y: auto; -webkit-overflow-scrolling: touch;
-  padding: 20px 16px 12px;
+  padding: var(--s-5) var(--s-4) var(--s-3);
 }
 .sheet h3 { margin: 0 0 4px; font-size: 16px; }
 .sheet .hint { color: var(--muted); font-size: 13px; margin-bottom: 12px; line-height: 1.45; }
@@ -618,68 +646,86 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 
 /* Symptom chip: a pill toggle. Separate from .btn so the pressed state can be a
    filled rose pill rather than a rectangular button. */
+/* Chips (spec 8): pill, 40 tall, unselected on the tinted surface, selected
+   filled with a check. */
 .chip-btn {
-  border: 1px solid var(--line); background: var(--card); color: var(--ink-2);
-  border-radius: var(--r-full); padding: 8px 14px; font: inherit; font-size: 13px;
-  font-weight: 600; cursor: pointer;
-  transition: transform .14s cubic-bezier(.2,.8,.2,1), background .18s ease, color .18s ease, border-color .18s ease;
+  border: none; background: var(--surface-alt); color: var(--ink-2);
+  border-radius: var(--r-full); padding: 0 16px; min-height: 40px; font: inherit; font-size: 14px;
+  font-weight: 500; cursor: pointer; display: inline-flex; align-items: center; gap: var(--s-2);
+  transition: transform .18s cubic-bezier(.2,.8,.2,1), background .18s ease, color .18s ease;
 }
-.chip-btn:active { transform: scale(.95); }
-.chip-btn.on { background: var(--period); color: #fff; border-color: var(--period); }
-.chip-btn:focus-visible { outline: 2px solid var(--period); outline-offset: 2px; }
+.chip-btn:active { transform: scale(.96); }
+.chip-btn.on { background: var(--period); color: #fff; }
+.chip-btn:focus-visible { outline: 2px solid var(--period-ink); outline-offset: 2px; }
 
-/* bottom nav */
-/* Floating pill nav. A detached capsule rather than a full-width bar, so the
-   content behind it stays visible and the nav reads as an overlay rather than as
-   part of the page chrome. */
+/* Bottom tab bar: docked, not floating (spec 2.3). Five equal slots, no pill
+   or indicator bar. The active cue is colour plus a filled icon. */
 .tabbar {
   position: fixed; left: 0; right: 0; z-index: 5;
-  display: flex; gap: 2px;
-  max-width: 420px; margin: 0 auto;
-  padding: 5px;
-  border-radius: var(--r-full);
+  display: flex; gap: 0;
+  max-width: 480px; margin: 0 auto;
+  padding: 6px var(--s-2) calc(6px + env(safe-area-inset-bottom));
   background: var(--card);
-  border: 1px solid var(--line);
-  box-shadow: var(--shadow-2);
-  /* Floats above the home indicator, so the inset is part of the offset. */
-  bottom: calc(10px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  box-shadow: none;
+  bottom: 0;
 }
 
-/* Cycle ring: the home screen's anchor. One SVG circle drawn as a progress
-   arc; the arc colour is the phase colour and the track is rose-soft. The
-   phase is also written as text beside the ring, so the ring is never the only
-   carrier of meaning (colour-blind and screen-reader safety). */
+/* Week strip (spec 4.1 zone 2): seven equal cells, weekday initial above a
+   date number in a circle. Today is filled; a logged period day carries a dot. */
+.week-strip {
+  display: grid; grid-template-columns: repeat(7, 1fr); gap: var(--s-1);
+  margin-bottom: var(--s-4);
+}
+.week-cell {
+  border: none; background: none; cursor: pointer; font: inherit;
+  display: flex; flex-direction: column; align-items: center; gap: var(--s-1);
+  padding: var(--s-1) 0; position: relative; min-height: 48px;
+}
+.week-dow { font-size: 11px; font-weight: 500; color: var(--muted); }
+.week-num {
+  width: 36px; height: 36px; display: grid; place-items: center;
+  border-radius: var(--r-full); font-size: 15px; font-weight: 500;
+  font-variant-numeric: tabular-nums; color: var(--ink);
+  transition: background .18s ease, color .18s ease, box-shadow .18s ease;
+}
+.week-cell.sel .week-num { box-shadow: inset 0 0 0 2px var(--period-ink); }
+.week-num.today { background: var(--period); color: #fff; font-weight: 700; }
+.week-dot {
+  position: absolute; bottom: -2px; width: 5px; height: 5px;
+  border-radius: var(--r-full); background: var(--period);
+}
+
+/* Cycle dial (spec 4.1 zone 3, SVG sketch in section 13). */
 .home-hero-wrap { margin: 0 0 var(--s-5); }
 .ring-card {
-  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-xl);
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--r-lg);
   padding: var(--s-6) var(--s-5); box-shadow: var(--shadow-1);
   display: flex; flex-direction: column; align-items: center; gap: var(--s-5);
   animation: rise .28s cubic-bezier(.22,1,.36,1) both;
 }
 .ring-wrap { position: relative; display: grid; place-items: center; }
-.ring-svg { transform: rotate(-90deg); }
-.ring-track { stroke: var(--rose-soft); }
-.ring-arc {
-  stroke: var(--period); transition: stroke-dashoffset .7s cubic-bezier(.22,1,.36,1), stroke .3s ease;
-}
+.ring-svg { transform: rotate(0deg); }
+.ring-track { stroke: var(--neutral); opacity: .35; }
+.ring-knob { filter: drop-shadow(0 1px 2px rgba(43, 34, 48, .18)); }
 .ring-centre {
   position: absolute; inset: 0; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; gap: 2px; text-align: center;
+  align-items: center; justify-content: center; gap: var(--s-1); text-align: center;
 }
 .ring-figure {
-  font-size: 48px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;
+  font-size: 56px; font-weight: 700; line-height: 1; letter-spacing: -0.03em;
   font-variant-numeric: tabular-nums; color: var(--ink);
 }
-.ring-label { font-size: 12px; font-weight: 600; color: var(--muted); }
+.ring-label { font-size: 13px; font-weight: 500; color: var(--muted); }
 .ring-copy { text-align: center; }
 .ring-title {
-  font-size: 26px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em;
+  font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -0.02em;
   color: var(--ink); margin: 0;
 }
 .ring-sub { margin-top: var(--s-2); font-size: 15px; line-height: 1.5; color: var(--ink-2); }
 .ring-phase {
   margin-top: var(--s-3); display: inline-flex; align-items: center; gap: var(--s-2);
-  font-size: 13px; font-weight: 600; color: var(--ink-2);
+  font-size: 13px; font-weight: 500; color: var(--ink-2);
 }
 .ring-dot { width: 10px; height: 10px; border-radius: var(--r-full); }
 .home-lower { padding: 0; }
@@ -772,17 +818,16 @@ button.day-card:focus-visible { outline: 2px solid var(--rose); outline-offset: 
 @keyframes pop { 0% { transform: scale(.8); opacity: 0; } 60% { transform: scale(1.06); } 100% { transform: scale(1); opacity: 1; } }
 .tab {
   flex: 1; border: none; background: none; cursor: pointer;
-  padding: 9px 0 8px; border-radius: var(--r-full);
-  font-size: 10px; color: var(--muted); display: flex; flex-direction: column;
-  align-items: center; gap: 3px; font-family: inherit; font-weight: 600;
-  transition: color .18s ease, background .18s ease, transform .14s cubic-bezier(.2,.8,.2,1);
+  padding: 8px 0 6px; border-radius: var(--r-sm);
+  font-size: 11px; color: var(--muted); display: flex; flex-direction: column;
+  align-items: center; gap: 4px; font-family: inherit; font-weight: 500;
+  min-height: 48px;
+  transition: color .18s ease, transform .14s cubic-bezier(.2,.8,.2,1);
 }
 .tab:active { transform: scale(.94); }
-/* The icon is an inline SVG using currentColor, so the active tab colours it via
-   .tab.active { color }. Emoji could not be recoloured reliably across OEMs. */
 .tab svg { transition: transform .24s cubic-bezier(.34,1.4,.64,1); }
-.tab.active svg { transform: translateY(-1px) scale(1.12); }
-.tab.active { color: #fff; background: var(--period); box-shadow: var(--shadow-1); }
+.tab.active svg { transform: translateY(-1px) scale(1.08); }
+.tab.active { color: var(--period-ink); }
 
 footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line-height: 1.5; }
 

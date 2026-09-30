@@ -1,9 +1,9 @@
 import Icon from './Icon';
 import { t } from './i18n';
 
-// Profil: identity banner, the cycle figures as a card of stat rows, then one
-// entry into Pengaturan. This screen never edits anything; settings owns the
-// editing surface.
+// Profil (spec 4.6): header with avatar + name + status pill, then grouped list
+// sections in rounded cards, then one entry into Pengaturan. This screen never
+// edits anything; settings owns the editing surface.
 export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpenSettings, onLogout }: {
   name: string | null;
   avgCycle: number | null;
@@ -39,11 +39,19 @@ export default function ProfileScreen({ name, avgCycle, avgPeriod, logged, onOpe
         </div>
       </div>
 
-      <div className="row">
-        <button className="btn primary" onClick={onOpenSettings}>
-          <Icon name="settings" size={16} />{t.profOpenSettings}
-        </button>
-        <button className="btn" onClick={onLogout}>{t.profLogout}</button>
+      <div className="card">
+        <div className="rows">
+          <button onClick={onOpenSettings}>
+            <Icon name="settings" size={20} />
+            <span className="row-head">{t.profOpenSettings}</span>
+            <span className="row-chevron" aria-hidden="true">›</span>
+          </button>
+          <button onClick={onLogout}>
+            <Icon name="cross" size={20} />
+            <span className="row-head">{t.profLogout}</span>
+            <span className="row-chevron" aria-hidden="true">›</span>
+          </button>
+        </div>
       </div>
     </>
   );
