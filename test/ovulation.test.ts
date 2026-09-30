@@ -351,3 +351,26 @@ describe('tier 1: symptom heads-up, late period, reminder re-sync', () => {
     expect(app).not.toMatch(/requestPermission\(\)/);
   });
 });
+
+// Two @keyframes with the same name collide: the later rule wins for both, and
+// a modal that centers with translateY(-50%) loses that centering mid-animation
+// then snaps back — the "flash off center" bug on the DaySheet popups.
+describe('keyframe names are unique and the modal keeps its centering', () => {
+  const css = readFileSync(ROOT + 'src/index.css', 'utf8');
+
+  it('declares no duplicate @keyframes name', () => {
+    const names = [...css.matchAll(/@keyframes\s+([\w-]+)/g)].map((m) => m[1]);
+    const dupes = names.filter((n, i) => names.indexOf(n) !== i);
+    expect([...new Set(dupes)]).toEqual([]);
+  });
+
+  it('the modal animation preserves its centering transform', () => {
+    const modal = /\.modal\s*\{([^}]*)\}/.exec(css)?.[1] ?? '';
+    const anim = /animation:\s*([\w-]+)/.exec(modal)?.[1] ?? '';
+    expect(anim).not.toBe('');
+    // Whatever keyframes the modal names must keep translateY(-50%), or the
+    // modal jumps during the animation.
+    const frames = new RegExp(`@keyframes\\s+${anim}\\s*\\{([^}]*)\\}[^}]*\\}`).exec(css)?.[1] ?? '';
+    expect(frames).toMatch(/translateY\(-50%\)/);
+  });
+});

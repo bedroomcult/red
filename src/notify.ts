@@ -68,13 +68,25 @@ export async function syncReminders(p: ReminderPrefs, nextPeriod: string | null)
   const n = await getNative();
   const jobs: Scheduled[] = [];
 
+  // Android 8+ drops a notification whose channelId does not exist, silently:
+  // no error, no notification. The channel has to be created before the first
+  // schedule, and createChannel is idempotent, so it runs on every sync.
+  if (n) {
+    await n.createChannel({
+      id: 'red-reminders',
+      name: 'Pengingat',
+      description: 'Pengingat pil KB dan perkiraan haid',
+      importance: 4, // IMPORTANCE_HIGH: a reminder must surface, not sit in the shade
+    }).catch(() => {});
+  }
   if (p.pillEnabled) {
     jobs.push({ id: ID_PILL, title: 'Waktunya minum pil KB', body: `Pil KB ${p.pillTime}. Ketuk untuk mencatat di aplikasi.`, at: atToday(p.pillTime) });
   }
   if (p.periodEnabled && nextPeriod) {
-    // 2 days before the predicted window starts.
-    const at = new Date(Date.parse(nextPeriod + 'T09:00:00Z'));
-    at.setDate(at.getDate() - 2);
+    // 2 days before the predicted window starts. Plain millisecond math, not
+    // setDate(): setDate works in local time while the parse is UTC, so a
+    // device west of UTC landed on the wrong day.
+    const at = new Date(Date.parse(nextPeriod + 'T09:00:00Z') - 2 * 864e5);
     if (at.getTime() > Date.now()) {
       jobs.push({ id: ID_PERIOD, title: 'Haid diperkirakan dekat', body: 'Perkiraan haid dalam 2 hari. Siapkan perlengkapan.', at });
     }
@@ -83,19 +95,25 @@ export async function syncReminders(p: ReminderPrefs, nextPeriod: string | null)
   if (n) {
     await n.cancel({ notifications: [{ id: ID_PILL }, { id: ID_PERIOD }] }).catch(() => {});
     if (jobs.length) {
+      // Caught, not awaited bare: callers run this with `void`, so a rejection
+      // (permission revoked, exact-alarm denied) would surface as an unhandled
+      // promise rejection instead of a quiet no-op.
       await n.schedule({
         notifications: jobs.map((j) => {
           if (j.id === ID_PILL) {
             // Repeat daily at the chosen time.
             const [h, m] = p.pillTime.split(':').map(Number);
             return {
-              id: j.id, title: j.title, body: j.body,
+              id: j.id, title: j.title, body: j.body, channelId: 'red-reminders',
               schedule: { on: { hour: h || 21, minute: m || 0 }, repeats: true, allowWhileIdle: true },
             };
           }
-          return { id: j.id, title: j.title, body: j.body, schedule: { at: j.at, allowWhileIdle: true } };
+          return {
+            id: j.id, title: j.title, body: j.body, channelId: 'red-reminders',
+            schedule: { at: j.at, allowWhileIdle: true },
+          };
         }),
-      });
+      }).catch(() => {});
     }
     return;
   }
@@ -108,7 +126,7 @@ export async function syncReminders(p: ReminderPrefs, nextPeriod: string | null)
 export async function notifyNow(title: string, body: string): Promise<void> {
   const n = await getNative();
   if (n) {
-    await n.schedule({ notifications: [{ id: 9999, title, body, schedule: { at: new Date(Date.now() + 1000) } }] });
+    await n.schedule({ notifications: [{ id: 9999, title, body, channelId: 'red-reminders', schedule: { at: new Date(Date.now() + 1000) } }] }).catch(() => {});
     return;
   }
   if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
