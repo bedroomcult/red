@@ -40,7 +40,7 @@ const PHASE_LABEL: Record<Phase, string> = {
 };
 
 export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
-  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null } | null };
+  me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[] } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
