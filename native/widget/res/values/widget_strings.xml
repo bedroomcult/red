@@ -2,5 +2,7 @@
 <resources>
     <string name="widget_description">Hitung hari menuju haid berikutnya dan fase siklus saat ini.</string>
     <string name="widget_safety_description">Peluang kehamilan hari ini: Tinggi, Sedang, atau Rendah.</string>
+    <string name="widget_risk_description">Peluang kehamilan hari ini dalam persen dan keterangan ovulasi.</string>
+    <string name="widget_risk_note">Peluang rendah bukan berarti aman.</string>
     <string name="risk_unknown">Tidak dapat diperkirakan</string>
 </resources>

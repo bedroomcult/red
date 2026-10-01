@@ -405,12 +405,14 @@ describe('home-screen widget wiring', () => {
     expect(app).toMatch(/const suppressed = me\.prediction\.confidence/);
   });
 
-  it('the CI copy step declares two widgets: 2x2 countdown and 1x1 safety', () => {
+  it('the CI copy step declares three widgets: 2x2, 1x1 and 2x1', () => {
     const script = readFileSync(ROOT + '.github/scripts/android-widget.mjs', 'utf8');
-    // Two receivers so Android shows two picker entries; both repaint from
-    // the same prefs via updateAll.
+    // Three receivers so Android shows three picker entries; all repaint
+    // from the same prefs via updateAll.
     expect(script).toMatch(/CycleWidgetSafety/);
     expect(script).toMatch(/widget_safety_info/);
+    expect(script).toMatch(/CycleWidgetRisk/);
+    expect(script).toMatch(/widget_risk_info/);
     // It must patch the existing manifest, not overwrite it.
     expect(script).toMatch(/lastIndexOf\('<\/application>'\)/);
     expect(script).not.toMatch(/cpSync\([^)]*AndroidManifest\.xml[^)]*src\/main\/AndroidManifest/);
@@ -426,6 +428,13 @@ describe('home-screen widget wiring', () => {
     expect(w).toMatch(/extends CycleWidgetProvider/);
     expect(w).not.toMatch(/widget_days/);
     expect(w).toMatch(/paintSafety\(context, data\)/);
+    // 2x1 risk entry paints percent + band + ovulation caption.
+    expect(p).toMatch(/CycleWidgetRisk\.class/);
+    expect(p).toMatch(/paintRisk\(context, data\)/);
+    const r = readFileSync(ROOT + 'native/widget/CycleWidgetRisk.java', 'utf8');
+    expect(r).toMatch(/extends CycleWidgetProvider/);
+    expect(r).toMatch(/paintRisk\(context, data\)/);
+    expect(r).not.toMatch(/widget_days/);
   });
 });
 
@@ -475,11 +484,12 @@ describe('widget today-risk wiring', () => {
 describe('widget xml survives the android resource merge', () => {
   const files = [
     ...['widget_bg.xml', 'widget_dot.xml', 'widget_chance_high.xml', 'widget_chance_medium.xml', 'widget_chance_low.xml'].map((f) => `native/widget/res/drawable/${f}`),
-    ...['widget_cycle.xml', 'widget_cycle_wide.xml', 'widget_safety.xml'].map((f) => `native/widget/res/layout/${f}`),
+    ...['widget_cycle.xml', 'widget_cycle_wide.xml', 'widget_safety.xml', 'widget_risk.xml'].map((f) => `native/widget/res/layout/${f}`),
     ...['widget_colors.xml', 'widget_strings.xml'].map((f) => `native/widget/res/values/${f}`),
     'native/widget/res/values-night/widget_colors.xml',
     'native/widget/res/xml/widget_cycle_info.xml',
     'native/widget/res/xml/widget_safety_info.xml',
+    'native/widget/res/xml/widget_risk_info.xml',
   ];
 
   it('declares no dangerous filenames', () => {
@@ -503,7 +513,7 @@ describe('widget xml survives the android resource merge', () => {
   it('references only ids its layouts define', () => {
     const ids = (src: string) => new Set([...src.matchAll(/android:id="@\+id\/([\w-]+)"/g)].map((m) => m[1]));
     const defined = new Set<string>();
-    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml']) {
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml', 'native/widget/res/layout/widget_risk.xml']) {
       for (const id of ids(readFileSync(join(ROOT, f), 'utf8'))) defined.add(id);
     }
     const src = readFileSync(join(ROOT, 'native/widget/CycleWidgetProvider.java'), 'utf8');
@@ -521,7 +531,7 @@ describe('widget xml survives the android resource merge', () => {
       for (const m of src.matchAll(/<string name="([\w-]+)"/g)) strings.add(m[1]);
     }
     const drawables = new Set<string>();
-    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml']) {
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml', 'native/widget/res/layout/widget_risk.xml']) {
       const src = readFileSync(join(ROOT, f), 'utf8');
       for (const m of src.matchAll(/@drawable\/([\w-]+)/g)) drawables.add(m[1]);
     }
@@ -529,6 +539,7 @@ describe('widget xml survives the android resource merge', () => {
       readFileSync(join(ROOT, 'native/widget/res/layout/widget_cycle.xml'), 'utf8'),
       readFileSync(join(ROOT, 'native/widget/res/layout/widget_cycle_wide.xml'), 'utf8'),
       readFileSync(join(ROOT, 'native/widget/res/layout/widget_safety.xml'), 'utf8'),
+      readFileSync(join(ROOT, 'native/widget/res/layout/widget_risk.xml'), 'utf8'),
       readFileSync(join(ROOT, 'native/widget/res/xml/widget_cycle_info.xml'), 'utf8'),
     ].join('\n');
     for (const m of layouts.matchAll(/@string\/([\w-]+)/g)) {
@@ -567,8 +578,25 @@ describe('widget xml survives the android resource merge', () => {
     expect(layout).toMatch(/widget_chance_label/);
   });
 
+  it('the 2x1 entry shows percent, band and ovulation caption', () => {
+    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
+    // Same number and band the ChanceCard shows, derived from the same ov date.
+    expect(p).toMatch(/paintRisk/);
+    expect(p).toMatch(/chancePercent\(chanceOffset\(today, data\.ov\)\)/);
+    expect(p).toMatch(/ovCaption\(today, data\.ov\)/);
+    // Never safety wording; unknown hides the number and the caption.
+    expect(p.toLowerCase()).not.toMatch(/aman/);
+    expect(p).not.toMatch(/\bsafe\b/i);
+    expect(p).toMatch(/widget_risk_caption, View\.GONE/);
+    const layout = readFileSync(join(ROOT, 'native/widget/res/layout/widget_risk.xml'), 'utf8');
+    expect(layout).not.toMatch(/widget_days|widget_phase|widget_unit/);
+    expect(layout).toMatch(/widget_risk_percent/);
+    expect(layout).toMatch(/widget_risk_band/);
+    expect(layout).toMatch(/widget_risk_caption/);
+  });
+
   it('layouts theme only via @color/widget_*, never a hardcoded hex', () => {
-    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml']) {
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml', 'native/widget/res/layout/widget_risk.xml']) {
       const src = readFileSync(join(ROOT, f), 'utf8');
       expect(src, f).not.toMatch(/#[0-9A-Fa-f]{6,8}/);
       for (const m of src.matchAll(/@color\/([\w-]+)/g)) {

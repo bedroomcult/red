@@ -12,6 +12,7 @@ import android.widget.RemoteViews;
 import com.red.tracker.R;
 
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
@@ -68,6 +69,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         for (int id : safetyIds) {
             manager.updateAppWidget(id, paintSafety(context, data));
         }
+        int[] riskIds = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetRisk.class));
+        for (int id : riskIds) {
+            manager.updateAppWidget(id, paintRisk(context, data));
+        }
     }
 
     static class WidgetData {
@@ -89,10 +94,14 @@ public class CycleWidgetProvider extends AppWidgetProvider {
                 p.getString(KEY_OV, null));
     }
 
-    private static String todayIso() {
-        SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
-        fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
-        return fmt.format(new Date());
+    // Device-local calendar date as YYYY-MM-DD. UTC would return yesterday
+    // until 07:00 in WIB (UTC+7), shifting the Wilcox offset by a day and
+    // showing Sedang where the app shows Tinggi. Same bug class lib/today.ts
+    // already fixed on the web side with local getters.
+    private static String localTodayIso() {
+        Calendar c = Calendar.getInstance();
+        return String.format(Locale.US, "%04d-%02d-%02d",
+                c.get(Calendar.YEAR), c.get(Calendar.MONTH) + 1, c.get(Calendar.DAY_OF_MONTH));
     }
 
     // Whole days from today to the stored date, in UTC to match how the app
@@ -103,7 +112,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
             SimpleDateFormat fmt = new SimpleDateFormat("yyyy-MM-dd", Locale.US);
             fmt.setTimeZone(TimeZone.getTimeZone("UTC"));
             Date target = fmt.parse(next);
-            Date today = fmt.parse(fmt.format(new Date()));
+            Date today = fmt.parse(localTodayIso());
             if (target == null || today == null) return null;
             return (int) ((target.getTime() - today.getTime()) / 86_400_000L);
         } catch (Exception e) {
@@ -165,9 +174,78 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     // BC-suppressed) shows the same wording as the app's chance card and
     // hides the icon row: naming a risk with no ovulation to measure
     // against would be invented.
+    // Whole percent for the offset, mirroring lib/chance.ts BY_OFFSET.
+    // Null outside the -5..+1 window: those days read "<1%", not a number.
+    static Integer chancePercent(Integer offset) {
+        if (offset == null) return null;
+        for (int i = 0; i < OFFSETS.length; i++) {
+            if (OFFSETS[i] == offset) return PERCENTS[i];
+        }
+        return null;
+    }
+
+    // Ovulation-relative caption, mirroring the ChanceCard copy:
+    // peak day, N days before, or N days after the predicted ovulation.
+    static String ovCaption(String today, String ov) {
+        Integer offset = chanceOffset(today, ov);
+        if (offset == null) return null;
+        if (offset == 0) return "Hari perkiraan ovulasi";
+        if (offset < 0) return Math.abs(offset) + " hari sebelum perkiraan ovulasi";
+        return offset + " hari setelah perkiraan ovulasi";
+    }
+
+    // 2x1 risk paint: big percent, band label, ovulation caption. Same band
+    // and the same number the ChanceCard shows, derived from the same stored
+    // ovulation date at paint time. Unknown (including BC-suppressed) shows
+    // the card's unknown wording with no number and no caption.
+    static RemoteViews paintRisk(Context context, WidgetData data) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_risk);
+        String today = localTodayIso();
+        boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
+                && chanceOffset(today, data.ov) != null;
+        String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
+        Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
+        String caption = "bc".equals(data.phase) ? null : ovCaption(today, data.ov);
+        if (band == null) {
+            views.setViewVisibility(R.id.widget_risk_icon_row, View.GONE);
+            views.setTextViewText(R.id.widget_risk_percent, "\u2013");
+            views.setTextViewText(R.id.widget_risk_band, chanceLabel(null));
+            views.setViewVisibility(R.id.widget_risk_caption, View.GONE);
+        } else {
+            int visible = "tinggi".equals(band) ? R.id.widget_chance_high
+                    : "sedang".equals(band) ? R.id.widget_chance_medium : R.id.widget_chance_low;
+            int[] icons = {R.id.widget_chance_high, R.id.widget_chance_medium, R.id.widget_chance_low};
+            for (int viewId : icons) {
+                views.setViewVisibility(viewId, viewId == visible ? View.VISIBLE : View.GONE);
+            }
+            int badge = "tinggi".equals(band) ? 0xFFF0507A
+                    : "sedang".equals(band) ? 0xFFF5A94A : 0xFF4CC38A;
+            views.setInt(visible, "setColorFilter", badge);
+            views.setViewVisibility(R.id.widget_risk_icon_row, View.VISIBLE);
+            views.setTextViewText(R.id.widget_risk_percent, percent == null ? "<1%" : percent + "%");
+            views.setTextViewText(R.id.widget_risk_band, chanceLabel(band));
+            if (caption != null) {
+                views.setViewVisibility(R.id.widget_risk_caption, View.VISIBLE);
+                views.setTextViewText(R.id.widget_risk_caption, caption);
+            } else {
+                views.setViewVisibility(R.id.widget_risk_caption, View.GONE);
+            }
+        }
+
+        // Tapping anywhere opens the app.
+        android.content.Intent launch = context.getPackageManager()
+                .getLaunchIntentForPackage(context.getPackageName());
+        if (launch != null) {
+            views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(
+                    context, 0, launch,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        }
+        return views;
+    }
+
     static RemoteViews paintSafety(Context context, WidgetData data) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_safety);
-        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(todayIso(), data.ov));
+        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(localTodayIso(), data.ov));
         int visible = band == null ? -1
                 : "tinggi".equals(band) ? R.id.widget_chance_high
                 : "sedang".equals(band) ? R.id.widget_chance_medium : R.id.widget_chance_low;
@@ -229,7 +307,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         // a risk with no ovulation to measure against would be invented.
         // The visible icon is tinted to its band, the way the phase dot is
         // tinted to the phase.
-        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(todayIso(), data.ov));
+        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(localTodayIso(), data.ov));
         int visible = band == null ? -1
                 : "tinggi".equals(band) ? R.id.widget_chance_high
                 : "sedang".equals(band) ? R.id.widget_chance_medium : R.id.widget_chance_low;
