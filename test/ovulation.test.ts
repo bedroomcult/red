@@ -394,7 +394,7 @@ describe('home-screen widget wiring', () => {
     // the moment the app closes.
     expect(w).not.toMatch(/days: number/);
     const provider = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
-    expect(provider).toMatch(/fun daysUntil\(/);
+    expect(provider).toMatch(/private static Integer daysUntil\(String next\)/);
   });
 
   it('the app pushes widget data whenever the prediction moves', () => {
@@ -446,7 +446,8 @@ describe('widget today-risk wiring', () => {
     expect(p.toLowerCase()).not.toMatch(/aman/);
     expect(p).not.toMatch(/\bsafe\b/i);
     // Percentage and raw probability stay in the app; the widget shows a band.
-    expect(p).not.toMatch(/percent/);
+    // (PERCENTS the int array is allowed: band names must never carry numbers.)
+    expect(p).not.toMatch(/percent %|\$\{[^}]*percent/);
     expect(p).not.toMatch(/belo?owOne/);
   });
 });
