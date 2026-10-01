@@ -398,7 +398,7 @@ describe('home-screen widget wiring', () => {
 
   it('the app pushes widget data whenever the prediction moves', () => {
     const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
-    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase\)/);
+    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase, me\.prediction\.ov\)/);
     // The phase cannot be read from the later bcMode const: hooks must sit above
     // the early returns.
     expect(app).toMatch(/const suppressed = me\.prediction\.confidence/);
@@ -412,5 +412,41 @@ describe('home-screen widget wiring', () => {
     // It must patch the existing manifest, not overwrite it.
     expect(script).toMatch(/lastIndexOf\('<\/application>'\)/);
     expect(script).not.toMatch(/cpSync\([^)]*AndroidManifest\.xml[^)]*src\/main\/AndroidManifest/);
+  });
+});
+
+// The widget's today-risk line: the native side derives the offset from a date
+// the app pushes, so the wording stays right on days the app is never opened.
+describe('widget today-risk wiring', () => {
+  it('pushes the ovulation date, never a precomputed risk', () => {
+    const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
+    expect(w).toMatch(/ov: string \| null/);
+    expect(w).toMatch(/ov: ov \?\? ''/);
+    expect(w).not.toMatch(/risk: (string|Risk)/);
+  });
+
+  it('derives the same bands the app does, in Kotlin', () => {
+    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+    // chanceOffset mirrors pregnancyChance's day-diff arithmetic.
+    expect(p).toMatch(/86_400_000L/);
+    // The Wilcox day-offsets, one entry per curve point.
+    for (const o of ['-5', '-4', '-3', '-2', '-1', '0', '1']) {
+      expect(p, `offset ${o}`).toMatch(new RegExp(`${o} -> [0-9]+`));
+    }
+    // The band cutoffs match lib/chance.ts: >=27 high, >=8 medium, rest low.
+    expect(p).toMatch(/p >= 27 -> "tinggi"/);
+    expect(p).toMatch(/p >= 8 -> "sedang"/);
+    // BC-suppressed hides the row rather than inventing a risk.
+    expect(p).toMatch(/if \(data\.phase == "bc"\) null/);
+  });
+
+  it('states a chance, never safety, in both word and icon', () => {
+    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+    // No word for "safe" or "aman" may appear anywhere in the widget.
+    expect(p.toLowerCase()).not.toMatch(/aman/);
+    expect(p).not.toMatch(/\bsafe\b/i);
+    // Percentage and raw probability stay in the app; the widget shows a band.
+    expect(p).not.toMatch(/percent/);
+    expect(p).not.toMatch(/belo?owOne/);
   });
 });

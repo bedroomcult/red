@@ -78,7 +78,7 @@ export default function App() {
     const starts = me.periods.filter((p) => p.type === 'menstruation').map((p) => p.start_date);
     const ranges = me.periods.filter((p) => p.type === 'menstruation').map((p) => ({ start_date: p.start_date, end_date: p.end_date }));
     const st = cycleStatus(me.today ?? localDate(), starts, ranges, me.prediction, suppressed, me.profile?.period_len ?? 5);
-    syncWidget(me.prediction.next, st.phase);
+    syncWidget(me.prediction.next, st.phase, me.prediction.ov);
   }, [me?.prediction.next, me?.prediction.ov, me?.prediction.confidence, me?.periods, me?.today]);
 
   const load = useCallback(async () => {

@@ -22,10 +22,16 @@ class CycleWidgetPlugin : Plugin() {
     fun setData(call: PluginCall) {
         val next = call.getString("nextPeriod") ?: ""
         val phase = call.getString("phase") ?: ""
+        // The ovulation date, so the widget can derive today's chance offset
+        // itself at paint time. Added after the count/phase pair: the risk
+        // shown changes daily, so only a date — never a precomputed value —
+        // stays right on days the app is never opened.
+        val ov = call.getString("ov") ?: ""
         context.getSharedPreferences(CycleWidgetProvider.PREFS, android.content.Context.MODE_PRIVATE)
             .edit()
             .putString(CycleWidgetProvider.KEY_NEXT, next)
             .putString(CycleWidgetProvider.KEY_PHASE, phase)
+            .putString(CycleWidgetProvider.KEY_OV, ov)
             .apply()
         // Repaint immediately, so the widget is correct without waiting for the
         // next updatePeriodMillis tick.
