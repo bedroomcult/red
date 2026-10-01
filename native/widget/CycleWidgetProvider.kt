@@ -34,6 +34,7 @@ class CycleWidgetProvider : AppWidgetProvider() {
         const val PREFS = "red_widget"
         const val KEY_NEXT = "next_period"
         const val KEY_PHASE = "phase"
+        const val KEY_OV = "ovulation"
 
         // Repaint every widget instance. Called by the plugin after the app
         // writes new data, and by the daily updatePeriodMillis tick.
@@ -47,15 +48,63 @@ class CycleWidgetProvider : AppWidgetProvider() {
             }
         }
 
-        private data class WidgetData(val next: String?, val phase: String?)
+        private data class WidgetData(val next: String?, val phase: String?, val ov: String?)
 
         private fun readWidgetData(context: Context): WidgetData {
             val p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-            return WidgetData(p.getString(KEY_NEXT, null), p.getString(KEY_PHASE, null))
+            return WidgetData(p.getString(KEY_NEXT, null), p.getString(KEY_PHASE, null), p.getString(KEY_OV, null))
+        }
+
+        // Today's chance, derived from the stored ovulation date the same way
+        // lib/chance.ts does: the day offset into the Wilcox curve, bucketed to
+        // the same low/medium/high bands. Re-implemented here because native
+        // code cannot import the TypeScript; the two must use the same numbers.
+        //
+        // The copy is conservative by design: naming a band one step down still
+        // states a chance, never safety, and the full caveats live in the app.
+        private fun chanceOffset(today: String?, ov: String?): Int? {
+            if (today.isNullOrEmpty() || ov.isNullOrEmpty()) return null
+            return try {
+                val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                }
+                val o = fmt.parse(ov) ?: return null
+                val t = fmt.parse(today) ?: return null
+                ((t.time - o.time) / 86_400_000L).toInt()
+            } catch (_: Exception) {
+                null
+            }
+        }
+
+        // Same buckets as lib/chance.ts: >=27% high, >=8% medium, window low.
+        private fun chanceBand(offset: Int?): String? {
+            if (offset == null) return null
+            val p = when (offset) {
+                -5 -> 4
+                -4 -> 8
+                -3 -> 17
+                -2 -> 27
+                -1 -> 31
+                0 -> 33
+                1 -> 5
+                else -> return "rendah"
+            }
+            return when {
+                p >= 27 -> "tinggi"
+                p >= 8 -> "sedang"
+                else -> "rendah"
+            }
         }
 
         // Whole days from today to the stored date, in UTC to match how the app
         // stores YYYY-MM-DD. Null when there is no date or it will not parse.
+        private fun todayIso(): String {
+            val fmt = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
+                timeZone = TimeZone.getTimeZone("UTC")
+            }
+            return fmt.format(Date())
+        }
+
         private fun daysUntil(next: String?): Int? {
             if (next.isNullOrEmpty()) return null
             return try {
@@ -78,6 +127,14 @@ class CycleWidgetProvider : AppWidgetProvider() {
             "neutral" -> "Hari biasa"
             "bc" -> "Siklus dijeda KB"
             else -> null
+        }
+
+        // Risk wording, matching the app's chance card labels exactly.
+        private fun chanceLabel(band: String?): String = when (band) {
+            "tinggi" -> "Tinggi"
+            "sedang" -> "Sedang"
+            "rendah" -> "Rendah"
+            else -> "Tidak dapat diperkirakan"
         }
 
         private fun buildViews(
@@ -114,6 +171,32 @@ class CycleWidgetProvider : AppWidgetProvider() {
             views.setTextViewText(R.id.widget_days, figure)
             views.setTextViewText(R.id.widget_unit, unit)
             views.setTextViewText(R.id.widget_phase, phaseLabel(data.phase) ?: "Belum ada data")
+
+            // Today's chance. Unknown (including BC-suppressed) shows the same
+            // wording as the app's chance card and hides the icon row: naming
+            // a risk with no ovulation to measure against would be invented.
+            // The visible icon is tinted to its band, the way the phase dot is
+            // tinted to the phase.
+            val offset = chanceOffset(todayIso(), data.ov)
+            val band = if (data.phase == "bc") null else chanceBand(offset)
+            val visibleIcon = when (band) {
+                "tinggi" -> R.id.widget_chance_high
+                "sedang" -> R.id.widget_chance_medium
+                "rendah" -> R.id.widget_chance_low
+                else -> -1
+            }
+            for (id in intArrayOf(R.id.widget_chance_high, R.id.widget_chance_medium, R.id.widget_chance_low)) {
+                views.setViewVisibility(id, if (id == visibleIcon) android.view.View.VISIBLE else android.view.View.GONE)
+            }
+            if (visibleIcon != -1) {
+                val badgeColor = when (band) {
+                    "tinggi" -> 0xFFF0507A.toInt()
+                    "sedang" -> 0xFFF5A94A.toInt()
+                    else -> 0xFF4CC38A.toInt()
+                }
+                views.setInt(visibleIcon, "setColorFilter", badgeColor)
+            }
+            views.setTextViewText(R.id.widget_chance_label, chanceLabel(band))
 
             // The phase dot carries the same colour the app uses for that phase,
             // so the widget and the app read as one product.

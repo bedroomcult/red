@@ -7,14 +7,21 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 // would freeze the moment the app is closed — the widget has to stay right on
 // days the user never opens the app.
 type CycleWidgetPlugin = {
-  setData(o: { nextPeriod: string; phase: string }): Promise<{ ok: boolean }>;
+  setData(o: { nextPeriod: string; phase: string; ov: string }): Promise<{ ok: boolean }>;
 };
 
 const CycleWidget = registerPlugin<CycleWidgetPlugin>('CycleWidget');
 
 // Push the current prediction to the widget. A no-op on web, and silent on any
 // native failure: a widget that cannot update must never break the app.
-export function syncWidget(nextPeriod: string | null, phase: string): void {
+//
+// The ovulation DATE goes across, never a precomputed risk or count: today's
+// offset is derived natively at paint time, so the risk shown stays correct on
+// days the user never opens the app. Lib/chance.ts owns the curve and its
+// caveats; the widget mirrors its buckets and its framing (a chance, never
+// "safe") but re-implements the arithmetic in Kotlin, since native code
+// cannot import the TypeScript.
+export function syncWidget(nextPeriod: string | null, phase: string, ov: string | null): void {
   if (!Capacitor.isNativePlatform()) return;
-  void CycleWidget.setData({ nextPeriod: nextPeriod ?? '', phase }).catch(() => {});
+  void CycleWidget.setData({ nextPeriod: nextPeriod ?? '', phase, ov: ov ?? '' }).catch(() => {});
 }
