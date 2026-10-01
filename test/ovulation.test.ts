@@ -393,7 +393,7 @@ describe('home-screen widget wiring', () => {
     // The count is derived natively at paint time; sending "days" would freeze
     // the moment the app closes.
     expect(w).not.toMatch(/days: number/);
-    const provider = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+    const provider = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
     expect(provider).toMatch(/fun daysUntil\(/);
   });
 
@@ -426,23 +426,22 @@ describe('widget today-risk wiring', () => {
     expect(w).not.toMatch(/risk: (string|Risk)/);
   });
 
-  it('derives the same bands the app does, in Kotlin', () => {
-    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+  it('derives the same bands the app does, natively', () => {
+    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
     // chanceOffset mirrors pregnancyChance's day-diff arithmetic.
     expect(p).toMatch(/86_400_000L/);
-    // The Wilcox day-offsets, one entry per curve point.
-    for (const o of ['-5', '-4', '-3', '-2', '-1', '0', '1']) {
-      expect(p, `offset ${o}`).toMatch(new RegExp(`${o} -> [0-9]+`));
-    }
+    // The Wilcox day-offsets, aligned element-wise with the percents.
+    expect(p).toMatch(/private static final int\[\] OFFSETS = \{-5, -4, -3, -2, -1, 0, 1\}/);
+    expect(p).toMatch(/private static final int\[\] PERCENTS = \{4, 8, 17, 27, 31, 33, 5\}/);
     // The band cutoffs match lib/chance.ts: >=27 high, >=8 medium, rest low.
-    expect(p).toMatch(/p >= 27 -> "tinggi"/);
-    expect(p).toMatch(/p >= 8 -> "sedang"/);
+    expect(p).toMatch(/if \(p >= 27\) return "tinggi"/);
+    expect(p).toMatch(/if \(p >= 8\) return "sedang"/);
     // BC-suppressed hides the row rather than inventing a risk.
-    expect(p).toMatch(/if \(data\.phase == "bc"\) null/);
+    expect(p).toMatch(/"bc"\.equals\(data\.phase\) \? null/);
   });
 
   it('states a chance, never safety, in both word and icon', () => {
-    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.kt', 'utf8');
+    const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
     // No word for "safe" or "aman" may appear anywhere in the widget.
     expect(p.toLowerCase()).not.toMatch(/aman/);
     expect(p).not.toMatch(/\bsafe\b/i);
@@ -491,7 +490,7 @@ describe('widget xml survives the android resource merge', () => {
     for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml']) {
       for (const id of ids(readFileSync(join(ROOT, f), 'utf8'))) defined.add(id);
     }
-    const src = readFileSync(join(ROOT, 'native/widget/CycleWidgetProvider.kt'), 'utf8');
+    const src = readFileSync(join(ROOT, 'native/widget/CycleWidgetProvider.java'), 'utf8');
     for (const m of src.matchAll(/R\.id\.([\w-]+)/g)) {
       expect(defined.has(m[1]), `R.id.${m[1]}`).toBe(true);
     }

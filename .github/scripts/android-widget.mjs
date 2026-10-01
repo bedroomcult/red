@@ -7,7 +7,7 @@
 // android-manifest.mjs. Must run AFTER `cap sync` and BEFORE the gradle build.
 //
 // What it does:
-//   1. copies .kt sources into the app's java package dir
+//   1. copies .java sources into the app's java package dir
 //   2. copies res/ into the app's res/ (layouts, drawables, values, xml)
 //   3. copies the widget's AndroidManifest.xml in, which the Android manifest
 //      merger picks up automatically from the app module
@@ -27,7 +27,7 @@ if (!existsSync('android')) {
 // 1. Kotlin sources.
 mkdirSync(JAVA_PKG, { recursive: true });
 for (const f of readdirSync(join(SRC))) {
-  if (!f.endsWith('.kt')) continue;
+  if (!f.endsWith('.java')) continue;
   cpSync(join(SRC, f), join(JAVA_PKG, f));
 }
 
