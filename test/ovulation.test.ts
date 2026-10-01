@@ -398,7 +398,7 @@ describe('home-screen widget wiring', () => {
 
   it('the app pushes widget data whenever the prediction moves', () => {
     const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
-    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase\)/);
+    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase, me\.prediction\.ov\)/);
     // The phase cannot be read from the later bcMode const: hooks must sit above
     // the early returns.
     expect(app).toMatch(/const suppressed = me\.prediction\.confidence/);
@@ -431,7 +431,7 @@ describe('widget today-risk wiring', () => {
     expect(p).toMatch(/86_400_000L/);
     // The Wilcox day-offsets, one entry per curve point.
     for (const o of ['-5', '-4', '-3', '-2', '-1', '0', '1']) {
-      expect(p, `offset ${o}`).toMatch(new RegExp(`${o} -> \\\\d+`));
+      expect(p, `offset ${o}`).toMatch(new RegExp(`${o} -> [0-9]+`));
     }
     // The band cutoffs match lib/chance.ts: >=27 high, >=8 medium, rest low.
     expect(p).toMatch(/p >= 27 -> "tinggi"/);
