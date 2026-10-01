@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 1x1 entry: today's chance band only. Icon tinted to the band, label names
+     the band, never safety. No countdown here; that stays on the 2x2 widget. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:gravity="center"
+    android:padding="8dp"
+    android:background="@drawable/widget_bg">
+
+    <ImageView
+        android:id="@+id/widget_chance_high"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/widget_chance_high"
+        android:visibility="gone"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_chance_medium"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/widget_chance_medium"
+        android:visibility="gone"
+        android:contentDescription="@null" />
+
+    <ImageView
+        android:id="@+id/widget_chance_low"
+        android:layout_width="20dp"
+        android:layout_height="20dp"
+        android:src="@drawable/widget_chance_low"
+        android:visibility="gone"
+        android:contentDescription="@null" />
+
+    <TextView
+        android:id="@+id/widget_chance_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:textSize="11sp"
+        android:textStyle="bold"
+        android:textColor="@color/widget_ink"
+        android:text="@string/risk_unknown" />
+</LinearLayout>

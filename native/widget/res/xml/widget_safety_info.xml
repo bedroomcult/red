@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 1x1 picker entry: today's chance band only. Fixed size, not resizable.
+     updatePeriodMillis repaints once a day so the band advances even when the
+     app is never opened. -->
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
+    android:minWidth="40dp"
+    android:minHeight="40dp"
+    android:targetCellWidth="1"
+    android:targetCellHeight="1"
+    android:updatePeriodMillis="86400000"
+    android:initialLayout="@layout/widget_safety"
+    android:previewLayout="@layout/widget_safety"
+    android:resizeMode="none"
+    android:widgetCategory="home_screen"
+    android:description="@string/widget_safety_description" />

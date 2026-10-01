@@ -68,6 +68,18 @@ if (!existsSync(MANIFEST)) {
       '                android:resource="@xml/widget_cycle_info" />',
       '        </receiver>',
     ].join('\n');
+    const SAFETY_RECEIVER = [
+      '        <receiver',
+      '            android:name="com.red.tracker.widget.CycleWidgetSafety"',
+      '            android:exported="false">',
+      '            <intent-filter>',
+      '                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
+      '            </intent-filter>',
+      '            <meta-data',
+      '                android:name="android.appwidget.provider"',
+      '                android:resource="@xml/widget_safety_info" />',
+      '        </receiver>',
+    ].join('\n');
     // Anchor on the closing </application> tag, which the Capacitor template
     // always has. Inserting before it keeps the file well formed.
     const idx = s.lastIndexOf('</application>');
@@ -75,7 +87,7 @@ if (!existsSync(MANIFEST)) {
       console.error(`${MANIFEST} has no </application> — refusing to patch`);
       process.exit(1);
     }
-    s = s.slice(0, idx) + RECEIVER + '\n    ' + s.slice(idx);
+    s = s.slice(0, idx) + RECEIVER + '\n' + SAFETY_RECEIVER + '\n    ' + s.slice(idx);
     writeFileSync(MANIFEST, s);
     console.log('declared CycleWidgetProvider in the app manifest');
   }

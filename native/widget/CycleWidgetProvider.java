@@ -44,28 +44,33 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     private static final int[] OFFSETS = {-5, -4, -3, -2, -1, 0, 1};
     private static final int[] PERCENTS = {4, 8, 17, 27, 31, 33, 5};
 
+    // Small entry: always the 2x2 layout. The safety badge is a separate
+    // provider (CycleWidgetSafety) so Android shows two choices.
     @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         WidgetData data = readWidgetData(context);
         for (int id : ids) {
-            manager.updateAppWidget(id, buildViews(context, manager, id, data));
+            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data));
         }
     }
 
-    // Repaint every widget instance. Called by the plugin after the app writes
-    // new data, and by the daily updatePeriodMillis tick.
+    // Repaint every widget instance of BOTH kinds. Called by the plugin after
+    // the app writes new data, and by the daily updatePeriodMillis tick.
     public static void updateAll(Context context) {
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         if (manager == null) return;
-        int[] ids = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetProvider.class));
-        if (ids.length == 0) return;
         WidgetData data = readWidgetData(context);
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetProvider.class));
         for (int id : ids) {
-            manager.updateAppWidget(id, buildViews(context, manager, id, data));
+            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data));
+        }
+        int[] safetyIds = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetSafety.class));
+        for (int id : safetyIds) {
+            manager.updateAppWidget(id, paintSafety(context, data));
         }
     }
 
-    private static class WidgetData {
+    static class WidgetData {
         final String next;
         final String phase;
         final String ov;
@@ -76,7 +81,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         }
     }
 
-    private static WidgetData readWidgetData(Context context) {
+    static WidgetData readWidgetData(Context context) {
         SharedPreferences p = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         return new WidgetData(
                 p.getString(KEY_NEXT, null),
@@ -155,13 +160,41 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         return "Tidak dapat diperkirakan";
     }
 
-    private static RemoteViews buildViews(
-            Context context, AppWidgetManager manager, int id, WidgetData data) {
-        // Width decides the layout. 220dp is comfortably between the 2x2 and
-        // the 4x2 default sizes, so neither falls on the wrong side.
-        int minWidth = manager.getAppWidgetOptions(id)
-                .getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 0);
-        int layout = minWidth >= 220 ? R.layout.widget_cycle_wide : R.layout.widget_cycle;
+    // 1x1 safety paint: chance icon + band label only. No countdown, no
+    // phase row; those stay on the 2x2 widget. Unknown (including
+    // BC-suppressed) shows the same wording as the app's chance card and
+    // hides the icon row: naming a risk with no ovulation to measure
+    // against would be invented.
+    static RemoteViews paintSafety(Context context, WidgetData data) {
+        RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_safety);
+        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(todayIso(), data.ov));
+        int visible = band == null ? -1
+                : "tinggi".equals(band) ? R.id.widget_chance_high
+                : "sedang".equals(band) ? R.id.widget_chance_medium : R.id.widget_chance_low;
+        int[] icons = {R.id.widget_chance_high, R.id.widget_chance_medium, R.id.widget_chance_low};
+        for (int viewId : icons) {
+            views.setViewVisibility(viewId, viewId == visible ? View.VISIBLE : View.GONE);
+        }
+        if (visible != -1) {
+            int badge = "tinggi".equals(band) ? 0xFFF0507A
+                    : "sedang".equals(band) ? 0xFFF5A94A : 0xFF4CC38A;
+            views.setInt(visible, "setColorFilter", badge);
+        }
+        views.setTextViewText(R.id.widget_chance_label, chanceLabel(band));
+
+        // Tapping anywhere opens the app.
+        android.content.Intent launch = context.getPackageManager()
+                .getLaunchIntentForPackage(context.getPackageName());
+        if (launch != null) {
+            views.setOnClickPendingIntent(R.id.widget_root, PendingIntent.getActivity(
+                    context, 0, launch,
+                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        }
+        return views;
+    }
+
+    static RemoteViews paint(
+            Context context, int layout, WidgetData data) {
         RemoteViews views = new RemoteViews(context.getPackageName(), layout);
 
         Integer days = daysUntil(data.next);
