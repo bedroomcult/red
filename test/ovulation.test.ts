@@ -496,4 +496,31 @@ describe('widget xml survives the android resource merge', () => {
       expect(defined.has(m[1]), `R.id.${m[1]}`).toBe(true);
     }
   });
+
+  it('references only strings and drawables the widget defines', () => {
+    // A missing string or drawable fails only at AAPT link time, in the APK
+    // job. Assert here so it fails in vitest instead.
+    const strings = new Set<string>();
+    for (const f of ['native/widget/res/values/widget_strings.xml']) {
+      const src = readFileSync(join(ROOT, f), 'utf8');
+      for (const m of src.matchAll(/<string name="([\w-]+)"/g)) strings.add(m[1]);
+    }
+    const drawables = new Set<string>();
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml']) {
+      const src = readFileSync(join(ROOT, f), 'utf8');
+      for (const m of src.matchAll(/@drawable\/([\w-]+)/g)) drawables.add(m[1]);
+    }
+    const layouts = [
+      readFileSync(join(ROOT, 'native/widget/res/layout/widget_cycle.xml'), 'utf8'),
+      readFileSync(join(ROOT, 'native/widget/res/layout/widget_cycle_wide.xml'), 'utf8'),
+      readFileSync(join(ROOT, 'native/widget/res/xml/widget_cycle_info.xml'), 'utf8'),
+    ].join('\n');
+    for (const m of layouts.matchAll(/@string\/([\w-]+)/g)) {
+      expect(strings.has(m[1]), `@string/${m[1]}`).toBe(true);
+    }
+    const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
+    for (const d of drawables) {
+      expect(existingDrawables.has(d), `@drawable/${d}`).toBe(true);
+    }
+  });
 });
