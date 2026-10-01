@@ -82,13 +82,36 @@ export default function LogSheet({ date, existing, active, onClose, onSaved, rai
     end_date: date,
   });
 
+  const d = new Date(date + 'T00:00:00Z');
+  const dayNum = Number(date.slice(8, 10));
+  const monthLong = d.toLocaleDateString('id-ID', { month: 'long' });
+  const weekdayLong = d.toLocaleDateString('id-ID', { weekday: 'long' });
+  // Badge shows the short type label only; the full sentence stays in the
+  // hint below. No-log has no short label, so it shows no badge.
+
   return (
     <>
       <div className={`overlay${raised ? ' sheet-overlay-raised' : ''}`} onClick={onClose} />
       <div className={`sheet${raised ? ' sheet-raised' : ''}`} role="dialog" aria-modal="true" aria-label={new Date(date + 'T00:00:00Z').toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}>
         <div className="sheet-body">
           <div className="grabber" />
-          <h3>{date}</h3>
+          <div className="day-head">
+            <div className="day-head-date">
+              <span className="day-head-num">{dayNum}</span>
+              <span className="day-head-mon">
+                {monthLong}
+                <span className="day-head-year">{date.slice(0, 4)}</span>
+              </span>
+            </div>
+            <div className="day-head-right">
+              {(inRange ? active!.type : existing?.type) === 'menstruation' ? (
+                <span className={`badge ${inRange ? 'amber' : 'green'}`}>{t.legendPeriod}</span>
+              ) : (inRange ? active!.type : existing?.type) === 'spotting' ? (
+                <span className={`badge ${inRange ? 'amber' : 'green'}`}>{t.legendSpotting}</span>
+              ) : null}
+              <span className="day-head-day">{weekdayLong}</span>
+            </div>
+          </div>
           <div className="hint">
             {inRange
               ? t.insideRange

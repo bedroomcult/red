@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget colours for night mode, mirroring the [data-theme="dark"] tokens
+     in src/index.css. Same resource names as res/values/widget_colors.xml;
+     Android picks this file when the device is in night mode. -->
+<resources>
+    <color name="widget_bg_color">#FF221C28</color> <!-- card -->
+    <color name="widget_ink">#FFF6EEF4</color>      <!-- ink -->
+    <color name="widget_muted">#FFA99FB0</color>    <!-- text-muted -->
+    <color name="widget_border">#FF3A3042</color>   <!-- border -->
+</resources>

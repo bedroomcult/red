@@ -464,6 +464,7 @@ describe('widget xml survives the android resource merge', () => {
     ...['widget_bg.xml', 'widget_dot.xml', 'widget_chance_high.xml', 'widget_chance_medium.xml', 'widget_chance_low.xml'].map((f) => `native/widget/res/drawable/${f}`),
     ...['widget_cycle.xml', 'widget_cycle_wide.xml'].map((f) => `native/widget/res/layout/${f}`),
     ...['widget_colors.xml', 'widget_strings.xml'].map((f) => `native/widget/res/values/${f}`),
+    'native/widget/res/values-night/widget_colors.xml',
     'native/widget/res/xml/widget_cycle_info.xml',
   ];
 
@@ -521,6 +522,33 @@ describe('widget xml survives the android resource merge', () => {
     const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
     for (const d of drawables) {
       expect(existingDrawables.has(d), `@drawable/${d}`).toBe(true);
+    }
+  });
+
+  it('day and night define identical color name sets', () => {
+    // Android picks values-night/ in night mode; a missing name there falls
+    // back to day, so both files must declare the same names.
+    const names = (f: string) => [...readFileSync(join(ROOT, f), 'utf8').matchAll(/<color name="([\w-]+)"/g)].map((m) => m[1]).sort();
+    expect(names('native/widget/res/values-night/widget_colors.xml')).toEqual(names('native/widget/res/values/widget_colors.xml'));
+  });
+
+  it('night values differ from day for bg/ink/muted/border', () => {
+    const vals = (f: string) => Object.fromEntries([...readFileSync(join(ROOT, f), 'utf8').matchAll(/<color name="([\w-]+)">([^<]+)</g)].map((m) => [m[1], m[2].trim()]));
+    const day = vals('native/widget/res/values/widget_colors.xml');
+    const night = vals('native/widget/res/values-night/widget_colors.xml');
+    for (const k of ['widget_bg_color', 'widget_ink', 'widget_muted', 'widget_border']) {
+      expect(night[k], k).toBeDefined();
+      expect(night[k], k).not.toBe(day[k]);
+    }
+  });
+
+  it('layouts theme only via @color/widget_*, never a hardcoded hex', () => {
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml']) {
+      const src = readFileSync(join(ROOT, f), 'utf8');
+      expect(src, f).not.toMatch(/#[0-9A-Fa-f]{6,8}/);
+      for (const m of src.matchAll(/@color\/([\w-]+)/g)) {
+        expect(m[1].startsWith('widget_'), `${f}: @color/${m[1]}`).toBe(true);
+      }
     }
   });
 });
