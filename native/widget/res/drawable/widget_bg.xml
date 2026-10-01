@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Widget background: rounded card matching the app's --card and radius scale. -->
+<!-- Widget background: rounded card matching the app's card and radius scale. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="@color/widget_bg_color" />

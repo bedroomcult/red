@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 // The calendar renders the fertile window as a solid green ring and the peak as
 // a dashed one. Both are pure CSS driven by the class list, so the classes and
@@ -448,5 +449,51 @@ describe('widget today-risk wiring', () => {
     // Percentage and raw probability stay in the app; the widget shows a band.
     expect(p).not.toMatch(/percent/);
     expect(p).not.toMatch(/belo?owOne/);
+  });
+});
+
+// Widget resources must survive the Android resource merger. Two rules the
+// merge step enforces but no JS test would otherwise check:
+//   1. XML comments may not contain "--", except the closing delimiter. The
+//      failure mode is a SAXParseException deep in :app:mergeReleaseResources.
+//   2. res/values/ files must not claim existing Capacitor names (strings.xml,
+//      colors.xml): the widget copy step would overwrite app_name and friends.
+//      Widget files are prefixed widget_ for that reason.
+describe('widget xml survives the android resource merge', () => {
+  const files = [
+    ...['widget_bg.xml', 'widget_dot.xml', 'widget_chance_high.xml', 'widget_chance_medium.xml', 'widget_chance_low.xml'].map((f) => `native/widget/res/drawable/${f}`),
+    ...['widget_cycle.xml', 'widget_cycle_wide.xml'].map((f) => `native/widget/res/layout/${f}`),
+    ...['widget_colors.xml', 'widget_strings.xml'].map((f) => `native/widget/res/values/${f}`),
+    'native/widget/res/xml/widget_cycle_info.xml',
+  ];
+
+  it('declares no dangerous filenames', () => {
+    for (const f of files) {
+      const base = f.split('/').pop()!;
+      expect(base.startsWith('widget_'), f).toBe(true);
+    }
+    expect(existsSync('native/widget/res/values/strings.xml')).toBe(false);
+    expect(existsSync('native/widget/res/values/colors.xml')).toBe(false);
+  });
+
+  it('has no double-dash inside any comment body', () => {
+    for (const f of files) {
+      const src = readFileSync(join(ROOT, f), 'utf8');
+      for (const m of src.matchAll(/<!--([\s\S]*?)-->/g)) {
+        expect(m[1], `${f}: ${m[1].slice(0, 40)}`).not.toMatch(/--/);
+      }
+    }
+  });
+
+  it('references only ids its layouts define', () => {
+    const ids = (src: string) => new Set([...src.matchAll(/android:id="@\+id\/([\w-]+)"/g)].map((m) => m[1]));
+    const defined = new Set<string>();
+    for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml']) {
+      for (const id of ids(readFileSync(join(ROOT, f), 'utf8'))) defined.add(id);
+    }
+    const src = readFileSync(join(ROOT, 'native/widget/CycleWidgetProvider.kt'), 'utf8');
+    for (const m of src.matchAll(/R\.id\.([\w-]+)/g)) {
+      expect(defined.has(m[1]), `R.id.${m[1]}`).toBe(true);
+    }
   });
 });

@@ -3,8 +3,8 @@
      widgets cannot read CSS variables, so the values are duplicated here and
      must track DESIGN.md when the palette changes. -->
 <resources>
-    <color name="widget_bg_color">#FFFFFFFF</color> <!-- --card -->
-    <color name="widget_ink">#FF2B2230</color>      <!-- --ink -->
-    <color name="widget_muted">#FF8A7F90</color>    <!-- --text-muted -->
-    <color name="widget_border">#FFF1DDE1</color>   <!-- --border -->
+    <color name="widget_bg_color">#FFFFFFFF</color> <!-- card -->
+    <color name="widget_ink">#FF2B2230</color>      <!-- ink -->
+    <color name="widget_muted">#FF8A7F90</color>    <!-- text-muted -->
+    <color name="widget_border">#FFF1DDE1</color>   <!-- border -->
 </resources>
