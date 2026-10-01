@@ -82,36 +82,44 @@ if (!existsSync(MANIFEST)) {
 }
 
 // 4. Register the plugin. Capacitor 7 discovers plugins listed in MainActivity;
-//    without this the JS call is a silent no-op. Capacitor 7 generates
-//    MainActivity.java, but a Kotlin project is possible, so both are checked
-//    and the import syntax is chosen to match.
-const ktMain = 'android/app/src/main/java/com/red/tracker/MainActivity.kt';
-const javaMain = 'android/app/src/main/java/com/red/tracker/MainActivity.java';
-const MAIN = existsSync(ktMain) ? ktMain : existsSync(javaMain) ? javaMain : null;
-if (!MAIN) {
-  console.error('no MainActivity.java or MainActivity.kt — cannot register the widget plugin');
+//    without this the JS call is a silent no-op. The generated template is bare
+//    (an empty class body), so when there is no onCreate to hook into we add
+//    one — the documented Capacitor pattern is registering before super.onCreate.
+const MAIN = 'android/app/src/main/java/com/red/tracker/MainActivity.java';
+if (!existsSync(MAIN)) {
+  console.error(`no ${MAIN} — cannot register the widget plugin`);
   process.exit(1);
 }
 {
-  const isKt = MAIN.endsWith('.kt');
   let s = readFileSync(MAIN, 'utf8');
   if (!s.includes('CycleWidgetPlugin')) {
-    // Import after the existing Capacitor import, which both templates have.
+    // Import after the existing Capacitor import, which the template has.
     const anchor = /import com\.getcapacitor\.BridgeActivity;?/;
     if (!anchor.test(s)) {
       console.error(`${MAIN} has no BridgeActivity import — refusing to guess an insertion point`);
       process.exit(1);
     }
-    s = s.replace(anchor, (m) => `${m}\nimport com.red.tracker.widget.CycleWidgetPlugin;`);
-    // Register before super.onCreate: Capacitor requires registration to happen
-    // before the bridge is built.
-    if (!s.includes('super.onCreate(savedInstanceState)')) {
-      console.error(`${MAIN} has no super.onCreate(savedInstanceState) — cannot register the plugin`);
+    s = s.replace(anchor, (m) => `${m}\nimport android.os.Bundle;\nimport com.red.tracker.widget.CycleWidgetPlugin;`);
+    if (/protected void onCreate\(/.test(s) && s.includes('super.onCreate(savedInstanceState);')) {
+      // A project-defined onCreate exists: register inside it, first.
+      s = s.replace(/(\s*)super\.onCreate\(savedInstanceState\);/, '$1registerPlugin(CycleWidgetPlugin.class);$1super.onCreate(savedInstanceState);');
+    } else {
+      // Stock template: add an onCreate that registers the plugin.
+      // The \s* covers both empty-body shapes.
+      s = s.replace(/public class MainActivity extends BridgeActivity \{\s*\}/, `public class MainActivity extends BridgeActivity {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        registerPlugin(CycleWidgetPlugin.class);
+        super.onCreate(savedInstanceState);
+    }
+}`);
+    }
+    if (!s.includes('registerPlugin(CycleWidgetPlugin.class)')) {
+      console.error(`${MAIN} — could not anchor plugin registration`);
       process.exit(1);
     }
-    s = s.replace(/(\s*)super\.onCreate\(savedInstanceState\);/, '$1registerPlugin(CycleWidgetPlugin.class);$1super.onCreate(savedInstanceState);');
     writeFileSync(MAIN, s);
-    console.log(`registered CycleWidgetPlugin in ${isKt ? 'MainActivity.kt' : 'MainActivity.java'}`);
+    console.log('registered CycleWidgetPlugin in MainActivity.java');
   }
 }
 
