@@ -1,7 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Chance band dot, tinted per band at paint time like the phase dot. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#FFFFFFFF" />
-    <size android:width="14dp" android:height="14dp" />
-</shape>
+<!-- Chance band droplet, matching the app logo. Tinted per band at paint
+     time like the phase droplet. A placeholder colour is required, so white
+     is used and always overwritten. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="14dp"
+    android:height="14dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,3.5c2.8,3.7 5.5,6.6 5.5,10a5.5,5.5 0 1,1 -11,0c0,-3.4 2.7,-6.3 5.5,-10z" />
+</vector>
