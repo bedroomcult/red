@@ -7,4 +7,8 @@
     <color name="widget_ink">#FFF6EEF4</color>      <!-- ink -->
     <color name="widget_muted">#FFA99FB0</color>    <!-- text-muted -->
     <color name="widget_border">#FF3A3042</color>   <!-- border -->
+    <color name="widget_band_high">#FF4A2A38</color>   <!-- rose-soft -->
+    <color name="widget_band_medium">#FF3A2C1C</color> <!-- amber -->
+    <color name="widget_band_low">#FF16352A</color>    <!-- green-soft -->
+    <color name="widget_band_unknown">#FF2C2433</color> <!-- surface-alt -->
 </resources>

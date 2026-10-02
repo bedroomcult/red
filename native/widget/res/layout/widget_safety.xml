@@ -1,23 +1,28 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1x1 entry: a band-coloured droplet with a white percent centred on it.
-     No band label: the colour alone carries the signal. RemoteViews cannot
-     tint a TextView background alone, so a FrameLayout stacks a tinted
-     droplet ImageView behind a white percent TextView. -->
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- 1x1 entry: a white droplet filling the cell like the app icon, with a
+     black percent centred on it, on a band-tinted card ground. No band
+     label: the ground colour alone carries the signal. RemoteViews cannot
+     tint a layout background, so a full-bleed rounded ImageView carries the
+     tint while the droplet drawable stays white. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:orientation="vertical"
-    android:gravity="center"
-    android:padding="6dp"
-    android:background="@drawable/widget_bg">
+    android:layout_height="match_parent">
+
+    <ImageView
+        android:id="@+id/widget_ground"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:src="@drawable/widget_safety_bg"
+        android:scaleType="fitXY"
+        android:contentDescription="@null" />
 
     <FrameLayout
-        android:layout_width="52dp"
-        android:layout_height="52dp">
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:padding="4dp">
 
         <ImageView
-            android:id="@+id/widget_drop_bg"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:src="@drawable/widget_drop_bg"
@@ -28,10 +33,10 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:gravity="center"
-            android:textSize="13sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:includeFontPadding="false"
-            android:textColor="#FFFFFFFF"
+            android:textColor="@color/widget_ink"
             android:text="–" />
     </FrameLayout>
-</LinearLayout>
+</FrameLayout>

@@ -267,22 +267,23 @@ public class CycleWidgetProvider extends AppWidgetProvider {
 
     static RemoteViews paintSafety(Context context, WidgetData data) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_safety);
-        // Colour-only signal: the droplet BACKGROUND carries the band
-        // colour, the droplet stays white in shape, the percent stays white
-        // on top. No band label; ChanceCard in the app carries the full
-        // wording for anyone who wants it.
+        // App-icon look: white droplet filling the cell, black percent
+        // centred on it, band-tinted card ground. The droplet drawable
+        // stays white; only the ground shape is tinted. No band label;
+        // ChanceCard in the app carries the full wording for anyone who
+        // wants it.
         String today = localTodayIso();
         boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
                 && chanceOffset(today, data.ov) != null;
         String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
         Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
+        int ground = band == null ? R.color.widget_band_unknown
+                : "tinggi".equals(band) ? R.color.widget_band_high
+                : "sedang".equals(band) ? R.color.widget_band_medium : R.color.widget_band_low;
+        views.setInt(R.id.widget_ground, "setColorFilter", context.getResources().getColor(ground));
         if (band == null) {
-            views.setInt(R.id.widget_drop_bg, "setColorFilter", 0xFFB9A8C9);
             views.setTextViewText(R.id.widget_chance_label, "\u2013");
         } else {
-            int badge = "tinggi".equals(band) ? 0xFFF0507A
-                    : "sedang".equals(band) ? 0xFFF5A94A : 0xFF4CC38A;
-            views.setInt(R.id.widget_drop_bg, "setColorFilter", badge);
             views.setTextViewText(R.id.widget_chance_label, percent == null ? "<1%" : percent + "%");
         }
 
