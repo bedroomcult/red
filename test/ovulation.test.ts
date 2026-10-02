@@ -554,7 +554,7 @@ describe('widget xml survives the android resource merge', () => {
     for (const m of layouts.matchAll(/@string\/([\w-]+)/g)) {
       expect(strings.has(m[1]), `@string/${m[1]}`).toBe(true);
     }
-    const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_drop_bg', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
+    const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_drop_bg', 'widget_safety_bg', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
     for (const d of drawables) {
       expect(existingDrawables.has(d), `@drawable/${d}`).toBe(true);
     }
@@ -582,11 +582,16 @@ describe('widget xml survives the android resource merge', () => {
     expect(p).toMatch(/paintSafety/);
     // The number, not the band name, goes into the 1x1 label.
     expect(p).toMatch(/percent == null \? "<1%" : percent \+ "%"/);
+    // App-icon look: white droplet, black percent, band-tinted ground.
+    expect(p).toMatch(/widget_band_high/);
+    expect(p).toMatch(/R\.id\.widget_ground/);
     expect(p.toLowerCase()).not.toMatch(/aman/);
     expect(p).not.toMatch(/\bsafe\b/i);
     const layout = readFileSync(join(ROOT, 'native/widget/res/layout/widget_safety.xml'), 'utf8');
     expect(layout).not.toMatch(/widget_days|widget_phase|widget_unit/);
     expect(layout).toMatch(/widget_chance_label/);
+    expect(layout).toMatch(/widget_ground/);
+    expect(layout).toMatch(/widget_drop_bg/);
   });
 
   it('the 2x1 entry shows percent, band and ovulation caption', () => {
