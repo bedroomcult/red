@@ -1,15 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- 2x1 picker entry: today's risk percent, band label and ovulation caption.
-     Fixed size, not resizable. updatePeriodMillis repaints once a day so the
-     figures advance even when the app is never opened. -->
+     Resizable: at the smallest height the note hides, then the caption;
+     a narrow width hides the icon row. updatePeriodMillis repaints once a
+     day so the figures advance even when the app is never opened. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="110dp"
     android:minHeight="40dp"
+    android:minResizeWidth="110dp"
+    android:minResizeHeight="40dp"
     android:targetCellWidth="2"
     android:targetCellHeight="1"
+    android:maxResizeWidth="320dp"
+    android:maxResizeHeight="120dp"
     android:updatePeriodMillis="86400000"
     android:initialLayout="@layout/widget_risk"
     android:previewLayout="@layout/widget_risk"
-    android:resizeMode="none"
+    android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:description="@string/widget_risk_description" />

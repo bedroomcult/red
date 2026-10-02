@@ -6,6 +6,8 @@ import android.appwidget.AppWidgetProvider;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.os.Bundle;
+import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -38,6 +40,8 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     public static final String KEY_NEXT = "next_period";
     public static final String KEY_PHASE = "phase";
     public static final String KEY_OV = "ovulation";
+    public static final String KEY_TITLE = "title";
+    public static final String KEY_NOTE = "note";
 
     // Wilcox day-specific conception probabilities, percent. Same numbers as
     // lib/chance.ts (-5..+1). Re-implemented because native code cannot import
@@ -51,8 +55,13 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         WidgetData data = readWidgetData(context);
         for (int id : ids) {
-            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data));
+            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data, manager.getAppWidgetOptions(id)));
         }
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle opts) {
+        manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, readWidgetData(context), opts));
     }
 
     // Repaint every widget instance of BOTH kinds. Called by the plugin after
@@ -63,7 +72,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         WidgetData data = readWidgetData(context);
         int[] ids = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetProvider.class));
         for (int id : ids) {
-            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data));
+            manager.updateAppWidget(id, paint(context, R.layout.widget_cycle, data, manager.getAppWidgetOptions(id)));
         }
         int[] safetyIds = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetSafety.class));
         for (int id : safetyIds) {
@@ -71,18 +80,28 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         }
         int[] riskIds = manager.getAppWidgetIds(new ComponentName(context, CycleWidgetRisk.class));
         for (int id : riskIds) {
-            manager.updateAppWidget(id, paintRisk(context, data));
+            manager.updateAppWidget(id, paintRisk(context, data, manager.getAppWidgetOptions(id)));
         }
+    }
+
+    static int optMin(Bundle opts, String key, int fallback) {
+        if (opts == null) return fallback;
+        int v = opts.getInt(key, fallback);
+        return v <= 0 ? fallback : v;
     }
 
     static class WidgetData {
         final String next;
         final String phase;
         final String ov;
-        WidgetData(String next, String phase, String ov) {
+        final String title;
+        final String note;
+        WidgetData(String next, String phase, String ov, String title, String note) {
             this.next = next;
             this.phase = phase;
             this.ov = ov;
+            this.title = title;
+            this.note = note;
         }
     }
 
@@ -91,7 +110,9 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         return new WidgetData(
                 p.getString(KEY_NEXT, null),
                 p.getString(KEY_PHASE, null),
-                p.getString(KEY_OV, null));
+                p.getString(KEY_OV, null),
+                p.getString(KEY_TITLE, ""),
+                p.getString(KEY_NOTE, ""));
     }
 
     // Device-local calendar date as YYYY-MM-DD. UTC would return yesterday
@@ -198,14 +219,22 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     // and the same number the ChanceCard shows, derived from the same stored
     // ovulation date at paint time. Unknown (including BC-suppressed) shows
     // the card's unknown wording with no number and no caption.
-    static RemoteViews paintRisk(Context context, WidgetData data) {
+    static RemoteViews paintRisk(Context context, WidgetData data, Bundle opts) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_risk);
+        int minW = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 999);
+        int minH = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 999);
         String today = localTodayIso();
         boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
                 && chanceOffset(today, data.ov) != null;
         String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
         Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
         String caption = "bc".equals(data.phase) ? null : ovCaption(today, data.ov);
+        String note = (data.note != null && !data.note.isEmpty())
+                ? data.note : context.getString(R.string.widget_risk_note);
+        views.setTextViewText(R.id.widget_risk_note, note);
+        if (minH < 50) {
+            views.setViewVisibility(R.id.widget_risk_note, View.GONE);
+        }
         if (band == null) {
             views.setViewVisibility(R.id.widget_risk_icon_row, View.GONE);
             views.setTextViewText(R.id.widget_risk_percent, "\u2013");
@@ -224,12 +253,15 @@ public class CycleWidgetProvider extends AppWidgetProvider {
             views.setViewVisibility(R.id.widget_risk_icon_row, View.VISIBLE);
             views.setTextViewText(R.id.widget_risk_percent, percent == null ? "<1%" : percent + "%");
             views.setTextViewText(R.id.widget_risk_band, chanceLabel(band));
-            if (caption != null) {
+            if (caption != null && minH >= 60) {
                 views.setViewVisibility(R.id.widget_risk_caption, View.VISIBLE);
                 views.setTextViewText(R.id.widget_risk_caption, caption);
             } else {
                 views.setViewVisibility(R.id.widget_risk_caption, View.GONE);
             }
+        }
+        if (minW < 170) {
+            views.setViewVisibility(R.id.widget_risk_icon_row, View.GONE);
         }
 
         // Tapping anywhere opens the app.
@@ -272,8 +304,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     }
 
     static RemoteViews paint(
-            Context context, int layout, WidgetData data) {
+            Context context, int layout, WidgetData data, Bundle opts) {
         RemoteViews views = new RemoteViews(context.getPackageName(), layout);
+        int minW = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 999);
+        int minH = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 999);
 
         Integer days = daysUntil(data.next);
         String figure = days == null ? "–" : String.valueOf(days);
@@ -321,6 +355,18 @@ public class CycleWidgetProvider extends AppWidgetProvider {
             views.setInt(visible, "setColorFilter", badge);
         }
         views.setTextViewText(R.id.widget_chance_label, chanceLabel(band));
+        if (data.title != null && !data.title.isEmpty()) {
+            views.setViewVisibility(R.id.widget_title, View.VISIBLE);
+            views.setTextViewText(R.id.widget_title, data.title);
+        } else {
+            views.setViewVisibility(R.id.widget_title, View.GONE);
+        }
+        if (minH < 130) {
+            views.setViewVisibility(R.id.widget_chance_row, View.GONE);
+        }
+        if (minW < 150) {
+            views.setTextViewTextSize(R.id.widget_days, TypedValue.COMPLEX_UNIT_SP, 28);
+        }
 
         // Tapping anywhere opens the app.
         android.content.Intent launch = context.getPackageManager()

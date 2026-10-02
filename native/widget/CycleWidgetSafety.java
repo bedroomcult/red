@@ -2,6 +2,7 @@ package com.red.tracker.widget;
 
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
+import android.os.Bundle;
 
 // 1x1 picker entry: today's chance band only. Shares prefs and the daily tick
 // with the 2x2 countdown widget: this class only picks the safety layout,
@@ -14,5 +15,10 @@ public class CycleWidgetSafety extends CycleWidgetProvider {
         for (int id : ids) {
             manager.updateAppWidget(id, paintSafety(context, data));
         }
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle opts) {
+        manager.updateAppWidget(id, paintSafety(context, readWidgetData(context)));
     }
 }

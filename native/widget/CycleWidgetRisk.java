@@ -2,6 +2,7 @@ package com.red.tracker.widget;
 
 import android.appwidget.AppWidgetManager;
 import android.content.Context;
+import android.os.Bundle;
 
 // 2x1 picker entry: today's risk percent, band label and ovulation caption.
 // Shares prefs and the daily tick with the other widgets: this class only
@@ -12,7 +13,12 @@ public class CycleWidgetRisk extends CycleWidgetProvider {
     public void onUpdate(Context context, AppWidgetManager manager, int[] ids) {
         WidgetData data = readWidgetData(context);
         for (int id : ids) {
-            manager.updateAppWidget(id, paintRisk(context, data));
+            manager.updateAppWidget(id, paintRisk(context, data, manager.getAppWidgetOptions(id)));
         }
+    }
+
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int id, Bundle opts) {
+        manager.updateAppWidget(id, paintRisk(context, readWidgetData(context), opts));
     }
 }

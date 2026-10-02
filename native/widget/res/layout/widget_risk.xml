@@ -6,7 +6,7 @@
     android:layout_height="match_parent"
     android:orientation="horizontal"
     android:gravity="center_vertical"
-    android:padding="12dp"
+    android:padding="10dp"
     android:background="@drawable/widget_bg">
 
     <LinearLayout
@@ -18,24 +18,24 @@
 
         <ImageView
             android:id="@+id/widget_chance_high"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/widget_chance_high"
             android:visibility="gone"
             android:contentDescription="@null" />
 
         <ImageView
             android:id="@+id/widget_chance_medium"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/widget_chance_medium"
             android:visibility="gone"
             android:contentDescription="@null" />
 
         <ImageView
             android:id="@+id/widget_chance_low"
-            android:layout_width="18dp"
-            android:layout_height="18dp"
+            android:layout_width="16dp"
+            android:layout_height="16dp"
             android:src="@drawable/widget_chance_low"
             android:visibility="gone"
             android:contentDescription="@null" />
@@ -52,7 +52,7 @@
             android:id="@+id/widget_risk_percent"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="28sp"
+            android:textSize="22sp"
             android:textStyle="bold"
             android:includeFontPadding="false"
             android:textColor="@color/widget_ink"
@@ -62,7 +62,7 @@
             android:id="@+id/widget_risk_band"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="12sp"
+            android:textSize="11sp"
             android:textStyle="bold"
             android:textColor="@color/widget_muted"
             android:text="@string/risk_unknown" />
@@ -80,7 +80,7 @@
             android:id="@+id/widget_risk_caption"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textColor="@color/widget_muted"
             android:text="@string/risk_unknown" />
 
@@ -89,7 +89,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textSize="10sp"
+            android:textSize="9sp"
             android:textColor="@color/widget_muted"
             android:text="@string/widget_risk_note" />
     </LinearLayout>
