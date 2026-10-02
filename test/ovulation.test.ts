@@ -577,9 +577,11 @@ describe('widget xml survives the android resource merge', () => {
     }
   });
 
-  it('the 1x1 badge shows the band, never safety wording', () => {
+  it('the 1x1 badge is colour-only: droplet plus percent, no band label', () => {
     const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
     expect(p).toMatch(/paintSafety/);
+    // The number, not the band name, goes into the 1x1 label.
+    expect(p).toMatch(/percent == null \? "<1%" : percent \+ "%"/);
     expect(p.toLowerCase()).not.toMatch(/aman/);
     expect(p).not.toMatch(/\bsafe\b/i);
     const layout = readFileSync(join(ROOT, 'native/widget/res/layout/widget_safety.xml'), 'utf8');
