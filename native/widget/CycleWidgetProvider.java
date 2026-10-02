@@ -267,11 +267,9 @@ public class CycleWidgetProvider extends AppWidgetProvider {
 
     static RemoteViews paintSafety(Context context, WidgetData data) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_safety);
-        // App-icon look: white droplet filling the cell, black percent
-        // centred on it, band-tinted card ground. The droplet drawable
-        // stays white; only the ground shape is tinted. No band label;
-        // ChanceCard in the app carries the full wording for anyone who
-        // wants it.
+        // Legibility first: big black percent, small band label, both on
+        // a band-tinted ground. The tint carries the signal at a glance;
+        // the words confirm it for anyone who looks closer.
         String today = localTodayIso();
         boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
                 && chanceOffset(today, data.ov) != null;
@@ -283,8 +281,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         views.setInt(R.id.widget_ground, "setColorFilter", context.getResources().getColor(ground));
         if (band == null) {
             views.setTextViewText(R.id.widget_chance_label, "\u2013");
+            views.setTextViewText(R.id.widget_safety_band, chanceLabel(null));
         } else {
             views.setTextViewText(R.id.widget_chance_label, percent == null ? "<1%" : percent + "%");
+            views.setTextViewText(R.id.widget_safety_band, chanceLabel(band));
         }
 
         // Tapping anywhere opens the app.
