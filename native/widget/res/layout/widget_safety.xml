@@ -1,48 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1x1 entry: a droplet tinted to today's band with the percent beneath it.
+<!-- 1x1 entry: a band-coloured droplet with a white percent centred on it.
      No band label: the colour alone carries the signal. RemoteViews cannot
-     overlay text on an image, so the percent sits below the droplet. -->
+     tint a TextView background alone, so a FrameLayout stacks a tinted
+     droplet ImageView behind a white percent TextView. -->
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
     android:gravity="center"
-    android:padding="8dp"
+    android:padding="6dp"
     android:background="@drawable/widget_bg">
 
-    <ImageView
-        android:id="@+id/widget_chance_high"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/widget_chance_high"
-        android:visibility="gone"
-        android:contentDescription="@null" />
+    <FrameLayout
+        android:layout_width="52dp"
+        android:layout_height="52dp">
 
-    <ImageView
-        android:id="@+id/widget_chance_medium"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/widget_chance_medium"
-        android:visibility="gone"
-        android:contentDescription="@null" />
+        <ImageView
+            android:id="@+id/widget_drop_bg"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/widget_drop_bg"
+            android:contentDescription="@null" />
 
-    <ImageView
-        android:id="@+id/widget_chance_low"
-        android:layout_width="24dp"
-        android:layout_height="24dp"
-        android:src="@drawable/widget_chance_low"
-        android:visibility="gone"
-        android:contentDescription="@null" />
-
-    <TextView
-        android:id="@+id/widget_chance_label"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="2dp"
-        android:textSize="13sp"
-        android:textStyle="bold"
-        android:includeFontPadding="false"
-        android:textColor="@color/widget_ink"
-        android:text="–" />
+        <TextView
+            android:id="@+id/widget_chance_label"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:textSize="13sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false"
+            android:textColor="#FFFFFFFF"
+            android:text="–" />
+    </FrameLayout>
 </LinearLayout>
