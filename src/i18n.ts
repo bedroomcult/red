@@ -168,10 +168,6 @@ export const t = {
   setSaved: 'Tersimpan',
   setAccount: 'Akun',
   setLogout: 'Keluar dari akun',
-  setWidget: 'Widget',
-  setWidgetTitle: 'Judul widget',
-  setWidgetNote: 'Catatan widget',
-  setWidgetHint: 'Kosong = teks bawaan. Judul tampil di 2x2, catatan di 2x1.',
   // day notes
   note: 'Catatan',
   notePlaceholder: 'Tulis apa yang Anda rasakan...',

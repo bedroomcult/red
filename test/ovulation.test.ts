@@ -437,24 +437,6 @@ describe('home-screen widget wiring', () => {
     expect(r).not.toMatch(/widget_days/);
   });
 
-  it('custom text syncs silently alongside prediction data', () => {
-    const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
-    // setText is a separate call so older native builds without it keep working.
-    expect(w).toMatch(/setText\(o: \{ title: string; note: string \}\)/);
-    expect(w).toMatch(/export function syncWidgetText/);
-    expect(w).toMatch(/loadWidgetText\(\)/);
-    const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
-    expect(app).toMatch(/syncWidgetText\(\)/);
-    const set = readFileSync(ROOT + 'src/SettingsScreen.tsx', 'utf8');
-    expect(set).toMatch(/setWidgetTitle/);
-    expect(set).toMatch(/setWidgetNote/);
-    expect(set).toMatch(/saveWidgetTextLocal/);
-    const wt = readFileSync(ROOT + 'src/widgetText.ts', 'utf8');
-    expect(wt).toMatch(/pt\.widgetTitle/);
-    expect(wt).toMatch(/slice\(0, 40\)/);
-    expect(wt).toMatch(/slice\(0, 80\)/);
-  });
-
   it('resizes adaptively and repaints', () => {
     const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
     expect(p).toMatch(/onAppWidgetOptionsChanged/);

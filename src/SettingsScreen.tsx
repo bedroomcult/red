@@ -3,8 +3,6 @@ import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
-import { loadWidgetText, saveWidgetText } from './widgetText';
-import { syncWidgetText } from './widget';
 import { apiFetch, readJson } from './api';
 
 export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout, onBack }: {
@@ -28,15 +26,6 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
-  const [wt, setWt] = useState(loadWidgetText);
-  const [wtMsg, setWtMsg] = useState<string | null>(null);
-
-  function saveWidgetTextLocal(next: { title: string; note: string }) {
-    setWt(next);
-    saveWidgetText(next);
-    syncWidgetText();
-    setWtMsg(t.setSaved);
-  }
 
   // Download everything the account holds as a JSON file. Built as a blob
   // rather than opening the endpoint, so the session cookie stays in the app
@@ -140,22 +129,6 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
             <button key={v} className={`btn ${theme === v ? 'primary' : ''}`} aria-pressed={theme === v} onClick={() => pickTheme(v)}>{label}</button>
           ))}
         </div>
-      </div>
-
-      <div className="card">
-        <h2>{t.setWidget}</h2>
-        <div className="muted">{t.setWidgetHint}</div>
-        <div className="field" style={{ display: 'block' }}>
-          <label htmlFor="set-widget-title">{t.setWidgetTitle}</label>
-          <input id="set-widget-title" value={wt.title} maxLength={40}
-            onChange={(e) => saveWidgetTextLocal({ ...wt, title: e.target.value })} placeholder={t.setWidgetTitle} />
-        </div>
-        <div className="field" style={{ display: 'block' }}>
-          <label htmlFor="set-widget-note">{t.setWidgetNote}</label>
-          <input id="set-widget-note" value={wt.note} maxLength={80}
-            onChange={(e) => saveWidgetTextLocal({ ...wt, note: e.target.value })} placeholder={t.setWidgetNote} />
-        </div>
-        {wtMsg && <div className="muted" style={{ marginTop: 'var(--s-3)' }}>{wtMsg}</div>}
       </div>
 
       <div className="card">

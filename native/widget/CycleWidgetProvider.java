@@ -40,8 +40,6 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     public static final String KEY_NEXT = "next_period";
     public static final String KEY_PHASE = "phase";
     public static final String KEY_OV = "ovulation";
-    public static final String KEY_TITLE = "title";
-    public static final String KEY_NOTE = "note";
 
     // Wilcox day-specific conception probabilities, percent. Same numbers as
     // lib/chance.ts (-5..+1). Re-implemented because native code cannot import
@@ -94,14 +92,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         final String next;
         final String phase;
         final String ov;
-        final String title;
-        final String note;
-        WidgetData(String next, String phase, String ov, String title, String note) {
+        WidgetData(String next, String phase, String ov) {
             this.next = next;
             this.phase = phase;
             this.ov = ov;
-            this.title = title;
-            this.note = note;
         }
     }
 
@@ -110,9 +104,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         return new WidgetData(
                 p.getString(KEY_NEXT, null),
                 p.getString(KEY_PHASE, null),
-                p.getString(KEY_OV, null),
-                p.getString(KEY_TITLE, ""),
-                p.getString(KEY_NOTE, ""));
+                p.getString(KEY_OV, null));
     }
 
     // Device-local calendar date as YYYY-MM-DD. UTC would return yesterday
@@ -229,9 +221,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
         Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
         String caption = "bc".equals(data.phase) ? null : ovCaption(today, data.ov);
-        String note = (data.note != null && !data.note.isEmpty())
-                ? data.note : context.getString(R.string.widget_risk_note);
-        views.setTextViewText(R.id.widget_risk_note, note);
+        views.setTextViewText(R.id.widget_risk_note, context.getString(R.string.widget_risk_note));
         if (minH < 50) {
             views.setViewVisibility(R.id.widget_risk_note, View.GONE);
         }
@@ -355,12 +345,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
             views.setInt(visible, "setColorFilter", badge);
         }
         views.setTextViewText(R.id.widget_chance_label, chanceLabel(band));
-        if (data.title != null && !data.title.isEmpty()) {
-            views.setViewVisibility(R.id.widget_title, View.VISIBLE);
-            views.setTextViewText(R.id.widget_title, data.title);
-        } else {
-            views.setViewVisibility(R.id.widget_title, View.GONE);
-        }
+        views.setViewVisibility(R.id.widget_title, View.GONE);
         if (minH < 130) {
             views.setViewVisibility(R.id.widget_chance_row, View.GONE);
         }

@@ -1,8 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- A plain circle; the provider tints it per phase with setColorFilter. A
-     placeholder colour is required, so white is used and always overwritten. -->
-<shape xmlns:android="http://schemas.android.com/apk/res/android"
-    android:shape="oval">
-    <solid android:color="#FFFFFFFF" />
-    <size android:width="8dp" android:height="8dp" />
-</shape>
+<!-- Phase droplet, matching the app logo (a droplet). The provider tints it
+     per phase with setColorFilter, so it reads as one product with the app.
+     A placeholder colour is required, so white is used and always overwritten. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="8dp"
+    android:height="8dp"
+    android:viewportWidth="24"
+    android:viewportHeight="24">
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M12,3.5c2.8,3.7 5.5,6.6 5.5,10a5.5,5.5 0 1,1 -11,0c0,-3.4 2.7,-6.3 5.5,-10z" />
+</vector>

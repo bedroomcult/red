@@ -8,10 +8,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 // days the user never opens the app.
 type CycleWidgetPlugin = {
   setData(o: { nextPeriod: string; phase: string; ov: string }): Promise<{ ok: boolean }>;
-  setText(o: { title: string; note: string }): Promise<{ ok: boolean }>;
 };
-
-import { loadWidgetText } from './widgetText';
 
 const CycleWidget = registerPlugin<CycleWidgetPlugin>('CycleWidget');
 
@@ -27,10 +24,4 @@ const CycleWidget = registerPlugin<CycleWidgetPlugin>('CycleWidget');
 export function syncWidget(nextPeriod: string | null, phase: string, ov: string | null): void {
   if (!Capacitor.isNativePlatform()) return;
   void CycleWidget.setData({ nextPeriod: nextPeriod ?? '', phase, ov: ov ?? '' }).catch(() => {});
-}
-
-export function syncWidgetText(): void {
-  if (!Capacitor.isNativePlatform()) return;
-  const { title, note } = loadWidgetText();
-  void CycleWidget.setText({ title, note }).catch(() => {});
 }
