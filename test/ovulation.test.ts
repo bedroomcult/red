@@ -430,17 +430,17 @@ describe('home-screen widget wiring', () => {
     expect(w).toMatch(/paintSafety\(context, data\)/);
     // 2x1 risk entry paints percent + band + ovulation caption.
     expect(p).toMatch(/CycleWidgetRisk\.class/);
-    expect(p).toMatch(/paintRisk\(context, data\)/);
+    expect(p).toMatch(/paintRisk\(context, data/);
     const r = readFileSync(ROOT + 'native/widget/CycleWidgetRisk.java', 'utf8');
     expect(r).toMatch(/extends CycleWidgetProvider/);
-    expect(r).toMatch(/paintRisk\(context, data\)/);
+    expect(r).toMatch(/paintRisk\(context, data/);
     expect(r).not.toMatch(/widget_days/);
   });
 
   it('custom text syncs silently alongside prediction data', () => {
     const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
     // setText is a separate call so older native builds without it keep working.
-    expect(w).toMatch(/setText\(o: \{title: string; note: string\}\)/);
+    expect(w).toMatch(/setText\(o: \{ title: string; note: string \}\)/);
     expect(w).toMatch(/export function syncWidgetText/);
     expect(w).toMatch(/loadWidgetText\(\)/);
     const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
