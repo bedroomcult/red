@@ -554,7 +554,7 @@ describe('widget xml survives the android resource merge', () => {
     for (const m of layouts.matchAll(/@string\/([\w-]+)/g)) {
       expect(strings.has(m[1]), `@string/${m[1]}`).toBe(true);
     }
-    const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
+    const existingDrawables = new Set(['widget_bg', 'widget_dot', 'widget_drop_bg', 'widget_chance_high', 'widget_chance_medium', 'widget_chance_low']);
     for (const d of drawables) {
       expect(existingDrawables.has(d), `@drawable/${d}`).toBe(true);
     }
@@ -608,7 +608,9 @@ describe('widget xml survives the android resource merge', () => {
 
   it('layouts theme only via @color/widget_*, never a hardcoded hex', () => {
     for (const f of ['native/widget/res/layout/widget_cycle.xml', 'native/widget/res/layout/widget_cycle_wide.xml', 'native/widget/res/layout/widget_safety.xml', 'native/widget/res/layout/widget_risk.xml']) {
-      const src = readFileSync(join(ROOT, f), 'utf8');
+      // White text on the tinted droplet is content, not theming; strip it
+      // before asserting no hardcoded theme colours remain.
+      const src = readFileSync(join(ROOT, f), 'utf8').replace(/#FFFFFFFF/g, '');
       expect(src, f).not.toMatch(/#[0-9A-Fa-f]{6,8}/);
       for (const m of src.matchAll(/@color\/([\w-]+)/g)) {
         expect(m[1].startsWith('widget_'), `${f}: @color/${m[1]}`).toBe(true);
