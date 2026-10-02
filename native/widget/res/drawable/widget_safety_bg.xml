@@ -1,10 +1,9 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1x1 card background, tinted per band at paint time. Rounded like the
-     shared widget_bg; a plain colour is required because setColorFilter on a
-     shape tints the whole card and setBackgroundColor would lose the radius. -->
+<!-- 1x1 square box background, tinted per band at paint time with the
+     saturated app palette. No stroke: on a saturated ground a hairline
+     border would read as dirt. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
     <solid android:color="#FFFFFFFF" />
-    <corners android:radius="20dp" />
-    <stroke android:width="1dp" android:color="@color/widget_border" />
+    <corners android:radius="18dp" />
 </shape>

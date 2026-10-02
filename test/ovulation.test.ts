@@ -571,7 +571,7 @@ describe('widget xml survives the android resource merge', () => {
     const vals = (f: string) => Object.fromEntries([...readFileSync(join(ROOT, f), 'utf8').matchAll(/<color name="([\w-]+)">([^<]+)</g)].map((m) => [m[1], m[2].trim()]));
     const day = vals('native/widget/res/values/widget_colors.xml');
     const night = vals('native/widget/res/values-night/widget_colors.xml');
-    for (const k of ['widget_bg_color', 'widget_ink', 'widget_muted', 'widget_border']) {
+    for (const k of ['widget_bg_color', 'widget_ink', 'widget_muted', 'widget_border', 'widget_band_high', 'widget_band_medium', 'widget_band_low', 'widget_band_unknown']) {
       expect(night[k], k).toBeDefined();
       expect(night[k], k).not.toBe(day[k]);
     }
