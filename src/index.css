@@ -874,7 +874,7 @@ footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line
 /* Lock screen: PIN dots plus a numeric pad. Reuses .btn for keys; dots are
    the only new shapes, so only they get new classes. */
 .lock-dots { display: flex; gap: 10px; justify-content: center; margin: var(--s-5) 0 var(--s-3); }
-.lock-dot { width: 12px; height: 12px; border-radius: 9999px; border: 1.5px solid var(--line-strong); }
+.lock-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
 .lock-dot.on { background: var(--period); border-color: var(--period); }
 .lock-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: var(--s-4); }
 .lock-key { padding: 16px 0; font-size: 20px; }
