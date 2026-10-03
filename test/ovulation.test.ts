@@ -450,25 +450,50 @@ describe('home-screen widget wiring', () => {
 // The widget's today-risk line: the native side derives the offset from a date
 // the app pushes, so the wording stays right on days the app is never opened.
 describe('widget today-risk wiring', () => {
-  it('pushes the ovulation date, never a precomputed risk', () => {
+  it('pushes dates plus a dated verdict, never a bare count', () => {
     const w = readFileSync(ROOT + 'src/widget.ts', 'utf8');
     expect(w).toMatch(/ov: string \| null/);
     expect(w).toMatch(/ov: ov \?\? ''/);
-    expect(w).not.toMatch(/risk: (string|Risk)/);
+    // The verdict carries its date and curve so the provider renders fresh
+    // data and self-heals from dates only when stale.
+    expect(w).toMatch(/verdict: string/);
+    expect(w).not.toMatch(/days: number/);
+    const c = readFileSync(ROOT + 'lib/chance.ts', 'utf8');
+    expect(c).toMatch(/export const CURVE_VERSION/);
+    expect(c).toMatch(/export function widgetVerdict/);
+    expect(c).toMatch(/export type Verdict/);
   });
 
-  it('derives the same bands the app does, natively', () => {
+  it('renders the verdict the app pushed, self-healing when stale', () => {
     const p = readFileSync(ROOT + 'native/widget/CycleWidgetProvider.java', 'utf8');
-    // chanceOffset mirrors pregnancyChance's day-diff arithmetic.
-    expect(p).toMatch(/86_400_000L/);
-    // The Wilcox day-offsets, aligned element-wise with the percents.
+    // One resolve() feeds all three paint paths from a single verdict shape.
+    expect(p).toMatch(/static Resolved resolve\(Context context, WidgetData data\)/);
+    expect(p).toMatch(/KEY_VERDICT/);
+    expect(p).toMatch(/CURVE_VERSION/);
+    // Fresh verdict for today renders directly; stale/missing/corrupt falls
+    // back to stored dates (the kill-dated mirror, not a second source).
+    expect(p).toMatch(/forDate/);
+    expect(p).toMatch(/self-heal|Self-heal|fall through to self-heal|Fallback mirror/);
+    // All three paints consume the resolved shape. The fallback mirror
+    // inside resolve() is the only place that may still derive; slice
+    // each paint body (paint start to its own return) so the mirror
+    // does not false-positive.
+    const paintStarts = [
+      ...p.matchAll(/static RemoteViews paint\w*\(Context context,[^)]*\) \{/g),
+      ...p.matchAll(/static RemoteViews paint\(\s*Context context,[\s\S]*?\) \{/g),
+    ].map((m) => m.index!).sort((a, b) => a - b);
+    const paintBodies = paintStarts.map((s, i) => {
+      const ret = p.indexOf('return views;', s);
+      return p.slice(s, ret);
+    });
+    expect(paintBodies.length).toBe(3);
+    for (const body of paintBodies) {
+      expect(body).toMatch(/resolve\(context, data\)/);
+      expect(body).not.toMatch(/chanceBand\(chanceOffset/);
+    }
+    // The fallback mirror keeps the Wilcox numbers until its kill date.
     expect(p).toMatch(/private static final int\[\] OFFSETS = \{-5, -4, -3, -2, -1, 0, 1\}/);
     expect(p).toMatch(/private static final int\[\] PERCENTS = \{4, 8, 17, 27, 31, 33, 5\}/);
-    // The band cutoffs match lib/chance.ts: >=27 high, >=8 medium, rest low.
-    expect(p).toMatch(/if \(p >= 27\) return "tinggi"/);
-    expect(p).toMatch(/if \(p >= 8\) return "sedang"/);
-    // BC-suppressed hides the row rather than inventing a risk.
-    expect(p).toMatch(/"bc"\.equals\(data\.phase\) \? null/);
   });
 
   it('states a chance, never safety, in both word and icon', () => {

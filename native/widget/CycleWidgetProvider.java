@@ -40,6 +40,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     public static final String KEY_NEXT = "next_period";
     public static final String KEY_PHASE = "phase";
     public static final String KEY_OV = "ovulation";
+    public static final String KEY_VERDICT = "verdict";
+    // Must match CURVE_VERSION in lib/chance.ts. A verdict stamped with an
+    // older curve is re-derived from stored dates instead of rendered.
+    private static final int CURVE_VERSION = 1;
 
     // Wilcox day-specific conception probabilities, percent. Same numbers as
     // lib/chance.ts (-5..+1). Re-implemented because native code cannot import
@@ -187,6 +191,59 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     // BC-suppressed) shows the same wording as the app's chance card and
     // hides the icon row: naming a risk with no ovulation to measure
     // against would be invented.
+    // Display values resolved for one specific day: band id (tinggi/sedang/
+    // rendah/null), percent text already formatted ("27%", "<1%", dash),
+    // and caption. Either rendered straight from the verdict the app pushed,
+    // or self-healed from stored dates when the verdict is stale, missing,
+    // or from an older curve. One shape feeds all three paint paths.
+    static class Resolved {
+        final String band;
+        final String percentText;
+        final String caption;
+        Resolved(String band, String percentText, String caption) {
+            this.band = band;
+            this.percentText = percentText;
+            this.caption = caption;
+        }
+    }
+
+    static Resolved resolve(Context context, WidgetData data) {
+        String today = localTodayIso();
+        String raw = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+                .getString(KEY_VERDICT, "");
+        if (raw != null && !raw.isEmpty()) {
+            try {
+                org.json.JSONObject v = new org.json.JSONObject(raw);
+                if (today.equals(v.optString("forDate", "")) && v.optInt("curve", -1) == CURVE_VERSION) {
+                    String risk = v.optString("risk", "unknown");
+                    String band = "unknown".equals(risk)
+                            ? null
+                            : "high".equals(risk) ? "tinggi" : "medium".equals(risk) ? "sedang" : "rendah";
+                    boolean bc = "bc".equals(data.phase);
+                    if (bc) band = null;
+                    Integer percent = v.isNull("percent") ? null : v.optInt("percent");
+                    boolean belowOne = v.optBoolean("belowOne", false);
+                    String caption = bc || v.isNull("caption") ? null : v.optString("caption", null);
+                    String text = band == null ? "\u2013" : belowOne || percent == null ? "<1%" : percent + "%";
+                    return new Resolved(band, text, caption);
+                }
+            } catch (Exception e) {
+                // Corrupt verdict: fall through to self-heal.
+            }
+        }
+        // Fallback mirror of lib/chance.ts, used ONLY when the verdict is
+        // absent, stale, corrupt, or from an older curve. Kill date: remove
+        // once the verdict path has shipped a full cycle without a fallback
+        // hit (no new code may call these helpers except this method).
+        boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
+                && chanceOffset(today, data.ov) != null;
+        String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
+        Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
+        String caption = "bc".equals(data.phase) ? null : ovCaption(today, data.ov);
+        if (band == null) return new Resolved(null, "\u2013", null);
+        return new Resolved(band, percent == null ? "<1%" : percent + "%", caption);
+    }
+
     // Whole percent for the offset, mirroring lib/chance.ts BY_OFFSET.
     // Null outside the -5..+1 window: those days read "<1%", not a number.
     static Integer chancePercent(Integer offset) {
@@ -215,12 +272,10 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_risk);
         int minW = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 999);
         int minH = optMin(opts, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 999);
-        String today = localTodayIso();
-        boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
-                && chanceOffset(today, data.ov) != null;
-        String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
-        Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
-        String caption = "bc".equals(data.phase) ? null : ovCaption(today, data.ov);
+        // Rendered from the shared verdict, self-healed when stale.
+        Resolved r = resolve(context, data);
+        String band = r.band;
+        String caption = r.caption;
         views.setTextViewText(R.id.widget_risk_note, context.getString(R.string.widget_risk_note));
         if (minH < 50) {
             views.setViewVisibility(R.id.widget_risk_note, View.GONE);
@@ -241,7 +296,7 @@ public class CycleWidgetProvider extends AppWidgetProvider {
                     : "sedang".equals(band) ? 0xFFF5A94A : 0xFF4CC38A;
             views.setInt(visible, "setColorFilter", badge);
             views.setViewVisibility(R.id.widget_risk_icon_row, View.VISIBLE);
-            views.setTextViewText(R.id.widget_risk_percent, percent == null ? "<1%" : percent + "%");
+            views.setTextViewText(R.id.widget_risk_percent, r.percentText);
             views.setTextViewText(R.id.widget_risk_band, chanceLabel(band));
             if (caption != null && minH >= 60) {
                 views.setViewVisibility(R.id.widget_risk_caption, View.VISIBLE);
@@ -268,22 +323,18 @@ public class CycleWidgetProvider extends AppWidgetProvider {
     static RemoteViews paintSafety(Context context, WidgetData data) {
         RemoteViews views = new RemoteViews(context.getPackageName(), R.layout.widget_safety);
         // Legibility first: big black percent, small band label, both on
-        // a band-tinted ground. The tint carries the signal at a glance;
-        // the words confirm it for anyone who looks closer.
-        String today = localTodayIso();
-        boolean measurable = !"bc".equals(data.phase) && data.ov != null && !data.ov.isEmpty()
-                && chanceOffset(today, data.ov) != null;
-        String band = measurable ? chanceBand(chanceOffset(today, data.ov)) : null;
-        Integer percent = measurable ? chancePercent(chanceOffset(today, data.ov)) : null;
+        // a band-tinted ground. Rendered from the shared verdict.
+        Resolved r = resolve(context, data);
+        String band = r.band;
         int ground = band == null ? R.color.widget_band_unknown
                 : "tinggi".equals(band) ? R.color.widget_band_high
                 : "sedang".equals(band) ? R.color.widget_band_medium : R.color.widget_band_low;
         views.setInt(R.id.widget_ground, "setColorFilter", context.getResources().getColor(ground));
         if (band == null) {
-            views.setTextViewText(R.id.widget_chance_label, "\u2013");
+            views.setTextViewText(R.id.widget_chance_label, r.percentText);
             views.setTextViewText(R.id.widget_safety_band, chanceLabel(null));
         } else {
-            views.setTextViewText(R.id.widget_chance_label, percent == null ? "<1%" : percent + "%");
+            views.setTextViewText(R.id.widget_chance_label, r.percentText);
             views.setTextViewText(R.id.widget_safety_band, chanceLabel(band));
         }
 
@@ -331,12 +382,13 @@ public class CycleWidgetProvider extends AppWidgetProvider {
         else dotColor = 0xFFB9A8C9;
         views.setInt(R.id.widget_dot, "setColorFilter", dotColor);
 
-        // Today's chance. Unknown (including BC-suppressed) shows the same
-        // wording as the app's chance card and hides the icon row: naming
-        // a risk with no ovulation to measure against would be invented.
+        // Today's chance, rendered from the shared verdict. Unknown
+        // (including BC-suppressed) shows the same wording as the app's
+        // chance card and hides the icon row.
         // The visible icon is tinted to its band, the way the phase dot is
         // tinted to the phase.
-        String band = "bc".equals(data.phase) ? null : chanceBand(chanceOffset(localTodayIso(), data.ov));
+        Resolved r = resolve(context, data);
+        String band = r.band;
         int visible = band == null ? -1
                 : "tinggi".equals(band) ? R.id.widget_chance_high
                 : "sedang".equals(band) ? R.id.widget_chance_medium : R.id.widget_chance_low;
@@ -350,7 +402,6 @@ public class CycleWidgetProvider extends AppWidgetProvider {
             views.setInt(visible, "setColorFilter", badge);
         }
         views.setTextViewText(R.id.widget_chance_label, chanceLabel(band));
-        views.setViewVisibility(R.id.widget_title, View.GONE);
         if (minH < 130) {
             views.setViewVisibility(R.id.widget_chance_row, View.GONE);
         }

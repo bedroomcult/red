@@ -68,6 +68,11 @@ export function pregnancyChance(
   };
 }
 
+// Curve version, bumped whenever BY_OFFSET or the band cutoffs change.
+// Travels with the verdict so the provider can detect a stale curve and
+// self-heal from stored dates.
+export const CURVE_VERSION = 1;
+
 // Bar width as a percentage of the peak (33%). Exported so the UI and its test
 // agree on the scale.
 export function barWidth(c: Chance): number {
@@ -76,3 +81,38 @@ export function barWidth(c: Chance): number {
 }
 
 export const BASELINE_PERCENT = Math.round(BASELINE * 100);
+
+// Widget verdict: the computed display values plus the date they describe
+// and the curve that produced them. The provider renders these directly
+// and re-derives from stored dates only when stale (another day) or from
+// an older curve version — self-heal, not a second source of truth.
+export type Verdict = {
+  risk: Risk;
+  percent: number | null;
+  belowOne: boolean;
+  caption: string | null;
+  forDate: string;
+  curve: number;
+};
+
+const RISK_ID: Record<Risk, string> = { high: 'tinggi', medium: 'sedang', low: 'rendah', unknown: 'unknown' };
+
+export function widgetVerdict(date: string, c: Chance): Verdict {
+  let caption: string | null = null;
+  if (c.offset !== null) {
+    if (c.offset === 0) caption = 'Hari perkiraan ovulasi';
+    else if (c.offset < 0) caption = `${Math.abs(c.offset)} hari sebelum perkiraan ovulasi`;
+    else caption = `${c.offset} hari setelah perkiraan ovulasi`;
+  }
+  return {
+    risk: c.risk,
+    percent: c.percent,
+    belowOne: c.belowOne,
+    caption,
+    forDate: date,
+    curve: CURVE_VERSION,
+  };
+}
+
+export const verdictBand = (v: Verdict): string | null =>
+  v.risk === 'unknown' ? null : RISK_ID[v.risk];

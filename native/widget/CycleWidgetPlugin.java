@@ -9,6 +9,7 @@ import com.getcapacitor.annotation.CapacitorPlugin;
 import static com.red.tracker.widget.CycleWidgetProvider.KEY_NEXT;
 import static com.red.tracker.widget.CycleWidgetProvider.KEY_OV;
 import static com.red.tracker.widget.CycleWidgetProvider.KEY_PHASE;
+import static com.red.tracker.widget.CycleWidgetProvider.KEY_VERDICT;
 import static com.red.tracker.widget.CycleWidgetProvider.PREFS;
 
 // Bridge so the web layer can hand the widget its data and ask for a repaint.
@@ -31,12 +32,14 @@ public class CycleWidgetPlugin extends Plugin {
         String next = call.getString("nextPeriod", "");
         String phase = call.getString("phase", "");
         String ov = call.getString("ov", "");
+        String verdict = call.getString("verdict", "");
 
         getContext().getSharedPreferences(PREFS, android.content.Context.MODE_PRIVATE)
                 .edit()
                 .putString(KEY_NEXT, next)
                 .putString(KEY_PHASE, phase)
                 .putString(KEY_OV, ov)
+                .putString(KEY_VERDICT, verdict)
                 .apply();
         // Repaint immediately, so the widget is correct without waiting for the
         // next updatePeriodMillis tick.

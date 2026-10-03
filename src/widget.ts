@@ -7,7 +7,7 @@ import { Capacitor, registerPlugin } from '@capacitor/core';
 // would freeze the moment the app is closed — the widget has to stay right on
 // days the user never opens the app.
 type CycleWidgetPlugin = {
-  setData(o: { nextPeriod: string; phase: string; ov: string }): Promise<{ ok: boolean }>;
+  setData(o: { nextPeriod: string; phase: string; ov: string; verdict: string }): Promise<{ ok: boolean }>;
 };
 
 const CycleWidget = registerPlugin<CycleWidgetPlugin>('CycleWidget');
@@ -21,7 +21,7 @@ const CycleWidget = registerPlugin<CycleWidgetPlugin>('CycleWidget');
 // caveats; the widget mirrors its buckets and its framing (a chance, never
 // "safe") but re-implements the arithmetic in Kotlin, since native code
 // cannot import the TypeScript.
-export function syncWidget(nextPeriod: string | null, phase: string, ov: string | null): void {
+export function syncWidget(nextPeriod: string | null, phase: string, ov: string | null, verdict: string = ''): void {
   if (!Capacitor.isNativePlatform()) return;
-  void CycleWidget.setData({ nextPeriod: nextPeriod ?? '', phase, ov: ov ?? '' }).catch(() => {});
+  void CycleWidget.setData({ nextPeriod: nextPeriod ?? '', phase, ov: ov ?? '', verdict }).catch(() => {});
 }
