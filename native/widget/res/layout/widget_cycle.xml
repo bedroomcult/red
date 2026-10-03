@@ -10,15 +10,6 @@
     android:background="@drawable/widget_bg">
 
     <TextView
-        android:id="@+id/widget_title"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textSize="11sp"
-        android:textColor="@color/widget_muted"
-        android:visibility="gone"
-        android:text="" />
-
-    <TextView
         android:id="@+id/widget_days"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"

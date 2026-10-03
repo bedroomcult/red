@@ -399,7 +399,9 @@ describe('home-screen widget wiring', () => {
 
   it('the app pushes widget data whenever the prediction moves', () => {
     const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
-    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase, me\.prediction\.ov\)/);
+    expect(app).toMatch(/syncWidget\(me\.prediction\.next, st\.phase, me\.prediction\.ov,/);
+    // The verdict travels in the same call so data and display never skew.
+    expect(app).toMatch(/widgetVerdict\(day, pregnancyChance\(day, me\.prediction, suppressed\)\)/);
     // The phase cannot be read from the later bcMode const: hooks must sit above
     // the early returns.
     expect(app).toMatch(/const suppressed = me\.prediction\.confidence/);
@@ -443,7 +445,8 @@ describe('home-screen widget wiring', () => {
     expect(p).toMatch(/OPTION_APPWIDGET_MIN_WIDTH/);
     expect(p).toMatch(/OPTION_APPWIDGET_MIN_HEIGHT/);
     expect(p).toMatch(/widget_chance_row/);
-    expect(p).toMatch(/widget_title/);
+    // widget_title died with the undone text-settings feature; the dead
+    // view goes with it so no pin can resurrect it.
   });
 });
 
@@ -502,9 +505,11 @@ describe('widget today-risk wiring', () => {
     expect(p.toLowerCase()).not.toMatch(/aman/);
     expect(p).not.toMatch(/\bsafe\b/i);
     // Percentage and raw probability stay in the app; the widget shows a band.
-    // (PERCENTS the int array is allowed: band names must never carry numbers.)
+    // (PERCENTS the int array is allowed: band names must never carry numbers.
+    // belowOne the verdict field is allowed: it selects the "<1%" text.)
     expect(p).not.toMatch(/percent %|\$\{[^}]*percent/);
-    expect(p).not.toMatch(/belo?owOne/);
+    expect(p).not.toMatch(/belowTwo/);
+    expect(p).toMatch(/belowOne/);
   });
 });
 
