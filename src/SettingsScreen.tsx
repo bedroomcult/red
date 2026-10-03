@@ -3,6 +3,7 @@ import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
 import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
+import { isLockOn, setLock, resetLock, validPin } from './lock';
 import { apiFetch, readJson } from './api';
 
 export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout, onBack }: {
@@ -23,6 +24,17 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
   const [remMsg, setRemMsg] = useState<string | null>(null);
   const [nativeOnly, setNativeOnly] = useState(false);
   const [exportErr, setExportErr] = useState<string | null>(null);
+  const [lockOn, setLockOn] = useState(isLockOn);
+  const [lockPin, setLockPin] = useState('');
+  const [lockPin2, setLockPin2] = useState('');
+  const [lockMsg, setLockMsg] = useState<string | null>(null);
+
+  async function saveLock() {
+    if (!validPin(lockPin)) { setLockMsg(t.lockNew); return; }
+    if (lockPin !== lockPin2) { setLockMsg(t.lockMismatch); return; }
+    if (await setLock(lockPin)) { setLockOn(true); setLockPin(''); setLockPin2(''); setLockMsg(t.lockSaved); }
+  }
+
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [deleteEmail, setDeleteEmail] = useState('');
   const [deleteErr, setDeleteErr] = useState<string | null>(null);
@@ -186,6 +198,38 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
             {deleteErr && <div className="err">{deleteErr}</div>}
           </div>
         )}
+      </div>
+
+      <div className="card">
+        <h2>{t.lockTitle}</h2>
+        {!lockOn ? (
+          <>
+            <div className="field" style={{ display: 'block' }}>
+              <label htmlFor="set-lock-pin">{t.lockNew}</label>
+              <input id="set-lock-pin" type="password" inputMode="numeric" maxLength={8} value={lockPin}
+                onChange={(e) => setLockPin(e.target.value.replace(/[^0-9]/g, ''))} autoComplete="off" />
+            </div>
+            <div className="field" style={{ display: 'block' }}>
+              <label htmlFor="set-lock-pin2">{t.lockConfirm}</label>
+              <input id="set-lock-pin2" type="password" inputMode="numeric" maxLength={8} value={lockPin2}
+                onChange={(e) => setLockPin2(e.target.value.replace(/[^0-9]/g, ''))} autoComplete="off" />
+            </div>
+            <div className="row">
+              <button className="btn primary" onClick={saveLock}>{t.lockSet}</button>
+            </div>
+          </>
+        ) : (
+          <div className="row" style={{ marginTop: 0 }}>
+            <button className="btn" onClick={() => { resetLock(); setLockOn(false); setLockMsg(t.lockResetDone); }}>{t.lockOff}</button>
+          </div>
+        )}
+        {lockMsg && <div className="muted" style={{ marginTop: 'var(--s-3)' }}>{lockMsg}</div>}
+        {/* Reset needs no verification by design: the lock guards casual
+            eyes, not theft. Account password via email is the recovery. */}
+        <div className="muted" style={{ marginTop: 'var(--s-3)' }}>{t.lockResetHint}</div>
+        <div className="row">
+          <button className="btn ghost" onClick={() => { resetLock(); setLockOn(false); setLockPin(''); setLockPin2(''); setLockMsg(t.lockResetDone); }}>{t.lockReset}</button>
+        </div>
       </div>
 
       <div className="card">

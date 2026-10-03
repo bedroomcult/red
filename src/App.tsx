@@ -13,6 +13,8 @@ import LoginScreen from './LoginScreen';
 import Icon from './Icon';
 import UpdateBanner from './UpdateBanner';
 import Loading from './Loading';
+import LockScreen from './LockScreen';
+import { isLockOn } from './lock';
 import ExitConfirm from './ExitConfirm';
 import { applyTheme, loadTheme } from './theme';
 import { loadPrefs, syncReminders } from './notify';
@@ -52,6 +54,9 @@ export default function App() {
   const openProfile = () => { setTab('profile'); setSettingsOpen(false); };
   const [needLogin, setNeedLogin] = useState(false);
   const [onboarding, setOnboarding] = useState(false);
+  // Closed at launch when the lock is on; stays shut for the session once
+  // the PIN passes. Deliberately not persisted: every cold start locks.
+  const [locked, setLocked] = useState(isLockOn);
 
   // Apply saved theme on first paint.
   useEffect(() => { applyTheme(loadTheme()); }, []);
@@ -141,6 +146,12 @@ export default function App() {
 
   if (onboarding) {
     return <Onboarding onDone={(s) => { setMe(s); setOnboarding(false); }} />;
+  }
+
+  // The gate renders before login and before any content: no data, not even
+  // the auth form, is visible until the PIN passes.
+  if (locked) {
+    return <LockScreen onUnlock={() => setLocked(false)} />;
   }
 
   if (needLogin) {
