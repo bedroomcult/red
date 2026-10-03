@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- 1x1 entry: a centred SQUARE with rounded corners, never the stretched
-     cell rectangle. Fixed 64dp box on a transparent root, tinted with the
-     saturated app palette per band. Big black percent plus a small band
-     label, both centred. -->
+<!-- 1x1 entry: a centred 48dp SQUARE, sized for the smallest launcher
+     cell so nothing clips. Saturated app palette per band, big percent
+     plus a small band label, both centred. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/widget_root"
     android:layout_width="match_parent"
@@ -10,15 +9,15 @@
 
     <ImageView
         android:id="@+id/widget_ground"
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="center"
         android:src="@drawable/widget_safety_bg"
         android:contentDescription="@null" />
 
     <LinearLayout
-        android:layout_width="64dp"
-        android:layout_height="64dp"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_gravity="center"
         android:orientation="vertical"
         android:gravity="center">
@@ -27,7 +26,7 @@
             android:id="@+id/widget_chance_label"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="22sp"
+            android:textSize="18sp"
             android:textStyle="bold"
             android:includeFontPadding="false"
             android:textColor="@color/widget_ink"
@@ -37,7 +36,7 @@
             android:id="@+id/widget_safety_band"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textSize="11sp"
+            android:textSize="10sp"
             android:textStyle="bold"
             android:textColor="@color/widget_ink"
             android:text="@string/risk_unknown" />
