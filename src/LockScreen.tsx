@@ -28,7 +28,8 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
 
   return (
     <div className="app">
-      <div className="card" style={{ marginTop: 'var(--s-8)', textAlign: 'center' }}>
+      <div className="lock-wrap">
+      <div className="card" style={{ textAlign: 'center', width: '100%' }}>
         <h2>{t.lockTitle}</h2>
         <div className="muted">{t.lockEnter}</div>
         <div className="lock-dots" aria-hidden="true">
@@ -45,6 +46,7 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
             </button>
           ))}
         </div>
+      </div>
       </div>
     </div>
   );

@@ -873,6 +873,7 @@ footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line
 
 /* Lock screen: PIN dots plus a numeric pad of circular keys. Dots grow
    with input length (4-8); the pad is centred and thumb-width capped. */
+.lock-wrap { min-height: 80dvh; display: grid; place-items: center; }
 .lock-dots { display: flex; gap: 12px; justify-content: center; margin: var(--s-5) 0 var(--s-3); min-height: 16px; }
 .lock-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
 .lock-dot.on { background: var(--period); border-color: var(--period); }
