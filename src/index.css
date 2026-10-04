@@ -871,10 +871,10 @@ footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line
 }
 .stat-label { font-size: 12px; font-weight: 600; letter-spacing: 0.02em; color: var(--muted); }
 
-/* Lock screen: PIN dots plus a numeric pad. Reuses .btn for keys; dots are
-   the only new shapes, so only they get new classes. */
-.lock-dots { display: flex; gap: 10px; justify-content: center; margin: var(--s-5) 0 var(--s-3); }
-.lock-dot { width: 12px; height: 12px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
+/* Lock screen: PIN dots plus a numeric pad of circular keys. Dots grow
+   with input length (4-8); the pad is centred and thumb-width capped. */
+.lock-dots { display: flex; gap: 12px; justify-content: center; margin: var(--s-5) 0 var(--s-3); min-height: 16px; }
+.lock-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
 .lock-dot.on { background: var(--period); border-color: var(--period); }
-.lock-pad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: var(--s-4); }
-.lock-key { padding: 16px 0; font-size: 20px; }
+.lock-pad { display: grid; grid-template-columns: repeat(3, 72px); gap: 12px; justify-content: center; margin: var(--s-4) auto 0; max-width: 280px; }
+.lock-key { width: 72px; height: 72px; border-radius: 50%; padding: 0; font-size: 22px; display: grid; place-items: center; }

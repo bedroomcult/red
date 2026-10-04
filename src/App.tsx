@@ -151,7 +151,7 @@ export default function App() {
   // The gate renders before login and before any content: no data, not even
   // the auth form, is visible until the PIN passes.
   if (locked) {
-    return <LockScreen onUnlock={() => setLocked(false)} />;
+    return <LockScreen onUnlock={() => { setLocked(false); void load(); }} />;
   }
 
   if (needLogin) {
