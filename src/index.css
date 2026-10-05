@@ -887,6 +887,16 @@ footer.disclaimer { margin-top: 20px; font-size: 11px; color: var(--muted); line
 /* Lock screen: PIN dots plus a numeric pad of circular keys. Dots grow
    with input length (4-8); the pad is centred and thumb-width capped. */
 .lock-wrap { min-height: 80dvh; display: grid; place-items: center; }
+/* Progress-fill card: a rose layer scales in from the left as digits land.
+   Content sits above it; text stays readable until the fill passes under. */
+.lock-card { position: relative; overflow: hidden; }
+.lock-fill {
+  position: absolute; inset: 0; background: var(--rose-soft);
+  transform-origin: left center; transition: transform .18s ease;
+}
+.lock-inner { position: relative; }
+.lock-card.lock-shake { animation: lock-shake .3s ease; }
+@keyframes lock-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
 .lock-dots { display: flex; gap: 12px; justify-content: center; margin: var(--s-5) 0 var(--s-3); min-height: 16px; }
 .lock-dot { width: 14px; height: 14px; border-radius: 50%; border: 1.5px solid var(--line-strong); }
 .lock-dot.on { background: var(--period); border-color: var(--period); }
