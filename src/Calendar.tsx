@@ -59,6 +59,15 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
   periodLen?: number;
 }) {
   const logged = new Map(periods.map((p) => [p.start_date, p]));
+  // Day-of-bleed per date: walking each logged range once, so a cell can
+  // show "day N" without scanning all periods per cell.
+  const bleedDay = new Map<string, number>();
+  for (const p of periods) {
+    if (p.type !== 'menstruation') continue;
+    periodDays(p).forEach((date, i) => {
+      if (!bleedDay.has(date)) bleedDay.set(date, i + 1);
+    });
+  }
   const doseByDate = new Map(doses.map((d) => [d.date, d]));
   const sexByDate = new Map(sex.map((s) => [s.date, s]));
 
@@ -94,10 +103,11 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
               const sexLog = sexByDate.get(d);
               const state = dayState(d);
               const cls = state === 'spotting' ? '' : state;
-              // The heart turns green when the date falls in the fertile window,
-              // matching the green used for the ovulation circle. That is the
-              // signal that this day carried pregnancy risk.
+              // The mark is a small glyph under the number, not a wrap: the
+              // old heart outline fought the phase fill for the same pixels.
+              // Fertile green vs pink keeps the risk signal; legend matches.
               const heartClass = sexLog ? (ovs.has(d) ? 'sex fertile' : 'sex') : '';
+              const day = bleedDay.get(d);
               return (
                 <button
                   className={`dnum ${cls} ${cell.inMonth ? '' : 'dim'} ${d === selected ? 'sel' : ''} ${d === todayIso ? 'today' : ''} ${dose ? (dose.taken ? 'dose-taken' : 'dose-missed') : ''} ${heartClass}`}
@@ -106,9 +116,12 @@ export default function Calendar({ year, mon, periods, prediction, selected, onP
                   aria-current={d === todayIso ? 'date' : undefined}
                 >
                   {sexLog && (
-                    <svg className="heart" viewBox="0 0 24 24" aria-hidden="true">
-                      <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                    <svg className="sex-mark" viewBox="0 0 24 24" aria-hidden="true">
+                      <path d="M12 20.5l-1.3-1.2C6 15 3 12.2 3 8.8 3 6 5.1 4 7.8 4c1.5 0 3 .7 4.2 2C13.2 4.7 14.7 4 16.2 4 18.9 4 21 6 21 8.8c0 3.4-3 6.2-7.7 10.5L12 20.5z" />
                     </svg>
+                  )}
+                  {day !== undefined && (
+                    <span className="bleed-day" aria-hidden="true">{day}</span>
                   )}
                   {/* Always the day number. The checkmark that used to replace it
                       removed the one piece of information the cell exists to show. */}

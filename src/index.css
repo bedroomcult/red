@@ -267,22 +267,31 @@ body {
 .dnum.dose-taken::after { background: var(--indigo); }
 .dnum.dose-missed::after { border: 2px solid var(--indigo); background: transparent; }
 
-/* Sex log: the day number is wrapped in a heart outline. Pink normally, green
-   when the date is in the fertile window — the same green as the ovulation
-   circle, so the risk signal reads consistently. */
+/* Sex log: a small heart glyph under the number, bottom-left so it never
+   collides with the centred dose bar. Pink normally, fertile green in the
+   window — the same green as the ovulation circle, so the risk signal
+   reads consistently. The old outline wrapped the number and fought the
+   phase fill for the same pixels. */
 .dnum { position: relative; }
 .dnum .dnum-num { position: relative; z-index: 1; }
-.dnum .heart {
-  /* Slightly larger than the 38px circle so the heart visibly wraps the number
-     rather than sitting inside it. */
-  position: absolute; inset: -2px; width: calc(100% + 4px); height: calc(100% + 4px);
-  fill: none; stroke: var(--heart); stroke-width: 2;
-  pointer-events: none;
+.sex-mark {
+  position: absolute; bottom: 1px; left: 4px; width: 10px; height: 10px;
+  fill: var(--heart); pointer-events: none;
 }
-.dnum.sex.fertile .heart { stroke: var(--green); }
-/* A filled day would hide the outline, so the heart sits above the fill. */
-.dnum.sex.logged .heart { stroke: #fff; }
-.dnum.sex.logged.fertile .heart { stroke: #fff; }
+.dnum.sex.fertile .sex-mark { fill: var(--green); }
+/* A filled day darkens the glyph zone, so white keeps it readable. */
+.dnum.sex.logged .sex-mark,
+.dnum.sex.fertile-logged .sex-mark,
+.dnum.sex.pred-ovulation .sex-mark { fill: #fff; }
+/* Bleed day counter: filled circle top-right with the day-of-bleed number.
+   Only bleed days get one; spotting days keep the plain dot, so the two
+   never share a cell. */
+.bleed-day {
+  position: absolute; top: 1px; right: 1px; min-width: 14px; height: 14px;
+  border-radius: var(--r-full); background: rgba(255,255,255,.9); color: var(--period-ink);
+  font-size: 9px; font-weight: 700; line-height: 14px; text-align: center;
+  padding: 0 3px; pointer-events: none;
+}
 
 /* Legend (spec 4.2): dot + caption per item, above the sticky CTA. */
 .legend { display: flex; flex-wrap: wrap; gap: var(--s-3) var(--s-5); margin-top: var(--s-5); font-size: 13px; color: var(--muted); }
