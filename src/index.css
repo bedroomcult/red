@@ -275,11 +275,15 @@ body {
 .dnum { position: relative; }
 .dnum .dnum-num { position: relative; z-index: 1; }
 .sex-mark {
-  position: absolute; bottom: 1px; left: 4px; width: 10px; height: 10px;
+  position: absolute; bottom: 1px; left: 50%; transform: translateX(-50%);
+  width: 14px; height: 14px;
   fill: var(--heart); pointer-events: none;
 }
 .dnum.sex.fertile .sex-mark { fill: var(--green); }
-/* A filled day darkens the glyph zone, so white keeps it readable. */
+/* A dose bar occupies bottom-center, so the glyph lifts above it on
+   medicated days instead of overlapping. */
+.dnum.sex.dose-taken .sex-mark,
+.dnum.sex.dose-missed .sex-mark { bottom: 9px; }
 .dnum.sex.logged .sex-mark,
 .dnum.sex.fertile-logged .sex-mark,
 .dnum.sex.pred-ovulation .sex-mark { fill: #fff; }
@@ -287,10 +291,10 @@ body {
    Only bleed days get one; spotting days keep the plain dot, so the two
    never share a cell. */
 .bleed-day {
-  position: absolute; top: 1px; right: 1px; min-width: 14px; height: 14px;
+  position: absolute; top: 0; right: 0; width: 20px; height: 20px;
   border-radius: var(--r-full); background: rgba(255,255,255,.9); color: var(--period-ink);
-  font-size: 9px; font-weight: 700; line-height: 14px; text-align: center;
-  padding: 0 3px; pointer-events: none;
+  font-size: 11px; font-weight: 700; line-height: 20px; text-align: center;
+  pointer-events: none;
 }
 
 /* Legend (spec 4.2): dot + caption per item, above the sticky CTA. */
