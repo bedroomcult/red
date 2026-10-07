@@ -29,8 +29,10 @@ export default function LockScreen({ onUnlock }: { onUnlock: () => void }) {
     if (next.length >= 4) void submit(next);
   }
 
-  // Fill tracks the longest PIN (8): 4 digits = half full, 8 = full.
-  const fill = Math.min(pin.length / 8, 1);
+  // Fill tracks the submit threshold (4): whatever the PIN length, the bar
+  // reads full the moment enough digits are in. Auto-submit fires at 4+, so
+  // dividing by 8 left the bar half-empty forever.
+  const fill = Math.min(pin.length / 4, 1);
 
   return (
     <div className="app">
