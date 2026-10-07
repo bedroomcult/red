@@ -14,6 +14,7 @@
 // there is no keyboard-layout surprise on device.
 const PIN_KEY = 'pt.lockPin';
 const ON_KEY = 'pt.lockOn';
+const LEN_KEY = 'pt.lockLen';
 
 export const isLockOn = (): boolean => {
   try {
@@ -28,11 +29,22 @@ async function sha256Hex(s: string): Promise<string> {
 
 export const validPin = (pin: string): boolean => /^[0-9]{4,8}$/.test(pin);
 
+// PIN length, stored in the clear next to the hash. It reveals how many
+// digits, never which — the gate needs it to know when to submit, and a
+// length alone unlocks nothing without the hash it accompanies.
+export const lockLen = (): number => {
+  try {
+    const n = Number(localStorage.getItem(LEN_KEY));
+    return n >= 4 && n <= 8 ? n : 4;
+  } catch { return 4; }
+};
+
 export async function setLock(pin: string): Promise<boolean> {
   if (!validPin(pin)) return false;
   try {
     localStorage.setItem(PIN_KEY, await sha256Hex(pin));
     localStorage.setItem(ON_KEY, '1');
+    localStorage.setItem(LEN_KEY, String(pin.length));
     return true;
   } catch { return false; }
 }
@@ -51,5 +63,6 @@ export function resetLock(): void {
   try {
     localStorage.removeItem(PIN_KEY);
     localStorage.removeItem(ON_KEY);
+    localStorage.removeItem(LEN_KEY);
   } catch {}
 }
