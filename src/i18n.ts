@@ -331,6 +331,11 @@ export const t = {
   setExport: 'Unduh data saya',
   setExportHint: 'Semua catatan Anda dalam satu berkas JSON.',
   setExportErr: 'Unduhan gagal',
+  // Background-sync failure: a sheet closed optimistically, then its
+  // request failed. Tapping retries once; the sheet is gone, so the
+  // banner is the only surface that can carry the error.
+  syncFailed: 'Gagal menyimpan, coba lagi',
+  syncRetry: 'Coba lagi',
   setDelete: 'Hapus akun',
   setDeleteHint: 'Menghapus akun dan seluruh catatan Anda. Tidak bisa dibatalkan.',
   setDeleteConfirmLabel: 'Ketik email Anda untuk mengonfirmasi',

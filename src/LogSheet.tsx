@@ -4,15 +4,16 @@ import type { Period } from './Calendar';
 import { t } from './i18n';
 import { apiFetch, readJson } from './api';
 
-export default function LogSheet({ date, existing, active, onClose, onSaved, raised = false }: {
+export default function LogSheet({ date, existing, active, onClose, onSaved, onSyncFail, raised = false }: {
   date: string; existing: Period | undefined; active: Period | undefined;
   onClose: () => void; onSaved: (state: any) => void;
+  // Called with a retry thunk when a request fails AFTER the sheet closed.
+  // Without it the error would have no surface at all.
+  onSyncFail: (retry: () => void) => void;
   // True when opened from inside a card modal: render above the modal.
   raised?: boolean;
 }) {
   useEscape(true, onClose);
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   const [flow, setFlow] = useState(existing?.flow ?? 'medium');
   const [endDate, setEndDate] = useState(existing?.end_date ?? '');
   const [note, setNote] = useState('');
@@ -26,28 +27,32 @@ export default function LogSheet({ date, existing, active, onClose, onSaved, rai
     return () => { on = false; };
   }, [date]);
 
+  // Close-then-sync: the sheet closes on tap and the request runs behind
+  // it. onSaved applies the server echo when it lands; a failure surfaces
+  // via onSyncFail (banner + retry) instead of trapping the user in an
+  // open sheet staring at a spinner.
   async function post(body: any) {
-    setBusy(true); setErr(null);
-    try {
+    const run = async () => {
       const r = await apiFetch('/api/periods', {
         method: 'POST',         body: JSON.stringify(body),
       });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   async function del() {
     const target = existing ?? active;
     if (!target) return;
-    setBusy(true); setErr(null);
-    try {
+    const run = async () => {
       const r = await apiFetch('/api/periods?id=' + target.id, { method: 'DELETE' });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   // id present => UPDATE existing (lets user set period end), else INSERT.
@@ -55,20 +60,22 @@ export default function LogSheet({ date, existing, active, onClose, onSaved, rai
   // lost because the user tapped "Catat haid" instead of "Simpan catatan" is a
   // silent data loss bug.
   async function save(type: string) {
-    setBusy(true); setErr(null);
-    try {
+    const payload = { id: existing?.id, start_date: date, type, flow, end_date: endDate || undefined };
+    const noteText = note.trim();
+    const run = async () => {
       const r = await apiFetch('/api/periods', {
         method: 'POST',
-        body: JSON.stringify({ id: existing?.id, start_date: date, type, flow, end_date: endDate || undefined }),
+        body: JSON.stringify(payload),
       });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
-      if (note.trim()) {
-        const n = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note }) });
+      if (noteText) {
+        const n = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note: noteText }) });
         if (!n.ok) throw new Error((await readJson(n)).error ?? n.statusText);
       }
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   // Tapped a day inside a logged period range but not its start => mark end here.
@@ -117,7 +124,6 @@ export default function LogSheet({ date, existing, active, onClose, onSaved, rai
               ? t.insideRange
               : existing ? `${t.logged}: ${existing.type === 'menstruation' ? t.legendPeriod : t.legendSpotting}` : t.noLog}
           </div>
-          {err && <div className="err">{err}</div>}
           {inRange ? (
             <div className="field">
               <label>{t.end}</label>
@@ -151,20 +157,20 @@ export default function LogSheet({ date, existing, active, onClose, onSaved, rai
         <div className="sheet-actions">
           {inRange ? (
             <>
-              <button className="btn primary" disabled={busy} onClick={markEnd}>{t.markEndHere}</button>
+              <button className="btn primary" onClick={markEnd}>{t.markEndHere}</button>
               <div className="btn-grid">
-                {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
-                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+                {removable && <button className="btn danger" onClick={del}>{t.remove}</button>}
+                <button className="btn ghost" onClick={onClose}>{t.skip}</button>
               </div>
             </>
           ) : (
             <>
-              <button className="btn primary" disabled={busy} onClick={() => save('menstruation')}>{t.logPeriod}</button>
+              <button className="btn primary" onClick={() => save('menstruation')}>{t.logPeriod}</button>
               <div className="btn-grid">
-                <button className="btn" disabled={busy} onClick={() => save('spotting')}>{t.spotting}</button>
-                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.skip}</button>
+                <button className="btn" onClick={() => save('spotting')}>{t.spotting}</button>
+                <button className="btn ghost" onClick={onClose}>{t.skip}</button>
               </div>
-              {removable && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
+              {removable && <button className="btn danger" onClick={del}>{t.remove}</button>}
             </>
           )}
         </div>

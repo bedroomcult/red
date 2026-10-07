@@ -42,7 +42,7 @@ const fmtLong = (d: string) =>
 // quick-log lives in its modal: one tap records, tapping again cancels.
 // Full period detail (flow/end/spotting) stays in LogSheet via onLog, so a tap
 // here is never an accidental commitment.
-export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onLog, onClose, onModalOpenChange, closeSignal, logOpen = false }: {
+export default function DaySheet({ date, periods, prediction, bcMode, dose, sexLog, onDoseSaved, onSyncFail, onLog, onClose, onModalOpenChange, closeSignal, logOpen = false }: {
   date: string;
   periods: Period[];
   prediction: Prediction | null;
@@ -50,6 +50,8 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   dose: Dose | undefined;
   sexLog: SexLog | undefined;
   onDoseSaved: (state: any) => void;
+  // Retry surface for requests that fail after their modal closed.
+  onSyncFail: (retry: () => void) => void;
   onLog: (date: string) => void;
   onClose: () => void;
   // Reports modal open/close so App's back-button precedence can close the
@@ -80,12 +82,10 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   // Two-step period cancel: first tap arms the confirm, second deletes.
   // A button reading "Batal" must never delete on one tap.
   const [confirmCancel, setConfirmCancel] = useState(false);
-  const [periodBusy, setPeriodBusy] = useState(false);
-  const [periodErr, setPeriodErr] = useState<string | null>(null);
 
   useEffect(() => { setDoseLocal(dose ? dose.taken : null); }, [date, dose]);
   useEffect(() => { setSexLocal(sexLog ?? null); }, [date, sexLog]);
-  useEffect(() => { setActiveModal(null); setPeriodErr(null); setConfirmCancel(false); }, [date]);
+  useEffect(() => { setActiveModal(null); setConfirmCancel(false); }, [date]);
   // App-driven close (hardware back): only fires when the signal changes.
   const closeSig = closeSignal ?? 0;
   const firstSig = useRef(true);
@@ -249,34 +249,27 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   // Record (POST) or cancel (DELETE) this day's period. A mid-range date has
   // no new row to add, so it opens LogSheet to mark the end instead.
   async function quickPeriod() {
+    // Close-then-sync like LogSheet: the modal closes on tap, the request
+    // runs behind it, failure surfaces via onSyncFail (banner + retry).
     if (startLog?.type === 'menstruation') {
-      setPeriodBusy(true);
-      setPeriodErr(null);
-      try {
-        const r = await apiFetch('/api/periods?id=' + startLog.id, { method: 'DELETE' });
+      const id = startLog.id;
+      const run = async () => {
+        const r = await apiFetch('/api/periods?id=' + id, { method: 'DELETE' });
         if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
         onDoseSaved(await readJson(r));
-        close();
-      } catch (e: any) {
-        setPeriodErr(e.message);
-      } finally {
-        setPeriodBusy(false);
-      }
+      };
+      close();
+      try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
       return;
     }
     if (inRange) { onLog(date); return; }
-    setPeriodBusy(true);
-    setPeriodErr(null);
-    try {
+    const run = async () => {
       const r = await apiFetch('/api/periods', { method: 'POST', body: JSON.stringify({ start_date: date, type: 'menstruation', flow: lastFlow }) });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onDoseSaved(await readJson(r));
-      close();
-    } catch (e: any) {
-      setPeriodErr(e.message);
-    } finally {
-      setPeriodBusy(false);
-    }
+    };
+    close();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   const flowLabel = (f: string | null) =>
@@ -478,24 +471,23 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
       )}
       {activeModal === 'period' && (
         <DayModal title={t.dayPeriodLogged} icon="droplet" onClose={close} escapeActive={!logOpen}>
-          {periodErr && <div className="err">{periodErr}</div>}
           {!startLog && !inRange && (
-            <button className="btn primary" disabled={periodBusy} onClick={quickPeriod}>
+            <button className="btn primary" onClick={quickPeriod}>
               {t.logPeriod}
             </button>
           )}
           {startLog?.type === 'menstruation' && !confirmCancel && (
-            <button className="btn" disabled={periodBusy} onClick={() => setConfirmCancel(true)}>
+            <button className="btn" onClick={() => setConfirmCancel(true)}>
               {t.dayPeriodCancel}
             </button>
           )}
           {startLog?.type === 'menstruation' && confirmCancel && (
             <>
               <div className="day-info-value">{t.dayPeriodCancelAsk}</div>
-              <button className="btn danger" disabled={periodBusy} onClick={quickPeriod}>
+              <button className="btn danger" onClick={quickPeriod}>
                 {t.dayPeriodCancelYes}
               </button>
-              <button className="btn ghost" disabled={periodBusy} onClick={() => setConfirmCancel(false)}>
+              <button className="btn ghost" onClick={() => setConfirmCancel(false)}>
                 {t.dayPeriodCancelBack}
               </button>
             </>

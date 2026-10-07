@@ -57,6 +57,10 @@ export default function App() {
   // Closed at launch when the lock is on; stays shut for the session once
   // the PIN passes. Deliberately not persisted: every cold start locks.
   const [locked, setLocked] = useState(isLockOn);
+  // A sheet that closed optimistically has a request still in flight.
+  // On failure there is no sheet left to show the error, so the banner
+  // below carries it with a one-tap retry. Null = nothing pending.
+  const [syncFail, setSyncFail] = useState<(() => void) | null>(null);
 
   // Apply saved theme on first paint.
   useEffect(() => { applyTheme(loadTheme()); }, []);
@@ -179,6 +183,15 @@ export default function App() {
       {err && <div className="err">{err}</div>}
 
       <UpdateBanner />
+
+      {syncFail && (
+        <div className="banner warn" role="alert">
+          <div>{t.syncFailed}</div>
+          <div className="row tight">
+            <button className="btn" onClick={() => { const r = syncFail; setSyncFail(null); r(); }}>{t.syncRetry}</button>
+          </div>
+        </div>
+      )}
 
       {bcMode && <div className="banner warn">{t.bcSuppressed}: {me?.bc?.pill_type ?? ''} ({me?.bc?.regimen ?? ''}). {t.bcHint}</div>}
       {ecHit && (
@@ -330,6 +343,7 @@ export default function App() {
           dose={me?.doses?.find((d) => d.date === sel)}
           sexLog={me?.sex?.find((s) => s.date === sel)}
           onDoseSaved={setMe}
+          onSyncFail={setSyncFail}
           onLog={(d) => setLogDate(d)}
           onClose={() => { setSel(null); setDayModalOpen(false); }}
           onModalOpenChange={setDayModalOpen}
@@ -337,7 +351,7 @@ export default function App() {
           logOpen={logDate !== null}
         />
       )}
-      {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} raised={dayModalOpen} onClose={() => setLogDate(null)} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); setDayModalOpen(false); }} />}
+      {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} raised={dayModalOpen} onClose={() => setLogDate(null)} onSyncFail={setSyncFail} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); setDayModalOpen(false); }} />}
       {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
       {ecOpen && (
         <EcPanel
