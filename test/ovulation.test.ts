@@ -204,8 +204,10 @@ describe('calendar and projection display fixes', () => {
     expect(day).toMatch(/activeModal/);
     expect(day).toMatch(/setActiveModal\(null\)/);
     // Quick-log posts with the last used flow; cancelling deletes the row.
-    expect(day).toMatch(/\/api\/periods', \{ method: 'POST'/);
-    expect(day).toMatch(/\/api\/periods\?id=' \+ startLog\.id/);
+    // Close-then-sync: the id is hoisted before close so the request can
+    // run behind the closed modal, failure surfacing via onSyncFail.
+    expect(day).toMatch(/\/api\/periods\?id=' \+ id/);
+    expect(day).toMatch(/onSyncFail/);
     // Mid-range dates open LogSheet instead of posting a duplicate row.
     expect(day).toMatch(/if \(inRange\) \{ onLog\(date\); return; \}/);
     // The verdict modal opens with or without a prediction: no `&& reason`
