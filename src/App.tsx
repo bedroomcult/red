@@ -215,6 +215,7 @@ export default function App() {
           onOpenCalendar={() => setTab('calendar')}
           onLogToday={(d) => { const dt = new Date(d + 'T00:00:00Z'); setYm({ y: dt.getUTCFullYear(), m: dt.getUTCMonth() }); setSel(d); setLogDate(d); }}
           onSaved={setMe}
+          onSyncFail={setSyncFail}
         />
       )}
 
@@ -352,13 +353,14 @@ export default function App() {
         />
       )}
       {logDate && <LogSheet date={logDate} existing={me?.periods.find((p) => p.start_date === logDate)} active={activeFor(logDate)} raised={dayModalOpen} onClose={() => setLogDate(null)} onSyncFail={setSyncFail} onSaved={(s) => { setMe(s); setLogDate(null); setSel(null); setDayModalOpen(false); }} />}
-      {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} />}
+      {bcOpen && <BcPanel current={me?.bc ?? null} onClose={() => setBcOpen(false)} onSaved={setMe} onSyncFail={setSyncFail} />}
       {ecOpen && (
         <EcPanel
           events={(me?.ec ?? []) as any}
           current={ecEditId ? (me?.ec ?? []).find((e) => e.id === ecEditId) ?? null : null}
           onClose={() => { setEcOpen(false); setEcEditId(null); }}
           onSaved={setMe}
+          onSyncFail={setSyncFail}
         />
       )}
 

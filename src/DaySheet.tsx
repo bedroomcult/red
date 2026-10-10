@@ -69,16 +69,9 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
   const [symErr, setSymErr] = useState<string | null>(null);
   const [note, setNote] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState('');
-  const [noteBusy, setNoteBusy] = useState(false);
-  const [noteErr, setNoteErr] = useState<string | null>(null);
-  const [doseBusy, setDoseBusy] = useState(false);
-  const [doseErr, setDoseErr] = useState<string | null>(null);
-  // Local echo of the parent's dose, so the buttons update before the refetch.
   const [doseLocal, setDoseLocal] = useState<boolean | null>(dose ? dose.taken : null);
   // Sex log: undefined = not logged, otherwise whether it was protected.
   const [sexLocal, setSexLocal] = useState<{ protected: boolean } | null>(sexLog ?? null);
-  const [sexBusy, setSexBusy] = useState(false);
-  const [sexErr, setSexErr] = useState<string | null>(null);
   // Two-step period cancel: first tap arms the confirm, second deletes.
   // A button reading "Batal" must never delete on one tap.
   const [confirmCancel, setConfirmCancel] = useState(false);
@@ -100,7 +93,6 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
     setNote(null);
     setNoteDraft('');
     setSymErr(null);
-    setNoteErr(null);
     apiFetch('/api/symptoms?date=' + date)
       .then((r) => (r.ok ? readJson(r) : { symptoms: [] }))
       .then((j) => { if (on) setSyms((j.symptoms ?? []).map((s: any) => s.kind)); })
@@ -136,61 +128,49 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
 
   // Explicit save, not autosave: one request per tap instead of per keystroke.
   // Empty + save deletes the note, matching POST /api/notes.
+  // Close-then-sync like quickPeriod: modal closes on tap, failure retries
+  // from the banner via onSyncFail.
   async function saveNote() {
-    setNoteBusy(true);
-    setNoteErr(null);
-    try {
-      const r = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note: noteDraft }) });
+    const text = noteDraft;
+    const prev = note;
+    setNote(text);
+    const run = async () => {
+      const r = await apiFetch('/api/notes', { method: 'POST', body: JSON.stringify({ date, note: text }) });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       const j = await readJson(r);
       setNote(j.note ?? '');
-      close();
-    } catch (e: any) {
-      setNoteErr(e.message);
-    } finally {
-      setNoteBusy(false);
-    }
+    };
+    close();
+    try { await run(); } catch { setNote(prev); onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
   const noteDirty = note !== null && noteDraft !== note;
 
   // taken: true | false | null (null clears). Any date, past or future.
   async function setDose(taken: boolean | null) {
-    setDoseBusy(true);
-    setDoseErr(null);
     const prev = doseLocal;
     setDoseLocal(taken);
-    try {
+    const run = async () => {
       const r = await apiFetch('/api/doses', { method: 'POST', body: JSON.stringify({ date, taken }) });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onDoseSaved(await readJson(r));
-      close();
-    } catch (e: any) {
-      setDoseLocal(prev);
-      setDoseErr(e.message);
-    } finally {
-      setDoseBusy(false);
-    }
+    };
+    close();
+    try { await run(); } catch { setDoseLocal(prev); onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   // One log per day, so this either creates or replaces. Passing null clears it.
   async function saveSex(next: { protected: boolean } | null) {
-    setSexBusy(true);
-    setSexErr(null);
     const prev = sexLocal;
     setSexLocal(next);
-    try {
+    const run = async () => {
       const r = next
         ? await apiFetch('/api/sex', { method: 'POST', body: JSON.stringify({ date, protected: next.protected }) })
         : await apiFetch('/api/sex?date=' + date, { method: 'DELETE' });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onDoseSaved(await readJson(r));
-      close();
-    } catch (e: any) {
-      setSexLocal(prev);
-      setSexErr(e.message);
-    } finally {
-      setSexBusy(false);
-    }
+    };
+    close();
+    try { await run(); } catch { setSexLocal(prev); onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   const startLog = periods.find((p) => p.start_date === date);
@@ -420,13 +400,12 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
                 placeholder={t.notePlaceholder}
                 onChange={(e) => setNoteDraft(e.target.value)} />
               <div className="row tight">
-                <button className="btn" disabled={!noteDirty || noteBusy} onClick={saveNote}>
+                <button className="btn" disabled={!noteDirty} onClick={saveNote}>
                   {t.setSave}
                 </button>
               </div>
             </>
           )}
-          {noteErr && <div className="err">{noteErr}</div>}
         </DayModal>
       )}
       {activeModal === 'dose' && (
@@ -435,18 +414,17 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
               right/wrong/clear rather than taken/missed/delete. Tapping the
               active chip clears, so no third button is needed. */}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.dayDose}>
-            <button className={`btn ${doseLocal === true ? 'on' : ''}`} disabled={doseBusy}
+            <button className={`btn ${doseLocal === true ? 'on' : ''}`}
               aria-pressed={doseLocal === true}
               onClick={() => setDose(doseLocal === true ? null : true)}>
               {t.doseTaken}
             </button>
-            <button className={`btn ${doseLocal === false ? 'on' : ''}`} disabled={doseBusy}
+            <button className={`btn ${doseLocal === false ? 'on' : ''}`}
               aria-pressed={doseLocal === false}
               onClick={() => setDose(doseLocal === false ? null : false)}>
               {t.doseMissed}
             </button>
           </div>
-          {doseErr && <div className="err">{doseErr}</div>}
         </DayModal>
       )}
       {activeModal === 'sex' && (
@@ -455,18 +433,17 @@ export default function DaySheet({ date, periods, prediction, bcMode, dose, sexL
             <div className="day-info-sub" style={{ marginTop: 0, marginBottom: 8 }}><span className="badge">{t.sexFertileWarn}</span></div>
           )}
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }} role="group" aria-label={t.daySex}>
-            <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`} disabled={sexBusy}
+            <button className={`btn ${sexLocal?.protected === true ? 'on' : ''}`}
               aria-pressed={sexLocal?.protected === true}
               onClick={() => saveSex(sexLocal?.protected === true ? null : { protected: true })}>
               {t.sexProtected}
             </button>
-            <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`} disabled={sexBusy}
+            <button className={`btn ${sexLocal && !sexLocal.protected ? 'on' : ''}`}
               aria-pressed={!!sexLocal && !sexLocal.protected}
               onClick={() => saveSex(sexLocal && !sexLocal.protected ? null : { protected: false })}>
               {t.sexUnprotected}
             </button>
           </div>
-          {sexErr && <div className="err">{sexErr}</div>}
         </DayModal>
       )}
       {activeModal === 'period' && (

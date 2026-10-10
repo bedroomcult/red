@@ -16,11 +16,12 @@ const LABELS: Record<string, string> = {
   'copper-IUD': 'IUD tembaga (≤5 hari)',
 };
 
-export default function EcPanel({ events, current, onClose, onSaved }: {
+export default function EcPanel({ events, current, onClose, onSaved, onSyncFail }: {
   events: EcEvent[];
   current: EcEvent | null; // the event being edited, or null for a new one
   onClose: () => void;
   onSaved: (state: any) => void;
+  onSyncFail: (retry: () => void) => void;
 }) {
   useEscape(true, onClose);
   // The row selected for editing. Starts at the event the parent opened with.
@@ -28,44 +29,42 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
   const [ecType, setEcType] = useState(current?.ec_type ?? 'LNG');
   const [intake, setIntake] = useState(current ? toDateInput(current.intake_at) : localDate());
   const [upsi, setUpsi] = useState(toDateInput(current?.upsi_at));
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
 
   function loadInto(ev: EcEvent) {
     setEditing(ev);
     setEcType(ev.ec_type);
     setIntake(toDateInput(ev.intake_at));
     setUpsi(toDateInput(ev.upsi_at));
-    setErr(null);
   }
 
+  // Snapshot the form: close() unmounts us, so run() must not read state.
   async function save() {
-    setBusy(true); setErr(null);
-    try {
-      const r = await apiFetch('/api/ec', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: editing?.id,
-          ec_type: ecType,
-          intake_date: intake,
-          upsi_date: upsi || undefined,
-        }),
-      });
+    const id = editing?.id;
+    const body = JSON.stringify({
+      id,
+      ec_type: ecType,
+      intake_date: intake,
+      upsi_date: upsi || undefined,
+    });
+    const run = async () => {
+      const r = await apiFetch('/api/ec', { method: 'POST', body });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   async function del() {
     if (!editing) return;
-    setBusy(true); setErr(null);
-    try {
-      const r = await apiFetch('/api/ec?id=' + encodeURIComponent(editing.id), { method: 'DELETE' });
+    const id = editing.id;
+    const run = async () => {
+      const r = await apiFetch('/api/ec?id=' + encodeURIComponent(id), { method: 'DELETE' });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   return (
@@ -76,7 +75,6 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
           <div className="grabber" />
           <h3>{editing ? t.ecEdit : t.ecTitle}</h3>
           <div className="hint">{t.ecHint}</div>
-          {err && <div className="err">{err}</div>}
 
           <div className="field">
             <label htmlFor="ec-type">{t.bcType}</label>
@@ -110,7 +108,6 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
                       type="button"
                       className={`ec-row ${ev.id === editing?.id ? 'on' : ''}`}
                       onClick={() => loadInto(ev)}
-                      disabled={busy}
                       aria-pressed={ev.id === editing?.id}
                     >
                       <span className="ec-row-date">{toDateInput(ev.intake_at)}</span>
@@ -127,10 +124,10 @@ export default function EcPanel({ events, current, onClose, onSaved }: {
         </div>
 
         <div className="sheet-actions">
-          <button className="btn primary" disabled={busy} onClick={save}>{t.ecSave}</button>
+          <button className="btn primary" onClick={save}>{t.ecSave}</button>
           <div className="btn-grid">
-            {editing && <button className="btn danger" disabled={busy} onClick={del}>{t.remove}</button>}
-            <button className="btn ghost" disabled={busy} onClick={onClose}>{t.ecClose}</button>
+            {editing && <button className="btn danger" onClick={del}>{t.remove}</button>}
+            <button className="btn ghost" onClick={onClose}>{t.ecClose}</button>
           </div>
         </div>
       </div>

@@ -6,44 +6,42 @@ import { apiFetch, readJson } from './api';
 
 const REGIMENS = ['21/7', '24/4', 'continuous'] as const;
 
-export default function BcPanel({ current, onClose, onSaved }: {
+export default function BcPanel({ current, onClose, onSaved, onSyncFail }: {
   current: { pill_type: string; regimen: string } | null;
   onClose: () => void; onSaved: (state: any) => void;
+  onSyncFail: (retry: () => void) => void;
 }) {
   useEscape(true, onClose);
   const [pillType, setPillType] = useState(current?.pill_type ?? 'combined');
   const [regimen, setRegimen] = useState(current?.regimen ?? '21/7');
   const [taken, setTaken] = useState(true);
-  const [err, setErr] = useState<string | null>(null);
-  const [busy, setBusy] = useState(false);
   // Stopping contraception deletes the regimen and re-enables cycle predictions.
   // It sits in the same visual slot as clearing a day's log, so it asks first.
   const [confirmStop, setConfirmStop] = useState(false);
 
   async function save() {
-    setBusy(true); setErr(null);
-    try {
-      const r = await apiFetch('/api/bc', {
-        method: 'POST',         body: JSON.stringify({
-          pill_type: pillType, regimen,
-          pack_start_date: localDate(),
-          taken,
-        }),
-      });
+    const body = JSON.stringify({
+      pill_type: pillType, regimen,
+      pack_start_date: localDate(),
+      taken,
+    });
+    const run = async () => {
+      const r = await apiFetch('/api/bc', { method: 'POST', body });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   async function stop() {
-    setBusy(true); setErr(null);
-    try {
+    const run = async () => {
       const r = await apiFetch('/api/bc', { method: 'DELETE' });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-      onClose();
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    onClose();
+    try { await run(); } catch { onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   return (
@@ -54,7 +52,6 @@ export default function BcPanel({ current, onClose, onSaved }: {
         <div className="grabber" />
         <h3>{t.bcTitle}</h3>
         <div className="hint">{t.bcHint}</div>
-        {err && <div className="err">{err}</div>}
         <div className="field">
           <label>{t.bcType}</label>
           <select value={pillType} onChange={(e) => setPillType(e.target.value)}>
@@ -78,15 +75,15 @@ export default function BcPanel({ current, onClose, onSaved }: {
           {confirmStop ? (
             <>
               <div className="hint" style={{ margin: 0 }}>{t.bcStopConfirm}</div>
-              <button className="btn danger" disabled={busy} onClick={stop}>{t.bcStopYes}</button>
-              <button className="btn ghost" disabled={busy} onClick={() => setConfirmStop(false)}>{t.bcCancel}</button>
+              <button className="btn danger" onClick={stop}>{t.bcStopYes}</button>
+              <button className="btn ghost" onClick={() => setConfirmStop(false)}>{t.bcCancel}</button>
             </>
           ) : (
             <>
-              <button className="btn primary" disabled={busy} onClick={save}>{t.bcSave}</button>
+              <button className="btn primary" onClick={save}>{t.bcSave}</button>
               <div className="btn-grid">
-                {current && <button className="btn danger" disabled={busy} onClick={() => setConfirmStop(true)}>{t.bcStop}</button>}
-                <button className="btn ghost" disabled={busy} onClick={onClose}>{t.bcClose}</button>
+                {current && <button className="btn danger" onClick={() => setConfirmStop(true)}>{t.bcStop}</button>}
+                <button className="btn ghost" onClick={onClose}>{t.bcClose}</button>
               </div>
             </>
           )}

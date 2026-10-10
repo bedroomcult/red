@@ -8,13 +8,12 @@ import type { Period } from './Calendar';
 // episode at yesterday, so today already reads as clean. "Masih haid" leaves it ongoing and hides the
 // prompt for today, so the period keeps painting and the question returns
 // tomorrow if the bleeding has not stopped.
-export default function OngoingPrompt({ period, today, onSaved }: {
+export default function OngoingPrompt({ period, today, onSaved, onSyncFail }: {
   period: Period;
   today: string;
   onSaved: (s: any) => void;
+  onSyncFail: (retry: () => void) => void;
 }) {
-  const [busy, setBusy] = useState(false);
-  const [err, setErr] = useState<string | null>(null);
   const [hidden, setHidden] = useState(false);
 
   const dayCount = Math.round((Date.parse(today + 'T00:00:00Z') - Date.parse(period.start_date + 'T00:00:00Z')) / 864e5) + 1;
@@ -24,21 +23,23 @@ export default function OngoingPrompt({ period, today, onSaved }: {
   const endDay = yesterday < period.start_date ? period.start_date : yesterday;
 
   async function save(endDate: string) {
-    setBusy(true); setErr(null);
-    try {
-      const r = await apiFetch('/api/periods', {
-        method: 'POST',
-        body: JSON.stringify({
-          id: period.id,
-          start_date: period.start_date,
-          end_date: endDate,
-          type: period.type,
-          flow: period.flow ?? undefined,
-        }),
-      });
+    const body = JSON.stringify({
+      id: period.id,
+      start_date: period.start_date,
+      end_date: endDate,
+      type: period.type,
+      flow: period.flow ?? undefined,
+    });
+    const run = async () => {
+      const r = await apiFetch('/api/periods', { method: 'POST', body });
       if (!r.ok) throw new Error((await readJson(r)).error ?? r.statusText);
       onSaved(await readJson(r));
-    } catch (e: any) { setErr(e.message); } finally { setBusy(false); }
+    };
+    // Same close-then-sync as the sheets: ending a period hides the prompt
+    // first, so a slow network never leaves the buttons frozen. Failure
+    // retries from the banner via onSyncFail.
+    setHidden(true);
+    try { await run(); } catch { setHidden(false); onSyncFail(() => { void run().catch(() => onSyncFail(() => {})); }); }
   }
 
   if (hidden) return null;
@@ -50,10 +51,9 @@ export default function OngoingPrompt({ period, today, onSaved }: {
         {t.ongoingBody.replace('{n}', String(dayCount))}
       </div>
       <div className="row tight">
-        <button className="btn primary" disabled={busy} onClick={() => save(endDay)}>{t.ongoingEnded}</button>
-        <button className="btn" disabled={busy} onClick={() => setHidden(true)}>{t.ongoingStill}</button>
+        <button className="btn primary" onClick={() => save(endDay)}>{t.ongoingEnded}</button>
+        <button className="btn" onClick={() => setHidden(true)}>{t.ongoingStill}</button>
       </div>
-      {err && <div className="err">{err}</div>}
     </div>
   );
 }

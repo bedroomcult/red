@@ -41,11 +41,12 @@ const PHASE_LABEL: Record<Phase, string> = {
   bc: t.phaseBc,
 };
 
-export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
+export default function Home({ me, onOpenCalendar, onLogToday, onSaved, onSyncFail }: {
   me: { periods: Period[]; prediction: Prediction; bc: { pill_type: string } | null; todaySymptoms?: string[]; today?: string; symptomLog?: { date: string; kind: string }[]; profile?: { period_len: number | null; cycle_len: number | null } | null; insights?: { avgCycle: number | null; next6: string[]; next6Ov?: string[] } | null };
   onOpenCalendar: () => void;
   onLogToday: (date: string) => void;
   onSaved: (s: any) => void;
+  onSyncFail: (retry: () => void) => void;
 }) {
   const today = me.today ?? localDate();
   const [sel, setSel] = useState(today);
@@ -169,7 +170,7 @@ export default function Home({ me, onOpenCalendar, onLogToday, onSaved }: {
       </div>
 
       <div className="home-lower">
-        {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} />}
+        {ongoing && <OngoingPrompt period={ongoing} today={today} onSaved={onSaved} onSyncFail={onSyncFail} />}
         {/* Symptom heads-up: states a pattern from the user's own log, never a
             prediction. The count is shown so the claim is auditable. */}
         {pattern && (
