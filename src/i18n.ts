@@ -250,6 +250,9 @@ export const t = {
   remDenied: 'Izin notifikasi ditolak. Aktifkan di pengaturan sistem.',
   remNativeOnly: 'Pengingat terjadwal bekerja di aplikasi Android. Di browser, notifikasi hanya saat tab terbuka.',
   remSaved: 'Pengingat disimpan',
+  remUpdate: 'Beri tahu saat pembaruan tersedia',
+  remLog: 'Ingatkan mencatat hari ini',
+  remLogTime: 'Jam pengingat harian',
   // appearance
   setAppearance: 'Tampilan',
   themeLight: 'Terang',

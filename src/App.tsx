@@ -17,7 +17,7 @@ import LockScreen from './LockScreen';
 import { isLockOn } from './lock';
 import ExitConfirm from './ExitConfirm';
 import { applyTheme, loadTheme } from './theme';
-import { loadPrefs, syncReminders } from './notify';
+import { loadPrefs, syncReminders, checkAndNotifyUpdate, isDayLogged } from './notify';
 import { syncWidget } from './widget';
 import { pregnancyChance, widgetVerdict } from '../lib/chance';
 import { cycleStatus } from '../lib/cycle';
@@ -65,17 +65,19 @@ export default function App() {
   // Apply saved theme on first paint.
   useEffect(() => { applyTheme(loadTheme()); }, []);
 
-  // Keep the period reminder on the current prediction. syncReminders was only
-  // ever called from the Settings toggles, so logging a period moved
-  // prediction.next while the scheduled notification stayed on the old date.
-  // One effect on the date covers every path that mutates it (log, delete,
-  // onboarding) instead of threading a call through each handler.
-  // Never requests permission: it only runs when periodEnabled is already on,
-  // which is only reachable after Settings obtained permission.
+  // Keep reminders on the current state. The effect covers every path that
+  // mutates prediction or logs (log, delete, onboarding) instead of
+  // threading a call through each handler.
+  // Never requests permission: scheduling only runs for enabled kinds, which
+  // are only reachable after Settings obtained permission. checkAndNotifyUpdate
+  // notifies only when a newer release exists and only once per version.
   useEffect(() => {
     const p = loadPrefs();
-    if (p.periodEnabled) void syncReminders(p, me?.prediction.next ?? null);
-  }, [me?.prediction.next]);
+    if (!p.pillEnabled && !p.periodEnabled && !p.logEnabled && !p.updateEnabled) return;
+    const day = me?.today ?? localDate();
+    void syncReminders(p, me?.prediction.next ?? null, { todayLogged: isDayLogged(day, me) });
+    if (p.updateEnabled) void checkAndNotifyUpdate(__APP_VERSION__);
+  }, [me?.prediction.next, me?.periods, me?.todaySymptoms, me?.doses, me?.sex, me?.symptomLog, me?.today]);
 
   // Push the current phase and next period to the home-screen widget. Bundled
   // with the reminder sync because both depend on the same two values, and the
@@ -332,6 +334,7 @@ export default function App() {
 
       {me && tab === 'profile' && settingsOpen && (
         <SettingsScreen profile={me.profile ?? null} nextPeriod={me.prediction.next}
+          todayLogged={isDayLogged(me.today ?? localDate(), me)}
           onSaved={setMe} onLogout={doLogout} onBack={() => setSettingsOpen(false)} />
       )}
 

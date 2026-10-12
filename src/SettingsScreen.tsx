@@ -2,13 +2,14 @@ import { useState } from 'react';
 import { t } from './i18n';
 import { localDate } from '../lib/today';
 import { type Theme, loadTheme, saveTheme } from './theme';
-import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, notifyNow, notificationsSupported } from './notify';
+import { type ReminderPrefs, loadPrefs, savePrefs, requestPermission, syncReminders, checkAndNotifyUpdate, notifyNow, notificationsSupported } from './notify';
 import { isLockOn, setLock, resetLock, validPin } from './lock';
 import { apiFetch, readJson } from './api';
 
-export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout, onBack }: {
+export default function SettingsScreen({ profile, nextPeriod, todayLogged, onSaved, onLogout, onBack }: {
   profile: { display_name: string | null; cycle_len: number | null; period_len: number | null } | null;
   nextPeriod: string | null;
+  todayLogged: boolean;
   onSaved: (s: any) => void;
   onLogout: () => void;
   // Opened from the profile bottom; back returns to profile.
@@ -91,12 +92,13 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
     setPrefs(next);
     savePrefs(next);
     setRemMsg(null);
-    if (!next.pillEnabled && !next.periodEnabled) { await syncReminders(next, null); return; }
+    if (!next.pillEnabled && !next.periodEnabled && !next.logEnabled) { await syncReminders(next, null); return; }
     const ok = await requestPermission();
     if (!ok) { setRemMsg(t.remDenied); return; }
     const supported = await notificationsSupported();
     if (!supported) setNativeOnly(true);
-    await syncReminders(next, nextPeriod);
+    await syncReminders(next, nextPeriod, { todayLogged });
+    if (next.updateEnabled) await checkAndNotifyUpdate(__APP_VERSION__);
     setRemMsg(t.remSaved);
   }
 
@@ -162,6 +164,23 @@ export default function SettingsScreen({ profile, nextPeriod, onSaved, onLogout,
             onChange={(e) => applyReminders({ ...prefs, periodEnabled: e.target.checked })} />
           {t.remPeriod}
         </label>
+        <label className="check">
+          <input type="checkbox" checked={prefs.updateEnabled}
+            onChange={(e) => applyReminders({ ...prefs, updateEnabled: e.target.checked })} />
+          {t.remUpdate}
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={prefs.logEnabled}
+            onChange={(e) => applyReminders({ ...prefs, logEnabled: e.target.checked })} />
+          {t.remLog}
+        </label>
+        {prefs.logEnabled && (
+          <div className="field" style={{ display: 'block' }}>
+            <label htmlFor="set-logtime">{t.remLogTime}</label>
+            <input id="set-logtime" type="time" value={prefs.logTime}
+              onChange={(e) => applyReminders({ ...prefs, logTime: e.target.value })} />
+          </div>
+        )}
         {nativeOnly && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{t.remNativeOnly}</div>}
         {remMsg && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{remMsg}</div>}
         <div className="row">
