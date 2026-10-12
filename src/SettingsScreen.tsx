@@ -102,10 +102,21 @@ export default function SettingsScreen({ profile, nextPeriod, todayLogged, onSav
     setRemMsg(t.remSaved);
   }
 
-  async function testNotify() {
+  // "Aktifkan pengingat" requests permission first (when not granted), then
+  // schedules every enabled reminder and fires one test ping so the user
+  // sees proof it works. Disabled while nothing is enabled: with no jobs
+  // to schedule and no permission to ask for, the button would do nothing.
+  const canEnable = prefs.pillEnabled || prefs.periodEnabled || prefs.logEnabled || prefs.updateEnabled;
+  async function enableReminders() {
+    setRemMsg(null);
     const ok = await requestPermission();
     if (!ok) { setRemMsg(t.remDenied); return; }
+    const supported = await notificationsSupported();
+    if (!supported) setNativeOnly(true);
+    await syncReminders(prefs, nextPeriod, { todayLogged });
+    if (prefs.updateEnabled) await checkAndNotifyUpdate(__APP_VERSION__);
     await notifyNow('Red', 'Notifikasi berfungsi ✓');
+    setRemMsg(t.remSaved);
   }
 
   return (
@@ -184,7 +195,7 @@ export default function SettingsScreen({ profile, nextPeriod, todayLogged, onSav
         {nativeOnly && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{t.remNativeOnly}</div>}
         {remMsg && <div className="muted" style={{ marginTop: 'var(--s-2)' }}>{remMsg}</div>}
         <div className="row">
-          <button className="btn" onClick={testNotify}>{t.remEnable}</button>
+          <button className="btn primary" disabled={!canEnable} onClick={enableReminders}>{t.remEnable}</button>
         </div>
       </div>
 
