@@ -344,14 +344,17 @@ describe('tier 1: symptom heads-up, late period, reminder re-sync', () => {
     expect(home).toMatch(/saveLateDismissed\(me\.prediction\.next\)/);
   });
 
-  it('re-syncs the period reminder when the prediction moves', () => {
+  it('re-syncs reminders when prediction moves or logging changes', () => {
     const app = readFileSync(ROOT + 'src/App.tsx', 'utf8');
-    // The effect keys on prediction.next, which is what logging a period changes.
+    // The nudge schedules only for unlogged days, so the effect also keys on
+    // every log source — not just prediction.next.
     expect(app).toMatch(/syncReminders\(p, me\?\.prediction\.next/);
-    expect(app).toMatch(/\}, \[me\?\.prediction\.next\]\)/);
+    expect(app).toMatch(/todayLogged: isDayLogged\(day, me\)/);
+    expect(app).toMatch(/me\?\.periods, me\?\.todaySymptoms, me\?\.doses/);
     // It must never request permission: only run when the user already enabled it.
-    expect(app).toMatch(/if \(p\.periodEnabled\)/);
     expect(app).not.toMatch(/requestPermission\(\)/);
+    // Update check notifies once per version, gated on its own toggle.
+    expect(app).toMatch(/if \(p\.updateEnabled\) void checkAndNotifyUpdate/);
   });
 });
 
